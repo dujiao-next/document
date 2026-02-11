@@ -64,6 +64,10 @@ cp config.yml.example config.yml
 chmod +x ./dujiao-api
 ```
 
+> ⚠️ 重要安全提醒：上线前必须修改 `config.yml` 中的 `jwt.secret` 与 `user_jwt.secret`。
+>
+> 请使用至少 32 位高强度随机字符串，严禁使用模板默认值。
+
 在 aaPanel 的 PM2/Supervisor 中添加启动命令：
 
 > 建议同时为该进程设置环境变量（用于初始化默认管理员，避免使用默认弱口令）：

@@ -45,6 +45,10 @@ cp config.yml.example config.yml
 - `jwt.secret` / `user_jwt.secret`
 - `redis`、`queue`、`email`（按需启用）
 
+> ⚠️ 重要安全提醒：上线前必须修改 `jwt.secret` 与 `user_jwt.secret`，并使用至少 32 位高强度随机字符串。
+>
+> 严禁使用模板默认值，否则可能导致 Token 可伪造，存在严重安全风险。
+
 ### 2.3 初始化数据（可选）
 
 ```bash
