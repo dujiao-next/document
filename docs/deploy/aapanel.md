@@ -1,6 +1,6 @@
 # 使用 aaPanel 手动部署（基于 Releases 压缩包）
 
-> 更新时间：2026-02-11
+> 更新时间：2026-02-12
 
 本文档适用于你已在各仓库 Release 中提供编译产物压缩包的部署方式。
 
@@ -39,9 +39,11 @@ cd /www/wwwroot/dujiao-next
 
 示例（文件名按你的实际 Release 产物替换）：
 
+> API 压缩包命名遵循 GoReleaser 规则：`dujiao-next_<tag>_Linux_x86_64.tar.gz`，例如 `dujiao-next_v0.0.1-beta_Linux_x86_64.tar.gz`。
+
 ```bash
 # API
-wget -O api.tar.gz https://github.com/dujiao-next/dujiao-next/releases/download/v1.0.0/api-v1.0.0-linux-amd64.tar.gz
+wget -O api.tar.gz https://github.com/dujiao-next/dujiao-next/releases/download/v0.0.1-beta/dujiao-next_v0.0.1-beta_Linux_x86_64.tar.gz
 mkdir -p api && tar -xzf api.tar.gz -C api
 
 # User
@@ -53,15 +55,21 @@ wget -O admin.tar.gz https://github.com/dujiao-next/admin/releases/download/v1.0
 mkdir -p admin && tar -xzf admin.tar.gz -C admin
 ```
 
+> API 压缩包解压后，`/www/wwwroot/dujiao-next/api` 目录中应包含：
+> - `config.yml.example`
+> - `dujiao-next`
+> - `README.md`
+
+
 ## 4. 部署 API（无需编译）
 
-确保 API 目录中存在可执行文件（例如 `dujiao-api`）和配置模板（`config.yml.example`）。
+确认 API 解压目录中存在以下文件：`config.yml.example`、`dujiao-next`、`README.md`。
 
 ```bash
 cd /www/wwwroot/dujiao-next/api
 cp config.yml.example config.yml
 # 编辑 config.yml
-chmod +x ./dujiao-api
+chmod +x ./dujiao-next
 ```
 
 > ⚠️ 重要安全提醒：上线前必须修改 `config.yml` 中的 `jwt.secret` 与 `user_jwt.secret`。
@@ -76,7 +84,7 @@ chmod +x ./dujiao-api
 > - `DJ_DEFAULT_ADMIN_PASSWORD=<你的强密码>`
 
 ```bash
-/www/wwwroot/dujiao-next/api/dujiao-api
+/www/wwwroot/dujiao-next/api/dujiao-next
 ```
 
 工作目录设置为：
