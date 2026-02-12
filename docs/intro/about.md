@@ -16,7 +16,7 @@ Dujiao-Next 是一套面向「数字商品销售与交付」场景的开源系�
 ### 2.1 多端架构
 
 - `api/`：后端服务（Go + Gin + GORM）
-- `user/`：用户前台（Vue 3 + Vite + TypeScript，仓库名为 user）
+- `user/`：用户前台（Vue 3 + Vite + TypeScript）
 - `admin/`：后台管理（Vue 3 + Vite + TypeScript）
 - `Document/`：官方文档（VitePress）
 

@@ -19,7 +19,7 @@ export default defineConfig({
         items: [
           { text: '关于 Dujiao-Next', link: '/intro/about' },
           { text: '环境要求', link: '/intro/requirements' },
-          { text: '更新日志模板', link: '/intro/changelog' },
+          { text: '更新日志', link: '/intro/changelog' },
           { text: '开源仓库与贡献', link: '/intro/open-source' },
         ],
       },
