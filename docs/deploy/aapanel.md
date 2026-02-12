@@ -121,15 +121,108 @@ chmod +x ./dujiao-api
 - `/api` → `http://127.0.0.1:8080/api`
 - `/uploads` → `http://127.0.0.1:8080/uploads`
 
-示例：
+### 7.1 分域名部署示例（推荐）
 
 ```nginx
-location /api/ {
-    proxy_pass http://127.0.0.1:8080/api/;
+# 前台 User
+server {
+    listen 80;
+    server_name shop.example.com;
+
+    root /www/wwwroot/dujiao-next/user/dist;
+    index index.html;
+
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+
+    location /api/ {
+        proxy_pass http://127.0.0.1:8080/api/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location /uploads/ {
+        proxy_pass http://127.0.0.1:8080/uploads/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
 }
 
-location /uploads/ {
-    proxy_pass http://127.0.0.1:8080/uploads/;
+# 后台 Admin
+server {
+    listen 80;
+    server_name admin.example.com;
+
+    root /www/wwwroot/dujiao-next/admin/dist;
+    index index.html;
+
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+
+    location /api/ {
+        proxy_pass http://127.0.0.1:8080/api/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location /uploads/ {
+        proxy_pass http://127.0.0.1:8080/uploads/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+```
+
+### 7.2 单域名 `/admin` 子路径示例（可选）
+
+```nginx
+server {
+    listen 80;
+    server_name shop.example.com;
+
+    root /www/wwwroot/dujiao-next/user/dist;
+    index index.html;
+
+    # 前台 User
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+
+    # 后台 Admin
+    location = /admin {
+        return 301 /admin/;
+    }
+
+    location /admin/ {
+        alias /www/wwwroot/dujiao-next/admin/dist/;
+        try_files $uri $uri/ /admin/index.html;
+    }
+
+    location /api/ {
+        proxy_pass http://127.0.0.1:8080/api/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location /uploads/ {
+        proxy_pass http://127.0.0.1:8080/uploads/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
 }
 ```
 

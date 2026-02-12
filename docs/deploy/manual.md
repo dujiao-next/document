@@ -121,20 +121,119 @@ npm run build
 
 推荐采用同源代理模式：User 与 Admin 前端统一请求 `/api`、`/uploads`，由外层 Nginx 转发到 API 服务（`127.0.0.1:8080`）。
 
+### 5.1 分域名部署示例（推荐）
+
+- 前台：`user.example.com` → `user/dist`
+- 后台：`admin.example.com` → `admin/dist`
+
 ```nginx
-location /api/ {
-    proxy_pass http://127.0.0.1:8080/api/;
+# 前台 User
+server {
+    listen 80;
+    server_name user.example.com;
+
+    root /var/www/dujiao-next/user/dist;
+    index index.html;
+
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+
+    location /api/ {
+        proxy_pass http://127.0.0.1:8080/api/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location /uploads/ {
+        proxy_pass http://127.0.0.1:8080/uploads/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
 }
 
-location /uploads/ {
-    proxy_pass http://127.0.0.1:8080/uploads/;
+# 后台 Admin
+server {
+    listen 80;
+    server_name admin.example.com;
+
+    root /var/www/dujiao-next/admin/dist;
+    index index.html;
+
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+
+    location /api/ {
+        proxy_pass http://127.0.0.1:8080/api/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location /uploads/ {
+        proxy_pass http://127.0.0.1:8080/uploads/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+```
+
+### 5.2 单域名 `/admin` 子路径示例（可选）
+
+```nginx
+server {
+    listen 80;
+    server_name shop.example.com;
+
+    root /var/www/dujiao-next/user/dist;
+    index index.html;
+
+    # 前台 User
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+
+    # 后台 Admin
+    location = /admin {
+        return 301 /admin/;
+    }
+
+    location /admin/ {
+        alias /var/www/dujiao-next/admin/dist/;
+        try_files $uri $uri/ /admin/index.html;
+    }
+
+    location /api/ {
+        proxy_pass http://127.0.0.1:8080/api/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location /uploads/ {
+        proxy_pass http://127.0.0.1:8080/uploads/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
 }
 ```
 
 同时建议：
 
-- 前台与后台分别指向对应静态目录
-- 前端路由开启 `try_files $uri $uri/ /index.html`
+- 前台与后台分别绑定独立域名（更清晰）
+- 开启 HTTPS 并强制跳转到 443
+- 前端 SPA 路由必须保留 `try_files ... /index.html`
 
 ## 6. 启停与升级建议
 

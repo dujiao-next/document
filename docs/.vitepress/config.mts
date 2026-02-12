@@ -9,8 +9,8 @@ export default defineConfig({
   themeConfig: {
     nav: [
       { text: '指南', link: '/intro/about' },
+      { text: '体验Demo', link: 'https://demo.dujiaoka.com' },
       { text: 'Telegram', link: 'https://t.me/dujiaoka' },
-      { text: 'GitHub', link: 'https://github.com/dujiao-next' },
     ],
 
     sidebar: [

@@ -13,6 +13,9 @@
 ```bash
 mkdir -p /opt/dujiao-next/{config,data/db,data/uploads,data/logs,data/redis,data/postgres}
 cd /opt/dujiao-next
+
+# 关键：避免日志/数据库目录权限不足（api 容器默认非 root 用户）
+chmod -R 0777 ./data/logs ./data/db ./data/uploads ./data/redis ./data/postgres
 ```
 
 目录说明：
@@ -310,17 +313,128 @@ networks:
 
 `user` 与 `admin` 采用同源 `/api`、`/uploads` 访问后端，因此你需要在最外层网关（Nginx/Ingress）配置反向代理。
 
+> 下方示例使用默认端口：
+>
+> - API: `127.0.0.1:8080`
+> - User: `127.0.0.1:8081`
+> - Admin: `127.0.0.1:8082`
+>
+> 如果你在 `.env` 修改了端口，请同步替换。
+
+### 6.1 分域名部署示例（推荐）
+
 ```nginx
-location /api/ {
-  proxy_pass http://127.0.0.1:${API_PORT}/api/;
+# 前台 User
+server {
+    listen 80;
+    server_name user.example.com;
+
+    location / {
+        proxy_pass http://127.0.0.1:8081;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location /api/ {
+        proxy_pass http://127.0.0.1:8080/api/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location /uploads/ {
+        proxy_pass http://127.0.0.1:8080/uploads/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
 }
 
-location /uploads/ {
-  proxy_pass http://127.0.0.1:${API_PORT}/uploads/;
+# 后台 Admin
+server {
+    listen 80;
+    server_name admin.example.com;
+
+    location / {
+        proxy_pass http://127.0.0.1:8082;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location /api/ {
+        proxy_pass http://127.0.0.1:8080/api/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location /uploads/ {
+        proxy_pass http://127.0.0.1:8080/uploads/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
 }
 ```
 
-如果没有这两条代理，User/Admin 页面虽然能打开，但接口与上传文件会访问失败。
+### 6.2 单域名 `/admin` 子路径示例（可选）
+
+如果你希望只暴露一个域名（例如 `shop.example.com`），可按下列方式配置：
+
+```nginx
+server {
+    listen 80;
+    server_name shop.example.com;
+
+    # 前台 User
+    location / {
+        proxy_pass http://127.0.0.1:8081;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    # 后台 Admin
+    location = /admin {
+        return 301 /admin/;
+    }
+
+    location /admin/ {
+        proxy_pass http://127.0.0.1:8082/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location /api/ {
+        proxy_pass http://127.0.0.1:8080/api/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location /uploads/ {
+        proxy_pass http://127.0.0.1:8080/uploads/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+```
+
+如果没有 `/api` 和 `/uploads` 代理，User/Admin 页面虽然能打开，但接口与上传文件会访问失败。
 
 ## 7. 启动与运维命令
 
