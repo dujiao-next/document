@@ -40,6 +40,8 @@ cd /www/wwwroot/dujiao-next
 示例（文件名按你的实际 Release 产物替换）：
 
 > API 压缩包命名遵循 GoReleaser 规则：`dujiao-next_<tag>_Linux_x86_64.tar.gz`，例如 `dujiao-next_v0.0.1-beta_Linux_x86_64.tar.gz`。
+> User 压缩包命名示例：`dujiao-next-user-v0.0.1-beta.zip`。
+> Admin 压缩包命名示例：`dujiao-next-admin-v0.0.1-beta.zip`。
 
 ```bash
 # API
@@ -47,12 +49,12 @@ wget -O api.tar.gz https://github.com/dujiao-next/dujiao-next/releases/download/
 mkdir -p api && tar -xzf api.tar.gz -C api
 
 # User
-wget -O user.tar.gz https://github.com/dujiao-next/user/releases/download/v1.0.0/user-v1.0.0-dist.tar.gz
-mkdir -p user && tar -xzf user.tar.gz -C user
+wget -O user.zip https://github.com/dujiao-next/user/releases/download/v0.0.1-beta/dujiao-next-user-v0.0.1-beta.zip
+mkdir -p user && unzip -o user.zip -d user
 
 # Admin
-wget -O admin.tar.gz https://github.com/dujiao-next/admin/releases/download/v1.0.0/admin-v1.0.0-dist.tar.gz
-mkdir -p admin && tar -xzf admin.tar.gz -C admin
+wget -O admin.zip https://github.com/dujiao-next/admin/releases/download/v0.0.1-beta/dujiao-next-admin-v0.0.1-beta.zip
+mkdir -p admin && unzip -o admin.zip -d admin
 ```
 
 > API 压缩包解压后，`/www/wwwroot/dujiao-next/api` 目录中应包含：
@@ -106,7 +108,8 @@ chmod +x ./dujiao-next
 
 ## 5. 部署 User 与 Admin（无需构建）
 
-要求：Release 包内已经包含可直接托管的静态文件（通常是 `dist`）。
+要求：Release 包内已经包含可直接托管的静态文件（通常是 `dist`）；
+若是 ZIP 包，请先解压并确认 `user/dist`、`admin/dist` 目录已存在。
 
 建议目录：
 
