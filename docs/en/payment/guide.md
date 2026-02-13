@@ -16,6 +16,7 @@ This document covers:
 | Provider | `provider_type` | `channel_type` | `interaction_mode` | Scenario |
 | --- | --- | --- | --- | --- |
 | EPay | `epay` | `wechat` / `wxpay` / `alipay` / `qqpay` | `qr` / `redirect` | Aggregated payment gateway |
+| BEpusdt | `epusdt` | `usdt-trc20` / `usdc-trc20` / `trx` | `redirect` | Cryptocurrency payment (USDT/USDC/TRX) |
 | Official | `official` | `paypal` | `redirect` | PayPal Checkout redirect |
 | Official | `official` | `stripe` | `redirect` | Stripe Checkout redirect |
 | Official | `official` | `alipay` | `qr` / `wap` / `page` | Alipay Face-to-Face / WAP / Desktop |
@@ -172,13 +173,63 @@ Configuration entry: `Admin → Payment Management → Payment Channels`.
 }
 ```
 
+## 2.6 BEpusdt (`usdt-trc20` / `usdc-trc20` / `trx`)
+
+### Required
+
+- `gateway_url`: BEpusdt gateway address
+- `auth_token`: BEpusdt API Token
+- `notify_url`: Async callback URL
+- `return_url`: Payment success redirect URL
+
+### Optional
+
+- `fiat`: Fiat currency type, default `CNY` (supports `CNY` / `USD`)
+- `trade_type`: Transaction type (automatically set based on `channel_type`, usually no manual configuration needed)
+
+### Example `config_json`
+
+```json
+{
+  "gateway_url": "https://usdt.example.com",
+  "auth_token": "your_bepusdt_api_token",
+  "fiat": "CNY",
+  "notify_url": "https://api.example.com/api/v1/payments/callback",
+  "return_url": "https://shop.example.com/pay"
+}
+```
+
+### Payment Methods
+
+BEpusdt supports three cryptocurrency payment methods, each requiring a separate payment channel:
+
+| `channel_type` | Currency | `trade_type` (auto-set) | Description |
+| --- | --- | --- | --- |
+| `usdt-trc20` | USDT (TRC20) | `usdt.trc20` | TRON network USDT |
+| `usdc-trc20` | USDC (TRC20) | `usdc.trc20` | TRON network USDC |
+| `trx` | TRX | `tron.trx` | TRON native token |
+
+**Notes**:
+- `trade_type` is automatically set based on `channel_type`, no need to fill in configuration
+- `notify_url` path must be `/api/v1/payments/callback`
+- `return_url` path must be `/pay` (not `/order` or `/payment`)
+- Only supports `redirect` interaction mode, unified redirect to BEpusdt checkout page
+
+### Payment Flow
+
+1. User selects BEpusdt payment method
+2. System creates payment order and redirects to BEpusdt checkout
+3. User completes payment on BEpusdt checkout (scan QR or transfer)
+4. After successful payment, BEpusdt sends async callback notification
+5. User is automatically redirected back to shop order details page
+
 ## 3. Callback and Webhook Configuration
 
 Assume your public API domain is `https://api.example.com`, then your callback base path is:
 
 - `https://api.example.com/api/v1`
 
-## 3.1 Generic Callback Endpoint (Alipay / WeChat / EPay)
+## 3.1 Generic Callback Endpoint (Alipay / WeChat / EPay / BEpusdt)
 
 - Callback URL: `POST https://api.example.com/api/v1/payments/callback`
 - `GET` is only for compatibility/debug and is not recommended for production callbacks.
@@ -188,6 +239,7 @@ Recommended settings:
 - Alipay `notify_url`: `https://api.example.com/api/v1/payments/callback`
 - WeChat `notify_url`: `https://api.example.com/api/v1/payments/callback?channel_id=YOUR_CHANNEL_ID`
 - EPay `notify_url`: `https://api.example.com/api/v1/payments/callback`
+- BEpusdt `notify_url`: `https://api.example.com/api/v1/payments/callback`
 
 ## 3.2 PayPal Webhook
 
