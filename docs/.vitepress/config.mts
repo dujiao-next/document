@@ -35,6 +35,7 @@ const rootSidebar: DefaultTheme.Sidebar = [
       { text: '手动部署', link: '/deploy/manual' },
       { text: 'Docker Compose 部署', link: '/deploy/docker-compose' },
       { text: 'aaPanel 手动部署', link: '/deploy/aapanel' },
+      { text: '从老版迁移数据', link: '/deploy/migrate' },
     ],
   },
   {
@@ -75,6 +76,7 @@ const zhHantSidebar: DefaultTheme.Sidebar = [
       { text: '手動部署', link: '/zh-hant/deploy/manual' },
       { text: 'Docker Compose 部署', link: '/zh-hant/deploy/docker-compose' },
       { text: 'aaPanel 手動部署', link: '/zh-hant/deploy/aapanel' },
+      { text: '從舊版遷移資料', link: '/zh-hant/deploy/migrate' },
     ],
   },
   {
@@ -115,6 +117,7 @@ const enSidebar: DefaultTheme.Sidebar = [
       { text: 'Manual Deployment', link: '/en/deploy/manual' },
       { text: 'Docker Compose Deployment', link: '/en/deploy/docker-compose' },
       { text: 'aaPanel Deployment', link: '/en/deploy/aapanel' },
+      { text: 'Migrate from Legacy Version', link: '/en/deploy/migrate' },
     ],
   },
   {
