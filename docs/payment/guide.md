@@ -16,6 +16,7 @@
 | 提供方 | `provider_type` | `channel_type` | `interaction_mode` | 场景说明 |
 | --- | --- | --- | --- | --- |
 | 易支付 | `epay` | `wechat` / `wxpay` / `alipay` / `qqpay` | `qr` / `redirect` | 聚合支付通道 |
+| BEpusdt | `epusdt` | `usdt-trc20` / `usdc-trc20` / `trx` | `redirect` | 加密货币支付（USDT/USDC/TRX） |
 | 官方 | `official` | `paypal` | `redirect` | PayPal Checkout 跳转支付 |
 | 官方 | `official` | `stripe` | `redirect` | Stripe Checkout 跳转支付 |
 | 官方 | `official` | `alipay` | `qr` / `wap` / `page` | 支付宝当面付 / 手机网站 / 电脑网站 |
@@ -172,13 +173,63 @@
 }
 ```
 
+## 2.6 BEpusdt（usdt-trc20 / usdc-trc20 / trx）
+
+### 必填项
+
+- `gateway_url`：BEpusdt 网关地址
+- `auth_token`：BEpusdt API Token
+- `notify_url`：异步回调地址
+- `return_url`：支付成功跳转地址
+
+### 可选项
+
+- `fiat`：法币类型，默认 `CNY`（支持 `CNY` / `USD`）
+- `trade_type`：交易类型（会根据 `channel_type` 自动设置，通常无需手动配置）
+
+### 示例 `config_json`
+
+```json
+{
+  "gateway_url": "https://usdt.example.com",
+  "auth_token": "your_bepusdt_api_token",
+  "fiat": "CNY",
+  "notify_url": "https://api.example.com/api/v1/payments/callback",
+  "return_url": "https://shop.example.com/pay"
+}
+```
+
+### 支付方式说明
+
+BEpusdt 支持三种加密货币支付方式，每种方式需要单独创建支付渠道：
+
+| `channel_type` | 币种 | `trade_type`（自动设置） | 说明 |
+| --- | --- | --- | --- |
+| `usdt-trc20` | USDT (TRC20) | `usdt.trc20` | 波场网络 USDT |
+| `usdc-trc20` | USDC (TRC20) | `usdc.trc20` | 波场网络 USDC |
+| `trx` | TRX | `tron.trx` | 波场原生代币 |
+
+**注意**：
+- `trade_type` 会根据 `channel_type` 自动设置，无需在配置中填写
+- `notify_url` 路径必须是 `/api/v1/payments/callback`
+- `return_url` 路径必须是 `/pay`（不是 `/order` 或 `/payment`）
+- 只支持 `redirect` 交互模式，统一跳转到 BEpusdt 收银台页面
+
+### 支付流程
+
+1. 用户选择 BEpusdt 支付方式
+2. 系统创建支付订单并跳转到 BEpusdt 收银台
+3. 用户在 BEpusdt 收银台完成支付（扫码或转账）
+4. 支付成功后，BEpusdt 发送异步回调通知
+5. 用户自动跳转回商城订单详情页
+
 ## 3. 回调地址配置与 Webhook 填写
 
 假设你的 API 对外地址是 `https://api.example.com`，则 API 回调基址为：
 
 - `https://api.example.com/api/v1`
 
-## 3.1 通用回调入口（支付宝 / 微信 / 易支付）
+## 3.1 通用回调入口（支付宝 / 微信 / 易支付 / BEpusdt）
 
 - 回调地址：`POST https://api.example.com/api/v1/payments/callback`
 - 支持 `GET` 仅用于兼容和调试，不建议支付平台生产回调用 GET。
@@ -188,6 +239,7 @@
 - 支付宝 `notify_url`：`https://api.example.com/api/v1/payments/callback`
 - 微信 `notify_url`：`https://api.example.com/api/v1/payments/callback?channel_id=你的渠道ID`
 - 易支付 `notify_url`：`https://api.example.com/api/v1/payments/callback`
+- BEpusdt `notify_url`：`https://api.example.com/api/v1/payments/callback`
 
 ## 3.2 PayPal Webhook
 
@@ -264,6 +316,6 @@
    - 仍建议你在平台侧保持标准重试策略，不要自定义异常重放逻辑。
 
 6. **联调优先级**
-   - 先验证“下单成功返回支付链接/二维码”。
-   - 再验证“异步回调能更新支付状态”。
-   - 最后验证“前台 `/pay` 回跳后自动完成支付状态捕获（PayPal/Stripe）”。
+   - 先验证"下单成功返回支付链接/二维码"。
+   - 再验证"异步回调能更新支付状态"。
+   - 最后验证"前台 `/pay` 回跳后自动完成支付状态捕获（PayPal/Stripe）"。
