@@ -356,7 +356,6 @@ Authorization: Bearer <user_token>
       "telegram": "https://t.me/dujiaostudio",
       "whatsapp": "https://wa.me/1234567890"
     },
-    "logo_text": "D&N",
     "site_name": "Dujiao-Next",
     "payment_channels": [
       {
@@ -1992,4 +1991,3 @@ Authorization: Bearer <user_token>
 - `GET /payments/callback`
 - `POST /payments/webhook/paypal`
 - `POST /payments/webhook/stripe`
-

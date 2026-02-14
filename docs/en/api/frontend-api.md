@@ -354,7 +354,6 @@ None
       "telegram": "https://t.me/dujiaostudio",
       "whatsapp": "https://wa.me/1234567890"
     },
-    "logo_text": "D&N",
     "site_name": "Dujiao-Next",
     "payment_channels": [
       {
