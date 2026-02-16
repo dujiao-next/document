@@ -1,6 +1,6 @@
 # 關於 Dujiao-Next
 
-> 更新時間：2026-02-11  
+> 更新時間：2026-02-16  
 
 ## 1. 項目定位
 
@@ -52,7 +52,14 @@ Dujiao-Next 是一套面向「數字商品銷售與交付」場景的開源系�
 - 需要在現有系統上做定製開發的技術團隊
 
 
-## 5. 開源倉庫與貢獻
+## 5. Demo 站點
+
+- 前臺：https://demo.dujiaoka.com
+- 後臺：https://demo-admin.dujiaoka.com
+- 後臺測試管理員賬號：`test`
+- 後臺測試管理員密碼：`Test123456`
+
+## 6. 開源倉庫與貢獻
 
 - API（主項目）：https://github.com/dujiao-next/dujiao-next
 - User（用戶前臺）：https://github.com/dujiao-next/user

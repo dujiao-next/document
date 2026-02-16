@@ -1,6 +1,6 @@
 # About Dujiao-Next
 
-> Updated: 2026-02-11  
+> Updated: 2026-02-16  
 
 ## 1. Project positioning
 
@@ -51,7 +51,14 @@ Dujiao-Next is an open source system for the "digital goods sales and delivery" 
 - Enterprise teams that want to retain the autonomy and control of their systems
 - Technical teams that need to do custom development on existing systems
 
-## 5. Open source repositories and contributions
+## 5. Demo sites
+
+- Frontend: https://demo.dujiaoka.com
+- Admin: https://demo-admin.dujiaoka.com
+- Test admin account: `test`
+- Test admin password: `Test123456`
+
+## 6. Open source repositories and contributions
 
 - API (Main Project): https://github.com/dujiao-next/dujiao-next
 - User (Frontend): https://github.com/dujiao-next/user

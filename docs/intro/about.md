@@ -1,6 +1,6 @@
 # 关于 Dujiao-Next
 
-> 更新时间：2026-02-11  
+> 更新时间：2026-02-16  
 
 ## 1. 项目定位
 
@@ -52,7 +52,14 @@ Dujiao-Next 是一套面向「数字商品销售与交付」场景的开源系�
 - 需要在现有系统上做定制开发的技术团队
 
 
-## 5. 开源仓库与贡献
+## 5. Demo 站点
+
+- 前台：https://demo.dujiaoka.com
+- 后台：https://demo-admin.dujiaoka.com
+- 后台测试管理员账号：`test`
+- 后台测试管理员密码：`Test123456`
+
+## 6. 开源仓库与贡献
 
 - API（主项目）：https://github.com/dujiao-next/dujiao-next
 - User（用户前台）：https://github.com/dujiao-next/user
