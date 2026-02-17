@@ -357,6 +357,14 @@ Authorization: Bearer <user_token>
       "whatsapp": "https://wa.me/1234567890"
     },
     "site_name": "Dujiao-Next",
+    "scripts": [
+      {
+        "name": "Plausible",
+        "enabled": true,
+        "position": "head",
+        "code": "<script defer data-domain=\"localhost\" src=\"https://xxx.com/js/script.js\"></script>"
+      }
+    ],
     "payment_channels": [
       {
         "id": 1,
@@ -389,6 +397,7 @@ Authorization: Bearer <user_token>
 | --- | --- | --- |
 | languages | string[] | 站點啟用語言列表 |
 | contact | object | 聯繫方式配置 |
+| scripts | object[] | 前臺自訂 JS 腳本配置 |
 | payment_channels | object[] | 前臺可用支付渠道列表 |
 | captcha | object | 驗證碼公開配置 |
 | 其他字段 | any | 後臺站點設置中的公開字段（動態擴展） |

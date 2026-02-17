@@ -355,6 +355,14 @@ None
       "whatsapp": "https://wa.me/1234567890"
     },
     "site_name": "Dujiao-Next",
+    "scripts": [
+      {
+        "name": "Plausible",
+        "enabled": true,
+        "position": "head",
+        "code": "<script defer data-domain=\"localhost\" src=\"https://xxx.com/js/script.js\"></script>"
+      }
+    ],
     "payment_channels": [
       {
         "id": 1,
@@ -386,6 +394,7 @@ None
 | --- | --- | --- |
 | languages | string[] | List of enabled site languages |
 | contact | object | Contact configuration |
+| scripts | object[] | Custom frontend JS script configuration |
 | payment_channels | object[] | List of available payment channels on the frontend |
 | captcha | object | Public captcha configuration |
 | other fields | any | Public fields from the backend site settings (dynamically extended) |
