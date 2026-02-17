@@ -54,8 +54,8 @@ Dujiao-Next 是一套面向「數字商品銷售與交付」場景的開源系�
 
 ## 5. Demo 站點
 
-- 前臺：https://demo.dujiaoka.com
-- 後臺：https://demo-admin.dujiaoka.com
+- 前臺：https://demo.dujiao-next.com
+- 後臺：https://demo-admin.dujiao-next.com
 - 後臺測試管理員賬號：`test`
 - 後臺測試管理員密碼：`Test123456`
 

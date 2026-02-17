@@ -4,7 +4,7 @@ This repository contains the official documentation site for **Dujiao-Next**, bu
 
 ## Website
 
-- Production docs: https://dujiaoka.com
+- Production docs: https://dujiao-next.com
 - GitHub (docs): https://github.com/dujiao-next/document
 - GitHub (main API project): https://github.com/dujiao-next/dujiao-next
 - GitHub (user frontend): https://github.com/dujiao-next/user
