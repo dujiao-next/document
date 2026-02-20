@@ -64,5 +64,6 @@ Dujiao-Next is an open source system for the "digital goods sales and delivery" 
 - User (Frontend): https://github.com/dujiao-next/user
 - Admin (Backend): https://github.com/dujiao-next/admin
 - Document (Documentation): https://github.com/dujiao-next/document
+- Community Projects: https://github.com/dujiao-next/community-projects
 
 If you would like to add features, fix issues, or improve the documentation, you are welcome to submit a PR directly.

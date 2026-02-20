@@ -1,6 +1,6 @@
 # Open Source Repositories and Contributions
 
-> Last Updated: 2026-02-11  
+> Last Updated: 2026-02-17  
 
 ## 1. Repository Links
 
@@ -8,6 +8,7 @@
 - User (Frontend): https://github.com/dujiao-next/user
 - Admin (Backend): https://github.com/dujiao-next/admin
 - Document (Documentation): https://github.com/dujiao-next/document
+- Community Projects: https://github.com/dujiao-next/community-projects
 
 ## 2. Terminology
 

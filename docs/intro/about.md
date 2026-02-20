@@ -65,5 +65,6 @@ Dujiao-Next 是一套面向「数字商品销售与交付」场景的开源系�
 - User（用户前台）：https://github.com/dujiao-next/user
 - Admin（后台）：https://github.com/dujiao-next/admin
 - Document（文档）：https://github.com/dujiao-next/document
+- Community Projects（社区共享项目）：https://github.com/dujiao-next/community-projects
 
 如果你希望补充功能、修复问题或改进文档，欢迎直接提交 PR。

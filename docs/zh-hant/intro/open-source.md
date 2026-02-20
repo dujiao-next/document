@@ -1,6 +1,6 @@
 # 開源倉庫與貢獻
 
-> 更新時間：2026-02-11  
+> 更新時間：2026-02-17  
 
 ## 1. 倉庫地址
 
@@ -8,6 +8,7 @@
 - User（用戶前臺）：https://github.com/dujiao-next/user
 - Admin（後臺）：https://github.com/dujiao-next/admin
 - Document（文檔）：https://github.com/dujiao-next/document
+- Community Projects（社群共享專案）：https://github.com/dujiao-next/community-projects
 
 ## 2. 術語說明
 
