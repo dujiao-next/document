@@ -4,7 +4,7 @@
 
 本文檔用於說明社群共享專案的提交規範，並展示目前已收錄的社群專案集合。
 
-## 0. 倉庫地址
+## 倉庫地址
 
 - 社群倉庫：https://github.com/dujiao-next/community-projects
 - 提交 PR：https://github.com/dujiao-next/community-projects/pulls

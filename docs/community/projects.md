@@ -4,7 +4,7 @@
 
 本文档用于介绍社区共享项目的提交规范，并展示当前已收录的社区项目集合。
 
-## 0. 仓库地址
+## 仓库地址
 
 - 社区仓库：https://github.com/dujiao-next/community-projects
 - 提交 PR：https://github.com/dujiao-next/community-projects/pulls

@@ -4,7 +4,7 @@
 
 This page introduces the submission rules for community shared projects and lists the currently curated project collection.
 
-## 0. Repository Links
+## Repository Links
 
 - Repository: https://github.com/dujiao-next/community-projects
 - Pull Requests: https://github.com/dujiao-next/community-projects/pulls
