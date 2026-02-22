@@ -210,6 +210,8 @@ Authorization: Bearer <user_token>
 | nickname | string | 暱稱 |
 | email_verified_at | string/null | 郵箱驗證時間 |
 | locale | string | 語言（如 `zh-CN`） |
+| email_change_mode | string | 郵箱變更模式：`bind_only` / `change_with_old_and_new` |
+| password_change_mode | string | 密碼變更模式：`set_without_old` / `change_with_old` |
 
 ### 2.6 UserLoginLog
 
@@ -222,7 +224,7 @@ Authorization: Bearer <user_token>
 | fail_reason | string | 失敗原因枚舉 |
 | client_ip | string | 客戶端 IP |
 | user_agent | string | 客戶端 UA |
-| login_source | string | 登錄來源（當前為 `web`） |
+| login_source | string | 登錄來源：`web` / `telegram` |
 | request_id | string | 請求追蹤 ID |
 | created_at | string | 記錄創建時間 |
 
@@ -386,6 +388,10 @@ Authorization: Bearer <user_token>
       "turnstile": {
         "site_key": "0x4AAA..."
       }
+    },
+    "telegram_auth": {
+      "enabled": true,
+      "bot_username": "dujiao_auth_bot"
     }
   }
 }
@@ -400,6 +406,7 @@ Authorization: Bearer <user_token>
 | scripts | object[] | 前臺自訂 JS 腳本配置 |
 | payment_channels | object[] | 前臺可用支付渠道列表 |
 | captcha | object | 驗證碼公開配置 |
+| telegram_auth | object | Telegram 登錄公開配置（`enabled`、`bot_username`） |
 | 其他字段 | any | 後臺站點設置中的公開字段（動態擴展） |
 
 ---
@@ -925,6 +932,65 @@ Authorization: Bearer <user_token>
 
 ---
 
+### 4.5 Telegram 登錄
+
+**介面**：`POST /auth/telegram/login`
+
+**認證**：否
+
+#### Body 參數
+
+| 字段 | 類型 | 必填 | 說明 |
+| --- | --- | --- | --- |
+| id | number | 是 | Telegram 用戶 ID |
+| first_name | string | 否 | 名 |
+| last_name | string | 否 | 姓 |
+| username | string | 否 | Telegram 用戶名 |
+| photo_url | string | 否 | Telegram 頭像 URL |
+| auth_date | number | 是 | Telegram 授權時間戳（秒） |
+| hash | string | 是 | Telegram 登錄簽名 |
+
+#### 請求示例
+
+```json
+{
+  "id": 123456789,
+  "first_name": "Dujiao",
+  "last_name": "User",
+  "username": "dujiao_user",
+  "photo_url": "https://t.me/i/userpic/320/xxx.jpg",
+  "auth_date": 1739250000,
+  "hash": "f1b2c3..."
+}
+```
+
+#### 成功響應示例
+
+```json
+{
+  "status_code": 0,
+  "msg": "success",
+  "data": {
+    "user": {
+      "id": 101,
+      "email": "telegram_123456789@login.local",
+      "nickname": "telegram_123456789",
+      "email_verified_at": null
+    },
+    "token": "eyJhbGciOi...",
+    "expires_at": "2026-02-25T10:00:00Z"
+  }
+}
+```
+
+#### 返回結構（data）
+
+與註冊介面一致：`user + token + expires_at`
+
+> 首次 Telegram 登錄且未綁定站內帳號時，系統會自動創建帳號並直接登錄。
+
+---
+
 ## 5. 登錄用戶資料介面（需 Bearer Token）
 
 ### 5.1 獲取當前用戶
@@ -948,7 +1014,9 @@ Authorization: Bearer <user_token>
     "email": "user@example.com",
     "nickname": "user",
     "email_verified_at": "2026-02-11T10:00:00Z",
-    "locale": "zh-CN"
+    "locale": "zh-CN",
+    "email_change_mode": "change_with_old_and_new",
+    "password_change_mode": "change_with_old"
   }
 }
 ```
@@ -1043,7 +1111,9 @@ Authorization: Bearer <user_token>
     "email": "user@example.com",
     "nickname": "新暱稱",
     "email_verified_at": "2026-02-11T10:00:00Z",
-    "locale": "zh-CN"
+    "locale": "zh-CN",
+    "email_change_mode": "change_with_old_and_new",
+    "password_change_mode": "change_with_old"
   }
 }
 ```
@@ -1054,7 +1124,151 @@ Authorization: Bearer <user_token>
 
 ---
 
-### 5.4 發送更換郵箱驗證碼
+### 5.4 獲取 Telegram 綁定狀態
+
+**介面**：`GET /me/telegram`
+
+**認證**：是
+
+#### 請求參數
+
+無
+
+#### 成功響應示例（已綁定）
+
+```json
+{
+  "status_code": 0,
+  "msg": "success",
+  "data": {
+    "bound": true,
+    "provider": "telegram",
+    "provider_user_id": "123456789",
+    "username": "dujiao_user",
+    "avatar_url": "https://t.me/i/userpic/320/xxx.jpg",
+    "auth_at": "2026-02-20T12:00:00Z",
+    "updated_at": "2026-02-20T12:00:00Z"
+  }
+}
+```
+
+#### 成功響應示例（未綁定）
+
+```json
+{
+  "status_code": 0,
+  "msg": "success",
+  "data": {
+    "bound": false
+  }
+}
+```
+
+#### 返回結構（data）
+
+| 字段 | 類型 | 說明 |
+| --- | --- | --- |
+| bound | boolean | 是否已綁定 Telegram |
+| provider | string | OAuth 提供方（綁定時為 `telegram`） |
+| provider_user_id | string | Telegram 用戶 ID（字串） |
+| username | string | Telegram 用戶名 |
+| avatar_url | string | Telegram 頭像 URL |
+| auth_at | string | Telegram 授權時間 |
+| updated_at | string | 綁定資訊更新時間 |
+
+> 當 `bound=false` 時，僅返回 `bound` 字段。
+
+---
+
+### 5.5 綁定 Telegram
+
+**介面**：`POST /me/telegram/bind`
+
+**認證**：是
+
+#### Body 參數
+
+| 字段 | 類型 | 必填 | 說明 |
+| --- | --- | --- | --- |
+| id | number | 是 | Telegram 用戶 ID |
+| first_name | string | 否 | 名 |
+| last_name | string | 否 | 姓 |
+| username | string | 否 | Telegram 用戶名 |
+| photo_url | string | 否 | Telegram 頭像 URL |
+| auth_date | number | 是 | Telegram 授權時間戳（秒） |
+| hash | string | 是 | Telegram 登錄簽名 |
+
+#### 請求示例
+
+```json
+{
+  "id": 123456789,
+  "first_name": "Dujiao",
+  "last_name": "User",
+  "username": "dujiao_user",
+  "photo_url": "https://t.me/i/userpic/320/xxx.jpg",
+  "auth_date": 1739250000,
+  "hash": "f1b2c3..."
+}
+```
+
+#### 成功響應示例
+
+```json
+{
+  "status_code": 0,
+  "msg": "success",
+  "data": {
+    "bound": true,
+    "provider": "telegram",
+    "provider_user_id": "123456789",
+    "username": "dujiao_user",
+    "avatar_url": "https://t.me/i/userpic/320/xxx.jpg",
+    "auth_at": "2026-02-20T12:00:00Z",
+    "updated_at": "2026-02-20T12:00:00Z"
+  }
+}
+```
+
+#### 返回結構（data）
+
+與 `GET /me/telegram`（已綁定）一致。
+
+---
+
+### 5.6 解除綁定 Telegram
+
+**介面**：`DELETE /me/telegram/unbind`
+
+**認證**：是
+
+#### 請求參數
+
+無
+
+#### 成功響應示例
+
+```json
+{
+  "status_code": 0,
+  "msg": "success",
+  "data": {
+    "unbound": true
+  }
+}
+```
+
+#### 返回結構（data）
+
+| 字段 | 類型 | 說明 |
+| --- | --- | --- |
+| unbound | boolean | 是否解除綁定成功 |
+
+> 當用戶尚未綁定真實郵箱（`email_change_mode=bind_only`）時，不允許解除綁定 Telegram。
+
+---
+
+### 5.7 發送更換郵箱驗證碼
 
 **介面**：`POST /me/email/send-verify-code`
 
@@ -1066,6 +1280,8 @@ Authorization: Bearer <user_token>
 | --- | --- | --- | --- |
 | kind | string | 是 | `old`（發到舊郵箱）/ `new`（發到新郵箱） |
 | new_email | string | 條件必填 | 當 `kind=new` 時必填 |
+
+> 當 `email_change_mode=bind_only` 時，`kind=old` 不可用，請直接使用 `kind=new` 綁定真實郵箱。
 
 #### 請求示例
 
@@ -1096,7 +1312,7 @@ Authorization: Bearer <user_token>
 
 ---
 
-### 5.5 更換郵箱
+### 5.8 更換郵箱
 
 **介面**：`POST /me/email/change`
 
@@ -1107,7 +1323,7 @@ Authorization: Bearer <user_token>
 | 字段 | 類型 | 必填 | 說明 |
 | --- | --- | --- | --- |
 | new_email | string | 是 | 新郵箱 |
-| old_code | string | 是 | 舊郵箱驗證碼 |
+| old_code | string | 條件必填 | 當 `email_change_mode=change_with_old_and_new` 時必填；當 `bind_only` 時可不傳（服務端忽略） |
 | new_code | string | 是 | 新郵箱驗證碼 |
 
 #### 請求示例
@@ -1131,7 +1347,9 @@ Authorization: Bearer <user_token>
     "email": "new@example.com",
     "nickname": "user",
     "email_verified_at": "2026-02-11T10:00:00Z",
-    "locale": "zh-CN"
+    "locale": "zh-CN",
+    "email_change_mode": "change_with_old_and_new",
+    "password_change_mode": "change_with_old"
   }
 }
 ```
@@ -1142,7 +1360,7 @@ Authorization: Bearer <user_token>
 
 ---
 
-### 5.6 修改密碼
+### 5.9 修改密碼
 
 **介面**：`PUT /me/password`
 
@@ -1152,8 +1370,10 @@ Authorization: Bearer <user_token>
 
 | 字段 | 類型 | 必填 | 說明 |
 | --- | --- | --- | --- |
-| old_password | string | 是 | 舊密碼 |
+| old_password | string | 條件必填 | 當 `password_change_mode=change_with_old` 時必填；當 `set_without_old` 時可不傳 |
 | new_password | string | 是 | 新密碼 |
+
+> 首次透過 Telegram 自動創建且未設置密碼的帳號，`password_change_mode=set_without_old`，僅需提交 `new_password`。
 
 #### 請求示例
 
@@ -1994,9 +2214,72 @@ Authorization: Bearer <user_token>
 
 ## 9. 非前臺主動調用介面（說明）
 
+### 9.1 支付平臺回調介面
+
 以下回調介面一般由支付平臺服務器調用，前臺模板無需主動請求：
 
 - `POST /payments/callback`
 - `GET /payments/callback`
 - `POST /payments/webhook/paypal`
 - `POST /payments/webhook/stripe`
+
+### 9.2 管理後臺 Telegram 登錄配置介面（Admin）
+
+以下介面由管理後臺調用，不屬於前臺用戶側介面：
+
+#### 9.2.1 獲取 Telegram 登錄配置
+
+**介面**：`GET /admin/settings/telegram-auth`
+
+**認證**：管理員 Token
+
+#### 成功響應示例
+
+```json
+{
+  "status_code": 0,
+  "msg": "success",
+  "data": {
+    "enabled": true,
+    "bot_username": "dujiao_auth_bot",
+    "bot_token": "",
+    "has_bot_token": true,
+    "login_expire_seconds": 300,
+    "replay_ttl_seconds": 300
+  }
+}
+```
+
+> 返回中的 `bot_token` 會固定為脫敏空字串，是否已配置請以 `has_bot_token` 判斷。
+
+#### 9.2.2 更新 Telegram 登錄配置
+
+**介面**：`PUT /admin/settings/telegram-auth`
+
+**認證**：管理員 Token
+
+#### Body 參數（Patch）
+
+| 字段 | 類型 | 必填 | 說明 |
+| --- | --- | --- | --- |
+| enabled | boolean | 否 | 是否啟用 Telegram 登錄 |
+| bot_username | string | 否 | Telegram Bot 用戶名（不帶 `@`） |
+| bot_token | string | 否 | Telegram Bot Token（傳空字串不會覆蓋既有值） |
+| login_expire_seconds | number | 否 | 登錄有效期（30-86400 秒） |
+| replay_ttl_seconds | number | 否 | 重放保護時長（60-86400 秒） |
+
+#### 請求示例
+
+```json
+{
+  "enabled": true,
+  "bot_username": "dujiao_auth_bot",
+  "bot_token": "123456:ABCDEF",
+  "login_expire_seconds": 300,
+  "replay_ttl_seconds": 300
+}
+```
+
+#### 成功響應
+
+返回結構與 `GET /admin/settings/telegram-auth` 一致（脫敏）。

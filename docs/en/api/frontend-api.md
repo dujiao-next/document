@@ -207,6 +207,8 @@ Authorization: Bearer <user_token>
 | nickname | string | Nickname |
 | email_verified_at | string/null | Email verification time |
 | locale | string | Language (e.g., `zh-CN`) |
+| email_change_mode | string | Email change mode: `bind_only` / `change_with_old_and_new` |
+| password_change_mode | string | Password change mode: `set_without_old` / `change_with_old` |
 
 ### 2.6 UserLoginLog
 
@@ -219,7 +221,7 @@ Authorization: Bearer <user_token>
 | fail_reason | string | Failure reason enum |
 | client_ip | string | Client IP |
 | user_agent | string | Client UA |
-| login_source | string | Login source (currently `web`) |
+| login_source | string | Login source: `web` / `telegram` |
 | request_id | string | Request trace ID |
 | created_at | string | Record creation time |
 
@@ -384,6 +386,10 @@ None
       "turnstile": {
         "site_key": "0x4AAA..."
       }
+    },
+    "telegram_auth": {
+      "enabled": true,
+      "bot_username": "dujiao_auth_bot"
     }
   }
 }
@@ -397,6 +403,7 @@ None
 | scripts | object[] | Custom frontend JS script configuration |
 | payment_channels | object[] | List of available payment channels on the frontend |
 | captcha | object | Public captcha configuration |
+| telegram_auth | object | Public Telegram login config (`enabled`, `bot_username`) |
 | other fields | any | Public fields from the backend site settings (dynamically extended) |
 
 ---
@@ -907,6 +914,65 @@ Consistent with the registration interface: `user   token   expires_at`
 
 ---
 
+### 4.5 Telegram Login
+
+**Endpoint**: `POST /auth/telegram/login`
+
+**Authentication**: No
+
+#### Body Parameters
+
+| Field | Type | Required | Description |
+| --- | --- | --- | --- |
+| id | number | Yes | Telegram user ID |
+| first_name | string | No | First name |
+| last_name | string | No | Last name |
+| username | string | No | Telegram username |
+| photo_url | string | No | Telegram avatar URL |
+| auth_date | number | Yes | Telegram auth timestamp (seconds) |
+| hash | string | Yes | Telegram login signature |
+
+#### Request Example
+
+```json
+{
+  "id": 123456789,
+  "first_name": "Dujiao",
+  "last_name": "User",
+  "username": "dujiao_user",
+  "photo_url": "https://t.me/i/userpic/320/xxx.jpg",
+  "auth_date": 1739250000,
+  "hash": "f1b2c3..."
+}
+```
+
+#### Successful Response Example
+
+```json
+{
+  "status_code": 0,
+  "msg": "success",
+  "data": {
+    "user": {
+      "id": 101,
+      "email": "telegram_123456789@login.local",
+      "nickname": "telegram_123456789",
+      "email_verified_at": null
+    },
+    "token": "eyJhbGciOi...",
+    "expires_at": "2026-02-25T10:00:00Z"
+  }
+}
+```
+
+#### Response Structure (data)
+
+Same as registration: `user + token + expires_at`
+
+> On first Telegram login without an existing binding, the system auto-creates an account and signs in directly.
+
+---
+
 ## 5. Login User Profile API (Bearer Token Required)
 
 ### 5.1 Get Current User
@@ -930,7 +996,9 @@ None
     "email": "user@example.com",
     "nickname": "user",
     "email_verified_at": "2026-02-11T10:00:00Z",
-    "locale": "zh-CN"
+    "locale": "zh-CN",
+    "email_change_mode": "change_with_old_and_new",
+    "password_change_mode": "change_with_old"
   }
 }
 ```
@@ -1022,7 +1090,9 @@ None
     "email": "user@example.com",
     "nickname": "new-nickname",
     "email_verified_at": "2026-02-11T10:00:00Z",
-    "locale": "zh-CN"
+    "locale": "zh-CN",
+    "email_change_mode": "change_with_old_and_new",
+    "password_change_mode": "change_with_old"
   }
 }
 ```
@@ -1032,7 +1102,151 @@ None
 
 ---
 
-### 5.4 Send Verification Code to Change Email
+### 5.4 Get Telegram Binding Status
+
+**Endpoint**: `GET /me/telegram`
+
+**Authentication**: Yes
+
+#### Request Parameters
+
+None
+
+#### Successful Response Example (Bound)
+
+```json
+{
+  "status_code": 0,
+  "msg": "success",
+  "data": {
+    "bound": true,
+    "provider": "telegram",
+    "provider_user_id": "123456789",
+    "username": "dujiao_user",
+    "avatar_url": "https://t.me/i/userpic/320/xxx.jpg",
+    "auth_at": "2026-02-20T12:00:00Z",
+    "updated_at": "2026-02-20T12:00:00Z"
+  }
+}
+```
+
+#### Successful Response Example (Unbound)
+
+```json
+{
+  "status_code": 0,
+  "msg": "success",
+  "data": {
+    "bound": false
+  }
+}
+```
+
+#### Response Structure (data)
+
+| Field | Type | Description |
+| --- | --- | --- |
+| bound | boolean | Whether Telegram is bound |
+| provider | string | OAuth provider (`telegram` when bound) |
+| provider_user_id | string | Telegram user ID (string) |
+| username | string | Telegram username |
+| avatar_url | string | Telegram avatar URL |
+| auth_at | string | Telegram authorization time |
+| updated_at | string | Binding updated time |
+
+> When `bound=false`, only the `bound` field is returned.
+
+---
+
+### 5.5 Bind Telegram
+
+**Endpoint**: `POST /me/telegram/bind`
+
+**Authentication**: Yes
+
+#### Body Parameters
+
+| Field | Type | Required | Description |
+| --- | --- | --- | --- |
+| id | number | Yes | Telegram user ID |
+| first_name | string | No | First name |
+| last_name | string | No | Last name |
+| username | string | No | Telegram username |
+| photo_url | string | No | Telegram avatar URL |
+| auth_date | number | Yes | Telegram auth timestamp (seconds) |
+| hash | string | Yes | Telegram login signature |
+
+#### Request Example
+
+```json
+{
+  "id": 123456789,
+  "first_name": "Dujiao",
+  "last_name": "User",
+  "username": "dujiao_user",
+  "photo_url": "https://t.me/i/userpic/320/xxx.jpg",
+  "auth_date": 1739250000,
+  "hash": "f1b2c3..."
+}
+```
+
+#### Successful Response Example
+
+```json
+{
+  "status_code": 0,
+  "msg": "success",
+  "data": {
+    "bound": true,
+    "provider": "telegram",
+    "provider_user_id": "123456789",
+    "username": "dujiao_user",
+    "avatar_url": "https://t.me/i/userpic/320/xxx.jpg",
+    "auth_at": "2026-02-20T12:00:00Z",
+    "updated_at": "2026-02-20T12:00:00Z"
+  }
+}
+```
+
+#### Response Structure (data)
+
+Same as `GET /me/telegram` (bound case).
+
+---
+
+### 5.6 Unbind Telegram
+
+**Endpoint**: `DELETE /me/telegram/unbind`
+
+**Authentication**: Yes
+
+#### Request Parameters
+
+None
+
+#### Successful Response Example
+
+```json
+{
+  "status_code": 0,
+  "msg": "success",
+  "data": {
+    "unbound": true
+  }
+}
+```
+
+#### Response Structure (data)
+
+| Field | Type | Description |
+| --- | --- | --- |
+| unbound | boolean | Whether unbinding succeeded |
+
+> If the user has not bound a real email yet (`email_change_mode=bind_only`), unbinding Telegram is not allowed.
+
+---
+
+### 5.7 Send Verification Code to Change Email
 
 **Endpoint**: `POST /me/email/send-verify-code`
 
@@ -1044,6 +1258,8 @@ None
 | --- | --- | --- | --- |
 | kind | string | Yes | `old` (send to old email) / `new` (send to new email) |
 | new_email | string | Conditionally required | Required when `kind=new` |
+
+> When `email_change_mode=bind_only`, `kind=old` is not available. Use `kind=new` to bind a real email.
 
 #### Request Example
 
@@ -1072,7 +1288,7 @@ None
 
 ---
 
-### 5.5 Change Email
+### 5.8 Change Email
 
 **Endpoint**: `POST /me/email/change`
 
@@ -1083,7 +1299,7 @@ None
 | Field | Type | Required | Description |
 | --- | --- | --- | --- |
 | new_email | string | Yes | New email |
-| old_code | string | Yes | Verification code of the old email |
+| old_code | string | Conditionally required | Required when `email_change_mode=change_with_old_and_new`; optional and ignored when `bind_only` |
 | new_code | string | Yes | Verification code of the new email |
 
 #### Request Example
@@ -1106,7 +1322,9 @@ None
     "email": "new@example.com",
     "nickname": "user",
     "email_verified_at": "2026-02-11T10:00:00Z",
-    "locale": "zh-CN"
+    "locale": "zh-CN",
+    "email_change_mode": "change_with_old_and_new",
+    "password_change_mode": "change_with_old"
   }
 }
 ```
@@ -1116,7 +1334,7 @@ None
 
 ---
 
-### 5.6 Change Password
+### 5.9 Change Password
 
 **Endpoint**: `PUT /me/password`
 
@@ -1126,8 +1344,10 @@ None
 
 | Field | Type | Required | Description |
 | --- | --- | --- | --- |
-| old_password | string | Yes | Old password |
+| old_password | string | Conditionally required | Required when `password_change_mode=change_with_old`; optional when `set_without_old` |
 | new_password | string | Yes | New password |
+
+> For accounts auto-created via Telegram that have never set a password, `password_change_mode=set_without_old`; only `new_password` is needed.
 
 #### Request Example
 
@@ -1950,9 +2170,72 @@ It can significantly reduce the perceived issue of 'payment made but the page no
 
 ## 9. Interfaces Not Actively Called by the Frontend (Explanation)
 
+### 9.1 Payment Platform Callback Interfaces
+
 The following callback interfaces are generally called by the payment platform's server, so the frontend template does not need to actively request them:
 
 - `POST /payments/callback`
 - `GET /payments/callback`
 - `POST /payments/webhook/paypal`
 - `POST /payments/webhook/stripe`
+
+### 9.2 Admin Telegram Login Settings APIs
+
+The following endpoints are for the admin panel and are not frontend user APIs:
+
+#### 9.2.1 Get Telegram Login Settings
+
+**Endpoint**: `GET /admin/settings/telegram-auth`
+
+**Authentication**: Admin token
+
+#### Successful Response Example
+
+```json
+{
+  "status_code": 0,
+  "msg": "success",
+  "data": {
+    "enabled": true,
+    "bot_username": "dujiao_auth_bot",
+    "bot_token": "",
+    "has_bot_token": true,
+    "login_expire_seconds": 300,
+    "replay_ttl_seconds": 300
+  }
+}
+```
+
+> `bot_token` is always masked as an empty string. Use `has_bot_token` to check whether a token is configured.
+
+#### 9.2.2 Update Telegram Login Settings
+
+**Endpoint**: `PUT /admin/settings/telegram-auth`
+
+**Authentication**: Admin token
+
+#### Body Parameters (Patch)
+
+| Field | Type | Required | Description |
+| --- | --- | --- | --- |
+| enabled | boolean | No | Whether Telegram login is enabled |
+| bot_username | string | No | Telegram bot username (without `@`) |
+| bot_token | string | No | Telegram bot token (empty string will not overwrite existing value) |
+| login_expire_seconds | number | No | Login validity window (30-86400 seconds) |
+| replay_ttl_seconds | number | No | Replay-protection TTL (60-86400 seconds) |
+
+#### Request Example
+
+```json
+{
+  "enabled": true,
+  "bot_username": "dujiao_auth_bot",
+  "bot_token": "123456:ABCDEF",
+  "login_expire_seconds": 300,
+  "replay_ttl_seconds": 300
+}
+```
+
+#### Successful Response
+
+Same structure as `GET /admin/settings/telegram-auth` (masked).
