@@ -4,7 +4,7 @@ outline: deep
 
 # User Frontend API Documentation
 
-> Last Updated: 2026-02-11
+> Last Updated: 2026-02-22
 
 This document covers all current frontend APIs in `user/src/api/index.ts`, with field definitions based on the following implementations:
 
@@ -18,6 +18,22 @@ This document covers all current frontend APIs in `user/src/api/index.ts`, with 
 - User (Frontend): https://github.com/dujiao-next/user
 - Admin (Backend): https://github.com/dujiao-next/admin
 - Document (Documentation): https://github.com/dujiao-next/document
+
+---
+
+## 0. v0.0.3-beta API Changes (2026-02-22)
+
+### 0.1 Unified Currency Strategy
+
+- The site now supports only one currency, sourced from `site_config.currency` (default: `CNY`).
+- Currency must be a 3-letter uppercase code (e.g. `CNY`, `USD`); invalid values are normalized to `CNY`.
+- Amount-related APIs (order preview, orders, payments, wallet) now consistently use this site currency.
+
+### 0.2 Breaking Field Changes
+
+- `PublicProduct.price_currency` has been removed.
+- `PublicProduct.promotion_price_currency` has been removed.
+- If your frontend still reads these fields, switch to `currency` from `GET /public/config`.
 
 ---
 
@@ -127,7 +143,6 @@ Authorization: Bearer <user_token>
 | description | object | Multilingual summary |
 | content | object | Multilingual detailed content |
 | price_amount | string | Product price amount (string format, e.g., `"99.00"`) |
-| price_currency | string | Currency |
 | images | string[] | List of product images |
 | tags | string[] | List of tags |
 | purchase_type | string | Purchase access restriction: `guest` / `member` |
@@ -146,7 +161,6 @@ Authorization: Bearer <user_token>
 | promotion_name | string | Promotion name (optional) |
 | promotion_type | string | Promotion type (optional) |
 | promotion_price_amount | string | Promotion price amount (optional) |
-| promotion_price_currency | string | Promotion price currency (optional) |
 | manual_stock_available | number | Manually available stock |
 | auto_stock_available | number | Automatically available stock |
 | stock_status | string | Stock status: `unlimited` / `in_stock` / `low_stock` / `out_of_stock` |
@@ -229,7 +243,7 @@ Authorization: Bearer <user_token>
 
 | Field | Type | Description |
 | --- | --- | --- |
-| currency | string | Currency |
+| currency | string | Currency (site-wide unified, sourced from `site_config.currency`) |
 | original_amount | string | Original total amount |
 | discount_amount | string | Total discount amount |
 | promotion_discount_amount | string | Promotion discount amount |
@@ -261,7 +275,7 @@ Authorization: Bearer <user_token>
 | guest_email | string | Guest email (for guest orders) |
 | guest_locale | string | Guest language |
 | status | string | Order status: `pending_payment` / `paid` / `fulfilling` / `partially_delivered` / `delivered` / `completed` / `canceled` |
-| currency | string | Order currency |
+| currency | string | Order currency (site-wide unified, sourced from `site_config.currency`) |
 | original_amount | string | Original price |
 | discount_amount | string | Discount amount |
 | promotion_discount_amount | string | Promotional discount amount |
@@ -352,6 +366,7 @@ None
   "msg": "success",
   "data": {
     "languages": ["zh-CN", "zh-TW", "en-US"],
+    "currency": "CNY",
     "contact": {
       "telegram": "https://t.me/dujiaostudio",
       "whatsapp": "https://wa.me/1234567890"
@@ -399,6 +414,7 @@ None
 | Field | Type | Description |
 | --- | --- | --- |
 | languages | string[] | List of enabled site languages |
+| currency | string | Site-wide currency (3-letter uppercase code, e.g. `CNY`) |
 | contact | object | Contact configuration |
 | scripts | object[] | Custom frontend JS script configuration |
 | payment_channels | object[] | List of available payment channels on the frontend |
@@ -438,7 +454,6 @@ None
       "description": { "zh-CN": "Available in all regions" },
       "content": { "zh-CN": "Detailed description" },
       "price_amount": "99.00",
-      "price_currency": "CNY",
       "images": ["/uploads/product/1.png"],
       "tags": ["Popular"],
       "purchase_type": "member",
@@ -495,7 +510,6 @@ None
     "slug": "netflix-plus",
     "title": { "zh-CN": "Netflix Membership" },
     "price_amount": "99.00",
-    "price_currency": "CNY",
     "fulfillment_type": "manual",
     "manual_form_schema": {
       "fields": [

@@ -4,7 +4,7 @@ outline: deep
 
 # User 前臺 API 文檔
 
-> 更新時間：2026-02-11
+> 更新時間：2026-02-22
 
 本文檔覆蓋 `user/src/api/index.ts` 當前全部前臺 API，字段定義以以下實現為準：
 
@@ -18,6 +18,22 @@ outline: deep
 - User（用戶前臺）：https://github.com/dujiao-next/user
 - Admin（後臺）：https://github.com/dujiao-next/admin
 - Document（文檔）：https://github.com/dujiao-next/document
+
+---
+
+## 0. v0.0.3-beta API 變更（2026-02-22）
+
+### 0.1 幣種統一策略
+
+- 全站僅允許一種幣種，配置來源：`site_config.currency`（預設 `CNY`）。
+- 幣種值必須為 3 位大寫代碼（如 `CNY`、`USD`），非法值會自動歸一化為 `CNY`。
+- 訂單預覽、訂單、支付、錢包等金額相關介面統一使用該站點幣種。
+
+### 0.2 破壞性字段變更
+
+- `PublicProduct.price_currency` 已移除。
+- `PublicProduct.promotion_price_currency` 已移除。
+- 前端若仍讀取上述字段，請改為讀取 `GET /public/config` 返回的 `currency`。
 
 ---
 
@@ -131,7 +147,6 @@ Authorization: Bearer <user_token>
 | description | object | 多語言摘要 |
 | content | object | 多語言詳情內容 |
 | price_amount | string | 商品價格金額（字符串金額，如 `"99.00"`） |
-| price_currency | string | 價格幣種 |
 | images | string[] | 商品圖片列表 |
 | tags | string[] | 標籤列表 |
 | purchase_type | string | 購買身份限制：`guest` / `member` |
@@ -149,7 +164,6 @@ Authorization: Bearer <user_token>
 | promotion_name | string | 活動名稱（可選） |
 | promotion_type | string | 活動類型（可選） |
 | promotion_price_amount | string | 活動價金額（可選） |
-| promotion_price_currency | string | 活動價幣種（可選） |
 | manual_stock_available | number | 人工可用庫存 |
 | auto_stock_available | number | 自動可用庫存 |
 | stock_status | string | 庫存狀態：`unlimited` / `in_stock` / `low_stock` / `out_of_stock` |
@@ -232,7 +246,7 @@ Authorization: Bearer <user_token>
 
 | 字段 | 類型 | 說明 |
 | --- | --- | --- |
-| currency | string | 幣種 |
+| currency | string | 幣種（全站統一，來源 `site_config.currency`） |
 | original_amount | string | 原價總額 |
 | discount_amount | string | 總優惠金額 |
 | promotion_discount_amount | string | 活動優惠金額 |
@@ -264,7 +278,7 @@ Authorization: Bearer <user_token>
 | guest_email | string | 遊客郵箱（遊客訂單） |
 | guest_locale | string | 遊客語言 |
 | status | string | 訂單狀態：`pending_payment` / `paid` / `fulfilling` / `partially_delivered` / `delivered` / `completed` / `canceled` |
-| currency | string | 訂單幣種 |
+| currency | string | 訂單幣種（全站統一，來源 `site_config.currency`） |
 | original_amount | string | 原價 |
 | discount_amount | string | 優惠金額 |
 | promotion_discount_amount | string | 活動優惠金額 |
@@ -354,6 +368,7 @@ Authorization: Bearer <user_token>
   "msg": "success",
   "data": {
     "languages": ["zh-CN", "zh-TW", "en-US"],
+    "currency": "CNY",
     "contact": {
       "telegram": "https://t.me/dujiaostudio",
       "whatsapp": "https://wa.me/1234567890"
@@ -402,6 +417,7 @@ Authorization: Bearer <user_token>
 | 字段 | 類型 | 說明 |
 | --- | --- | --- |
 | languages | string[] | 站點啟用語言列表 |
+| currency | string | 全站幣種（3 位大寫代碼，如 `CNY`） |
 | contact | object | 聯繫方式配置 |
 | scripts | object[] | 前臺自訂 JS 腳本配置 |
 | payment_channels | object[] | 前臺可用支付渠道列表 |
@@ -441,7 +457,6 @@ Authorization: Bearer <user_token>
       "description": { "zh-CN": "全區可用" },
       "content": { "zh-CN": "詳情說明" },
       "price_amount": "99.00",
-      "price_currency": "CNY",
       "images": ["/uploads/product/1.png"],
       "tags": ["熱門"],
       "purchase_type": "member",
@@ -499,7 +514,6 @@ Authorization: Bearer <user_token>
     "slug": "netflix-plus",
     "title": { "zh-CN": "奈飛會員" },
     "price_amount": "99.00",
-    "price_currency": "CNY",
     "fulfillment_type": "manual",
     "manual_form_schema": {
       "fields": [
