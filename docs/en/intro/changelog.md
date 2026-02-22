@@ -1,5 +1,16 @@
 # Changelog
 
+## [v0.0.3-beta] - 2026-02-22
+
+### Update Details:
+- Added a user wallet system: balance management, recharge, and wallet transaction details (including recharge, payment, refund rollback, and other fund movements).
+- Upgraded order payment flow: supports balance-only payment, combined balance + online payment, and online-only payment; deducted balance is automatically returned when payment fails or the order is canceled.
+- Added admin wallet management capabilities: view each user's balance and wallet details, manually increase/decrease user balance, and process order refunds to wallet balance only.
+- Added Telegram login: first-time Telegram login without an existing account binding now auto-creates an account and signs in directly.
+- Added Telegram bind/unbind in Security Center: logged-in users can bind or unbind Telegram; Telegram-created accounts without a real bound email cannot unbind Telegram.
+- Improved account security flow: added `email_change_mode` and `password_change_mode` in profile responses, supporting "bind new email only" and "set password without old password (first setup)".
+- Optimized User Center navigation: left menu order is now "Overview / My Orders / My Wallet / Security Center / Profile Settings", with matching icons added.
+
 ## [v0.0.2.Beta] - 2026-02-15
 
 ### Update Details:
