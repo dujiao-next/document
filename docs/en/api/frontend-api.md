@@ -35,6 +35,17 @@ This document covers all current frontend APIs in `user/src/api/index.ts`, with 
 - `PublicProduct.promotion_price_currency` has been removed.
 - If your frontend still reads these fields, switch to `currency` from `GET /public/config`.
 
+### 0.3 Multi-SKU Input Added for Admin Product APIs
+
+- Admin product create/update APIs now support a `skus` array for multi-variant pricing and stock.
+- Compatibility behavior:
+  - Without `skus`: handled as single-SKU mode (legacy `price_amount` + `manual_stock_total`).
+  - With `skus`: handled as multi-SKU mode, product price/stock are derived from SKUs.
+- In multi-SKU mode, backend validation enforces:
+  - `sku_code` must be unique within the same product (case-insensitive);
+  - each SKU `price_amount` must be greater than 0;
+  - at least one active SKU (`is_active=true`) must exist.
+
 ---
 
 ## 1. General Conventions
@@ -2253,3 +2264,117 @@ The following endpoints are for the admin panel and are not frontend user APIs:
 #### Successful Response
 
 Same structure as `GET /admin/settings/telegram-auth` (masked).
+
+### 9.3 Admin Product Multi-SKU APIs
+
+The following endpoints are used by the admin panel and are not frontend user APIs.
+
+#### 9.3.1 Create Product (Multi-SKU Supported)
+
+**Endpoint**: `POST /admin/products`  
+**Authentication**: Admin token
+
+#### Key Body Fields
+
+| Field | Type | Required | Description |
+| --- | --- | --- | --- |
+| category_id | number | Yes | Category ID |
+| slug | string | Yes | Unique product slug |
+| title | object | Yes | Localized title |
+| price_amount | number | Yes | Product price in single-SKU mode; when using multi-SKU, you can pass `0` or any placeholder value, final value is derived from SKUs |
+| fulfillment_type | string | No | `manual` / `auto` |
+| manual_stock_total | number | No | Total manual stock in single-SKU mode |
+| skus | array | No | Multi-SKU array; empty or omitted means single-SKU mode |
+
+#### `skus[]` Fields
+
+| Field | Type | Required | Description |
+| --- | --- | --- | --- |
+| id | number | No | Pass when updating an existing SKU; omit for new SKU |
+| sku_code | string | Yes | SKU code (unique within the same product) |
+| spec_values | object | No | SKU display labels (e.g. localized `{"en-US":"Standard","zh-CN":"标准版"}`) |
+| price_amount | number | Yes | SKU price (must be greater than 0) |
+| manual_stock_total | number | No | SKU manual stock (effective in manual fulfillment mode) |
+| is_active | boolean | No | Whether SKU is active, default `true` |
+| sort_order | number | No | Sort weight, default `0` |
+
+#### Request Example (Single-SKU Compatible)
+
+```json
+{
+  "category_id": 1,
+  "slug": "vpn-monthly",
+  "title": {
+    "zh-CN": "VPN 月付",
+    "zh-TW": "VPN 月付",
+    "en-US": "VPN Monthly"
+  },
+  "price_amount": 29.9,
+  "fulfillment_type": "manual",
+  "manual_stock_total": 100
+}
+```
+
+#### Request Example (Multi-SKU)
+
+```json
+{
+  "category_id": 1,
+  "slug": "vpn-subscription",
+  "title": {
+    "zh-CN": "VPN 订阅",
+    "zh-TW": "VPN 訂閱",
+    "en-US": "VPN Subscription"
+  },
+  "price_amount": 0,
+  "fulfillment_type": "manual",
+  "skus": [
+    {
+      "sku_code": "STANDARD",
+      "spec_values": {
+        "zh-CN": "标准版",
+        "zh-TW": "標準版",
+        "en-US": "Standard"
+      },
+      "price_amount": 29.9,
+      "manual_stock_total": 100,
+      "is_active": true,
+      "sort_order": 10
+    },
+    {
+      "sku_code": "PRO",
+      "spec_values": {
+        "zh-CN": "专业版",
+        "zh-TW": "專業版",
+        "en-US": "Pro"
+      },
+      "price_amount": 49.9,
+      "manual_stock_total": 80,
+      "is_active": true,
+      "sort_order": 20
+    }
+  ]
+}
+```
+
+#### 9.3.2 Update Product (Multi-SKU Supported)
+
+**Endpoint**: `PUT /admin/products/:id`  
+**Authentication**: Admin token
+
+Request body is the same as `POST /admin/products`; to update existing SKUs, pass their `id` in `skus[]`.
+
+#### 9.3.3 Backend Derivation Rules
+
+- When `skus` is not empty:
+  - product display price is auto-derived from the lowest active SKU price;
+  - in manual fulfillment mode, product manual stock total is auto-summed from active SKU `manual_stock_total`.
+- When `skus` is empty:
+  - legacy single-SKU mode applies, and product-level price/stock fields are used.
+
+#### 9.3.4 Admin UI Operation Guide
+
+1. Open Admin `Product Management`, then create or edit a product.
+2. In the `SKU configuration` section, add one or more SKUs and fill code, labels, price, stock, status, and sort order.
+3. Once SKU mode is configured, product-level `price/manual stock` fields are informational; effective values come from SKUs.
+4. Save and verify SKU selection/display on the frontend product detail page.

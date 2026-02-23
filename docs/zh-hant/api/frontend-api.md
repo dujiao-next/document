@@ -35,6 +35,17 @@ outline: deep
 - `PublicProduct.promotion_price_currency` 已移除。
 - 前端若仍讀取上述字段，請改為讀取 `GET /public/config` 返回的 `currency`。
 
+### 0.3 管理後臺商品新增多 SKU 入參
+
+- 管理後臺商品建立/更新介面新增 `skus` 陣列，用於提交多規格價格與庫存。
+- 相容規則：
+  - 不傳 `skus`：按單規格模式處理（沿用 `price_amount` + `manual_stock_total`）。
+  - 傳 `skus`：按多規格模式處理，商品價格與庫存由 SKU 派生。
+- 多規格模式下，後端會校驗：
+  - `sku_code` 在同商品內唯一（不區分大小寫）；
+  - 每個 SKU 的 `price_amount > 0`；
+  - 至少存在 1 個啟用中的 SKU（`is_active=true`）。
+
 ---
 
 ## 1. 通用約定
@@ -2297,3 +2308,117 @@ Authorization: Bearer <user_token>
 #### 成功響應
 
 返回結構與 `GET /admin/settings/telegram-auth` 一致（脫敏）。
+
+### 9.3 管理後臺商品多 SKU 介面（Admin）
+
+以下介面由管理後臺調用，不屬於前臺使用者側介面。
+
+#### 9.3.1 建立商品（支援多 SKU）
+
+**介面**：`POST /admin/products`  
+**認證**：管理員 Token
+
+#### Body 關鍵參數
+
+| 字段 | 類型 | 必填 | 說明 |
+| --- | --- | --- | --- |
+| category_id | number | 是 | 分類 ID |
+| slug | string | 是 | 商品唯一標識 |
+| title | object | 是 | 多語言標題 |
+| price_amount | number | 是 | 單規格模式下商品價格；多 SKU 時建議傳 `0` 或任意佔位值，最終以後端 SKU 計算為準 |
+| fulfillment_type | string | 否 | `manual` / `auto` |
+| manual_stock_total | number | 否 | 單規格模式下人工庫存總量 |
+| skus | array | 否 | 多 SKU 陣列，傳空或不傳表示單規格模式 |
+
+#### `skus[]` 字段
+
+| 字段 | 類型 | 必填 | 說明 |
+| --- | --- | --- | --- |
+| id | number | 否 | 更新既有 SKU 時傳；建立新 SKU 可不傳 |
+| sku_code | string | 是 | SKU 編碼（同商品內唯一） |
+| spec_values | object | 否 | 規格展示文案（如多語言 `{"zh-TW":"標準版","en-US":"Standard"}`） |
+| price_amount | number | 是 | SKU 價格（必須大於 0） |
+| manual_stock_total | number | 否 | SKU 人工庫存（手動交付模式下生效） |
+| is_active | boolean | 否 | 是否啟用，預設 `true` |
+| sort_order | number | 否 | 排序權重，預設 `0` |
+
+#### 請求示例（單規格相容）
+
+```json
+{
+  "category_id": 1,
+  "slug": "vpn-monthly",
+  "title": {
+    "zh-CN": "VPN 月付",
+    "zh-TW": "VPN 月付",
+    "en-US": "VPN Monthly"
+  },
+  "price_amount": 29.9,
+  "fulfillment_type": "manual",
+  "manual_stock_total": 100
+}
+```
+
+#### 請求示例（多 SKU）
+
+```json
+{
+  "category_id": 1,
+  "slug": "vpn-subscription",
+  "title": {
+    "zh-CN": "VPN 订阅",
+    "zh-TW": "VPN 訂閱",
+    "en-US": "VPN Subscription"
+  },
+  "price_amount": 0,
+  "fulfillment_type": "manual",
+  "skus": [
+    {
+      "sku_code": "STANDARD",
+      "spec_values": {
+        "zh-CN": "标准版",
+        "zh-TW": "標準版",
+        "en-US": "Standard"
+      },
+      "price_amount": 29.9,
+      "manual_stock_total": 100,
+      "is_active": true,
+      "sort_order": 10
+    },
+    {
+      "sku_code": "PRO",
+      "spec_values": {
+        "zh-CN": "专业版",
+        "zh-TW": "專業版",
+        "en-US": "Pro"
+      },
+      "price_amount": 49.9,
+      "manual_stock_total": 80,
+      "is_active": true,
+      "sort_order": 20
+    }
+  ]
+}
+```
+
+#### 9.3.2 更新商品（支援多 SKU）
+
+**介面**：`PUT /admin/products/:id`  
+**認證**：管理員 Token
+
+請求結構與 `POST /admin/products` 一致；若要更新既有 SKU，請在 `skus[]` 中傳對應 `id`。
+
+#### 9.3.3 後端處理規則
+
+- 當 `skus` 非空時：
+  - 商品展示價自動取「啟用 SKU 中的最低價」；
+  - 若為人工交付，商品人工庫存總量自動彙總「啟用 SKU 的 `manual_stock_total`」。
+- 當 `skus` 為空時：
+  - 按歷史單規格模式處理，價格與庫存使用商品本身字段。
+
+#### 9.3.4 管理後臺操作指引
+
+1. 進入後臺 `商品管理`，新建或編輯商品。
+2. 在「SKU 規格設定」區域新增一個或多個 SKU，填寫編碼、規格文案、價格、庫存、狀態與排序。
+3. 若已配置 SKU，商品「價格/人工庫存總量」字段僅作展示參考，實際以 SKU 數據為準。
+4. 保存後可在前臺商品詳情頁按 SKU 展示與下單。
