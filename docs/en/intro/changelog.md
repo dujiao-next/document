@@ -1,5 +1,12 @@
 # Changelog
 
+## [v0.0.5-beta] - 2026-02-25
+
+### Update Details:
+- Added a gift card system: admin now supports gift card generation, status management, filtering, batch status updates, and export; user center now includes a gift card redeem page (with motion effects), supports scene-based captcha switch (image captcha/Turnstile), and credits redeemed amount to wallet balance automatically.
+- Updated gift card currency strategy: gift card generation in admin now automatically inherits the site-wide currency and removes manual currency input, preventing currency configuration mismatch.
+- Payment callback security hotfix: callback entry now only accepts recognized and signature-verified provider callbacks (WeChat/Alipay/Epay/EPUSDT), preventing forged callbacks from incorrectly marking orders or wallet recharges as paid; `GET /payments/callback` remains available for Epay compatibility, while unrecognized requests always return `fail` and do not update payment state.
+
 ## [v0.0.4-beta] - 2026-02-25
 
 ### Update Details:
