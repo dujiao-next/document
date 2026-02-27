@@ -103,7 +103,7 @@ queue:
 在 `/opt/dujiao-next/.env` 新建：
 
 ```env
-TAG=v0.0.1-beta
+TAG=latest
 TZ=Asia/Shanghai
 
 API_PORT=8080

@@ -1,5 +1,13 @@
 # Changelog
 
+## [v0.0.6-beta] - 2026-02-27
+
+### Update Details:
+- Improved wallet recharge status flow: long-unpaid recharge orders now expire by rule, with clearer status display.
+- Improved recharge callback stability: payment result synchronization is more reliable under repeated callbacks.
+- Optimized order status transitions: admin-side order status updates are smoother and more consistent.
+- Continued multilingual and stability polish: copywriting and flow details are now more unified.
+
 ## [v0.0.5-beta] - 2026-02-25
 
 ### Update Details:

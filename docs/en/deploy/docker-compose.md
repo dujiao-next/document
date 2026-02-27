@@ -99,7 +99,7 @@ queue:
 Create a new file at `/opt/dujiao-next/.env`:
 
 ```env
-TAG=v0.0.1-beta
+TAG=latest
 TZ=Asia/Shanghai
 
 API_PORT=8080
