@@ -1,13 +1,14 @@
 # `config.yml` 詳細解釋與推薦配置
 
-> 更新時間：2026-02-11
+> 更新時間：2026-02-27
 
 ## 1. 配置加載規則
 
 後端啟動時按以下順序取值：
 
-1. 讀取 `config.yml`
-2. 讀取環境變量覆蓋（例如 `server.port` ⇢ `SERVER_PORT`）
+1. 使用系統默認值（代碼內置默認）
+2. 讀取 `config.yml`
+3. 讀取環境變量覆蓋（例如 `server.port` ⇢ `SERVER_PORT`）
 
 ## 2. 先看結論：數據庫選型建議
 
@@ -211,6 +212,11 @@ database:
 
 提示：如果 `queue.enabled=true` 但 Redis 不可達，異步任務（如郵件）會失敗或堆積。
 
+補充：
+
+- 默認啟動模式是 `all`（API + Worker）。
+- 當 `queue.enabled=false` 時，請使用 `-mode api` 啟動；否則 Worker 無法初始化。
+
 ## 5.7 `upload`
 
 | 字段 | 類型 | 說明 | 推薦 |
@@ -229,6 +235,10 @@ database:
 | `allowed_headers` | []string | 允許請求頭 | 按業務保留 |
 | `allow_credentials` | bool | 是否允許攜帶憑證 | 與前端策略匹配 |
 | `max_age` | int | 預檢緩存秒數 | `600` |
+
+補充：
+
+- 瀏覽器限制：當 `allow_credentials=true` 時，`allowed_origins` 不能包含 `*`。
 
 ## 5.9 `security`
 
@@ -256,7 +266,21 @@ database:
 | --- | --- | --- | --- |
 | `payment_expire_minutes` | int | 待支付訂單超時分鐘數 | `15~30` |
 
-## 5.12 `captcha`（可選）
+補充：
+
+- 實際生效值可能會被後台系統設置覆蓋（見下方「運行時覆蓋優先級」）。
+
+## 5.12 `telegram_auth`（可選）
+
+| 字段 | 類型 | 說明 | 推薦 |
+| --- | --- | --- | --- |
+| `enabled` | bool | 是否啟用 Telegram 登入 | 按需開啟 |
+| `bot_username` | string | Bot 用戶名（不帶 `@`） | 例如 `dujiao_login_bot` |
+| `bot_token` | string | Bot Token | 由 BotFather 生成 |
+| `login_expire_seconds` | int | 登入有效期（秒） | `300` |
+| `replay_ttl_seconds` | int | 重放保護時長（秒） | `300` |
+
+## 5.13 `captcha`（可選）
 
 `config.yml.example` 可能未完整展示該段，但系統已支持。
 
@@ -266,6 +290,7 @@ database:
   - `register_send_code`
   - `reset_send_code`
   - `guest_create_order`
+  - `gift_card_redeem`
 - `image`: 圖片驗證碼參數
 - `turnstile`: Cloudflare Turnstile 參數
 
@@ -279,12 +304,24 @@ captcha:
     register_send_code: true
     reset_send_code: true
     guest_create_order: true
+    gift_card_redeem: true
   turnstile:
     site_key: "<your-site-key>"
     secret_key: "<your-secret-key>"
     verify_url: "https://challenges.cloudflare.com/turnstile/v0/siteverify"
     timeout_ms: 2000
 ```
+
+## 5.14 運行時覆蓋優先級（重要）
+
+以下配置支持在後台「設置」中動態修改，且優先級高於 `config.yml`：
+
+- SMTP（郵件）配置
+- 驗證碼配置
+- Telegram 登入配置
+- 訂單支付超時分鐘數（`payment_expire_minutes`）
+
+如果你修改了 `config.yml` 但頁面行為沒有變化，請優先檢查後台對應設置項。
 
 ## 6. 環境變量映射示例
 
@@ -293,6 +330,8 @@ captcha:
 - `JWT_SECRET=...`
 - `USER_JWT_SECRET=...`
 - `REDIS_HOST=127.0.0.1`
+- `CAPTCHA_TURNSTILE_SITE_KEY=...`
+- `TELEGRAM_AUTH_ENABLED=true`
 
 規則：配置鍵中的 `.` 會被轉換為 `_`。
 
@@ -308,6 +347,8 @@ captcha:
   - 檢查 PostgreSQL DSN 的 `TimeZone` 與系統時區
 - Redis/隊列可用但郵件未發送
   - 檢查 `queue.enabled`、Redis 連通性、worker 是否啟動
+- 訂單長期停留在「待支付」，不自動過期
+  - 檢查是否以 `-mode api` 單獨啟動，或 `queue.enabled`/Redis 不可用導致超時任務未消費
 
 ## 8. 部署前檢查清單
 
@@ -316,5 +357,7 @@ captcha:
 - [ ] 數據庫驅動與 DSN 配置符合環境（SQLite/PostgreSQL）
 - [ ] 連接池參數與數據庫規格匹配
 - [ ] Redis/隊列可用（如已啟用）
+- [ ] 若使用默認啟動模式 `all`，請確認 `queue.enabled=true` 且隊列 Redis 可達
+- [ ] 若計劃關閉隊列，請確認使用 `-mode api` 啟動，並知曉異步任務能力會受影響
 - [ ] CORS 已限制到真實業務域名
 - [ ] 郵件配置已做真實發信驗證（如已啟用）
