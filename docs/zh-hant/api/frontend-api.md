@@ -4,7 +4,7 @@ outline: deep
 
 # User 前臺 API 文檔
 
-> 更新時間：2026-02-22
+> 更新時間：2026-02-27
 
 本文檔覆蓋 `user/src/api/index.ts` 當前全部前臺 API，字段定義以以下實現為準：
 
@@ -2422,3 +2422,130 @@ Authorization: Bearer <user_token>
 2. 在「SKU 規格設定」區域新增一個或多個 SKU，填寫編碼、規格文案、價格、庫存、狀態與排序。
 3. 若已配置 SKU，商品「價格/人工庫存總量」字段僅作展示參考，實際以 SKU 數據為準。
 4. 保存後可在前臺商品詳情頁按 SKU 展示與下單。
+
+### 9.4 推廣返利介面（Affiliate）
+
+以下介面對應前臺返利中心與後臺返利審核能力。
+
+#### 9.4.1 下單介面新增 `affiliate_code` 字段
+
+以下介面的請求體支持附帶 `affiliate_code`（聯盟 ID）：
+
+- `POST /orders/preview`
+- `POST /orders`
+- `POST /guest/orders/preview`
+- `POST /guest/orders`
+
+字段定義：
+
+| 字段 | 類型 | 必填 | 說明 |
+| --- | --- | --- | --- |
+| affiliate_code | string | 否 | 推廣聯盟 ID（如 `AB12CD34`），用於訂單返利歸因 |
+
+#### 9.4.2 公開點擊上報
+
+**介面**：`POST /public/affiliate/click`  
+**認證**：無需登錄
+
+| 字段 | 類型 | 必填 | 說明 |
+| --- | --- | --- | --- |
+| affiliate_code | string | 是 | 聯盟 ID |
+| visitor_key | string | 否 | 訪客標識（前端可持久化） |
+| landing_path | string | 否 | 落地路徑（如 `/?aff=AB12CD34`） |
+| referrer | string | 否 | 來源頁 URL |
+
+成功返回：
+
+```json
+{
+  "status_code": 0,
+  "msg": "success",
+  "data": {
+    "ok": true
+  }
+}
+```
+
+#### 9.4.3 用戶返利中心介面（需 Bearer Token）
+
+##### A) 開通返利
+
+- **介面**：`POST /affiliate/open`
+- **說明**：開通成功後返回返利檔案（含聯盟 ID）。
+
+##### B) 獲取返利看板
+
+- **介面**：`GET /affiliate/dashboard`
+
+返回 `data` 關鍵字段：
+
+| 字段 | 類型 | 說明 |
+| --- | --- | --- |
+| opened | boolean | 是否已開通 |
+| affiliate_code | string | 聯盟 ID |
+| promotion_path | string | 推廣路徑（如 `/?aff=AB12CD34`） |
+| click_count | number | 點擊數 |
+| valid_order_count | number | 有效訂單數 |
+| conversion_rate | number | 轉化率（百分比數值） |
+| pending_commission | string | 待確認佣金 |
+| available_commission | string | 可提現佣金 |
+| withdrawn_commission | string | 已提現佣金 |
+
+##### C) 查詢我的佣金記錄
+
+- **介面**：`GET /affiliate/commissions`
+- **參數**：`page`、`page_size`、`status`
+- **status 可選值**：`pending_confirm` / `available` / `rejected` / `withdrawn`
+
+##### D) 查詢我的提現記錄
+
+- **介面**：`GET /affiliate/withdraws`
+- **參數**：`page`、`page_size`、`status`
+- **status 可選值**：`pending_review` / `rejected` / `paid`
+
+##### E) 申請提現
+
+- **介面**：`POST /affiliate/withdraws`
+
+| 字段 | 類型 | 必填 | 說明 |
+| --- | --- | --- | --- |
+| amount | string | 是 | 提現金額（字符串金額，保留 2 位小數） |
+| channel | string | 是 | 提現渠道 |
+| account | string | 是 | 提現賬號 |
+
+#### 9.4.4 管理後臺返利設置（Admin）
+
+##### A) 獲取返利設置
+
+- **介面**：`GET /admin/settings/affiliate`
+- **認證**：管理員 Token
+
+##### B) 更新返利設置
+
+- **介面**：`PUT /admin/settings/affiliate`
+- **認證**：管理員 Token
+
+| 字段 | 類型 | 必填 | 說明 |
+| --- | --- | --- | --- |
+| enabled | boolean | 是 | 是否開啟返利 |
+| commission_rate | number | 是 | 返利比例（0-100，支持 2 位小數） |
+| confirm_days | number | 是 | 佣金確認天數（0-3650） |
+| min_withdraw_amount | number | 是 | 最低提現金額（>=0） |
+| withdraw_channels | string[] | 是 | 提現渠道列表 |
+
+#### 9.4.5 管理後臺返利管理（Admin）
+
+以下介面均需管理員 Token：
+
+| 介面 | 說明 |
+| --- | --- |
+| `GET /admin/affiliates/users` | 返利用戶列表 |
+| `GET /admin/affiliates/commissions` | 佣金記錄列表 |
+| `GET /admin/affiliates/withdraws` | 提現申請列表 |
+| `POST /admin/affiliates/withdraws/:id/reject` | 拒絕提現申請 |
+| `POST /admin/affiliates/withdraws/:id/pay` | 標記提現已打款 |
+
+其中：
+
+- `POST /admin/affiliates/withdraws/:id/reject` body 支持 `{ "reason": "拒絕原因" }`
+- `POST /admin/affiliates/withdraws/:id/pay` 無需額外 body 字段

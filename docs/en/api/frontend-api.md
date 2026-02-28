@@ -4,7 +4,7 @@ outline: deep
 
 # User Frontend API Documentation
 
-> Last Updated: 2026-02-22
+> Last Updated: 2026-02-27
 
 This document covers all current frontend APIs in `user/src/api/index.ts`, with field definitions based on the following implementations:
 
@@ -2378,3 +2378,130 @@ Request body is the same as `POST /admin/products`; to update existing SKUs, pas
 2. In the `SKU configuration` section, add one or more SKUs and fill code, labels, price, stock, status, and sort order.
 3. Once SKU mode is configured, product-level `price/manual stock` fields are informational; effective values come from SKUs.
 4. Save and verify SKU selection/display on the frontend product detail page.
+
+### 9.4 Affiliate APIs
+
+These endpoints support frontend affiliate center features and admin affiliate review workflows.
+
+#### 9.4.1 Order APIs Add `affiliate_code`
+
+The request body of the following endpoints supports optional `affiliate_code` (affiliate ID):
+
+- `POST /orders/preview`
+- `POST /orders`
+- `POST /guest/orders/preview`
+- `POST /guest/orders`
+
+Field definition:
+
+| Field | Type | Required | Description |
+| --- | --- | --- | --- |
+| affiliate_code | string | No | Affiliate ID (for example `AB12CD34`) used for commission attribution |
+
+#### 9.4.2 Public Click Tracking
+
+**Endpoint**: `POST /public/affiliate/click`  
+**Authentication**: None
+
+| Field | Type | Required | Description |
+| --- | --- | --- | --- |
+| affiliate_code | string | Yes | Affiliate ID |
+| visitor_key | string | No | Visitor identifier (can be persisted by frontend) |
+| landing_path | string | No | Landing path (for example `/?aff=AB12CD34`) |
+| referrer | string | No | Referrer page URL |
+
+Successful response:
+
+```json
+{
+  "status_code": 0,
+  "msg": "success",
+  "data": {
+    "ok": true
+  }
+}
+```
+
+#### 9.4.3 User Affiliate Center APIs (Bearer Token Required)
+
+##### A) Open Affiliate
+
+- **Endpoint**: `POST /affiliate/open`
+- **Description**: Returns the affiliate profile after activation (including affiliate ID).
+
+##### B) Get Affiliate Dashboard
+
+- **Endpoint**: `GET /affiliate/dashboard`
+
+Key `data` fields:
+
+| Field | Type | Description |
+| --- | --- | --- |
+| opened | boolean | Whether affiliate is activated |
+| affiliate_code | string | Affiliate ID |
+| promotion_path | string | Promotion path (for example `/?aff=AB12CD34`) |
+| click_count | number | Click count |
+| valid_order_count | number | Valid order count |
+| conversion_rate | number | Conversion rate (percentage value) |
+| pending_commission | string | Pending commission |
+| available_commission | string | Withdrawable commission |
+| withdrawn_commission | string | Withdrawn commission |
+
+##### C) Get My Commission Records
+
+- **Endpoint**: `GET /affiliate/commissions`
+- **Query params**: `page`, `page_size`, `status`
+- **status values**: `pending_confirm` / `available` / `rejected` / `withdrawn`
+
+##### D) Get My Withdraw Records
+
+- **Endpoint**: `GET /affiliate/withdraws`
+- **Query params**: `page`, `page_size`, `status`
+- **status values**: `pending_review` / `rejected` / `paid`
+
+##### E) Apply for Withdraw
+
+- **Endpoint**: `POST /affiliate/withdraws`
+
+| Field | Type | Required | Description |
+| --- | --- | --- | --- |
+| amount | string | Yes | Withdraw amount (string amount with 2 decimal places) |
+| channel | string | Yes | Withdraw channel |
+| account | string | Yes | Withdraw account |
+
+#### 9.4.4 Admin Affiliate Settings APIs
+
+##### A) Get Affiliate Settings
+
+- **Endpoint**: `GET /admin/settings/affiliate`
+- **Authentication**: Admin token
+
+##### B) Update Affiliate Settings
+
+- **Endpoint**: `PUT /admin/settings/affiliate`
+- **Authentication**: Admin token
+
+| Field | Type | Required | Description |
+| --- | --- | --- | --- |
+| enabled | boolean | Yes | Whether affiliate is enabled |
+| commission_rate | number | Yes | Commission rate (0-100, up to 2 decimals) |
+| confirm_days | number | Yes | Commission confirmation days (0-3650) |
+| min_withdraw_amount | number | Yes | Minimum withdraw amount (>=0) |
+| withdraw_channels | string[] | Yes | Withdraw channel list |
+
+#### 9.4.5 Admin Affiliate Management APIs
+
+The following endpoints all require Admin token:
+
+| Endpoint | Description |
+| --- | --- |
+| `GET /admin/affiliates/users` | Affiliate user list |
+| `GET /admin/affiliates/commissions` | Commission record list |
+| `GET /admin/affiliates/withdraws` | Withdraw request list |
+| `POST /admin/affiliates/withdraws/:id/reject` | Reject withdraw request |
+| `POST /admin/affiliates/withdraws/:id/pay` | Mark withdraw as paid |
+
+Notes:
+
+- `POST /admin/affiliates/withdraws/:id/reject` body supports `{ "reason": "rejection reason" }`
+- `POST /admin/affiliates/withdraws/:id/pay` requires no extra body fields

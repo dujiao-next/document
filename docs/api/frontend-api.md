@@ -4,7 +4,7 @@ outline: deep
 
 # User 前台 API 文档
 
-> 更新时间：2026-02-22
+> 更新时间：2026-02-27
 
 本文档覆盖 `user/src/api/index.ts` 当前全部前台 API，字段定义以以下实现为准：
 
@@ -2422,3 +2422,130 @@ Authorization: Bearer <user_token>
 2. 在“SKU 规格配置”区域新增一个或多个 SKU，填写编码、规格文案、价格、库存、状态与排序。
 3. 若已配置 SKU，商品“价格/人工库存总量”字段仅作展示参考，实际以 SKU 数据为准。
 4. 保存后可在前台商品详情页按 SKU 展示与下单。
+
+### 9.4 推广返利接口（Affiliate）
+
+以下接口对应前台返利中心与后台返利审核能力。
+
+#### 9.4.1 下单接口新增 `affiliate_code` 字段
+
+以下接口的请求体支持附带 `affiliate_code`（联盟ID）：
+
+- `POST /orders/preview`
+- `POST /orders`
+- `POST /guest/orders/preview`
+- `POST /guest/orders`
+
+字段定义：
+
+| 字段 | 类型 | 必填 | 说明 |
+| --- | --- | --- | --- |
+| affiliate_code | string | 否 | 推广联盟ID（如 `AB12CD34`），用于订单返利归因 |
+
+#### 9.4.2 公开点击上报
+
+**接口**：`POST /public/affiliate/click`  
+**认证**：无需登录
+
+| 字段 | 类型 | 必填 | 说明 |
+| --- | --- | --- | --- |
+| affiliate_code | string | 是 | 联盟ID |
+| visitor_key | string | 否 | 访客标识（前端可持久化） |
+| landing_path | string | 否 | 落地路径（如 `/?aff=AB12CD34`） |
+| referrer | string | 否 | 来源页 URL |
+
+成功返回：
+
+```json
+{
+  "status_code": 0,
+  "msg": "success",
+  "data": {
+    "ok": true
+  }
+}
+```
+
+#### 9.4.3 用户返利中心接口（需 Bearer Token）
+
+##### A) 开通返利
+
+- **接口**：`POST /affiliate/open`
+- **说明**：开通成功后返回返利档案（含联盟ID）。
+
+##### B) 获取返利看板
+
+- **接口**：`GET /affiliate/dashboard`
+
+返回 `data` 关键字段：
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| opened | boolean | 是否已开通 |
+| affiliate_code | string | 联盟ID |
+| promotion_path | string | 推广路径（如 `/?aff=AB12CD34`） |
+| click_count | number | 点击数 |
+| valid_order_count | number | 有效订单数 |
+| conversion_rate | number | 转化率（百分比数值） |
+| pending_commission | string | 待确认佣金 |
+| available_commission | string | 可提现佣金 |
+| withdrawn_commission | string | 已提现佣金 |
+
+##### C) 查询我的佣金记录
+
+- **接口**：`GET /affiliate/commissions`
+- **参数**：`page`、`page_size`、`status`
+- **status 可选值**：`pending_confirm` / `available` / `rejected` / `withdrawn`
+
+##### D) 查询我的提现记录
+
+- **接口**：`GET /affiliate/withdraws`
+- **参数**：`page`、`page_size`、`status`
+- **status 可选值**：`pending_review` / `rejected` / `paid`
+
+##### E) 申请提现
+
+- **接口**：`POST /affiliate/withdraws`
+
+| 字段 | 类型 | 必填 | 说明 |
+| --- | --- | --- | --- |
+| amount | string | 是 | 提现金额（字符串金额，保留 2 位小数） |
+| channel | string | 是 | 提现渠道 |
+| account | string | 是 | 提现账号 |
+
+#### 9.4.4 管理后台返利设置（Admin）
+
+##### A) 获取返利设置
+
+- **接口**：`GET /admin/settings/affiliate`
+- **认证**：管理员 Token
+
+##### B) 更新返利设置
+
+- **接口**：`PUT /admin/settings/affiliate`
+- **认证**：管理员 Token
+
+| 字段 | 类型 | 必填 | 说明 |
+| --- | --- | --- | --- |
+| enabled | boolean | 是 | 是否开启返利 |
+| commission_rate | number | 是 | 返利比例（0-100，支持 2 位小数） |
+| confirm_days | number | 是 | 佣金确认天数（0-3650） |
+| min_withdraw_amount | number | 是 | 最低提现金额（>=0） |
+| withdraw_channels | string[] | 是 | 提现渠道列表 |
+
+#### 9.4.5 管理后台返利管理（Admin）
+
+以下接口均需管理员 Token：
+
+| 接口 | 说明 |
+| --- | --- |
+| `GET /admin/affiliates/users` | 返利用户列表 |
+| `GET /admin/affiliates/commissions` | 佣金记录列表 |
+| `GET /admin/affiliates/withdraws` | 提现申请列表 |
+| `POST /admin/affiliates/withdraws/:id/reject` | 拒绝提现申请 |
+| `POST /admin/affiliates/withdraws/:id/pay` | 标记提现已打款 |
+
+其中：
+
+- `POST /admin/affiliates/withdraws/:id/reject` body 支持 `{ "reason": "拒绝原因" }`
+- `POST /admin/affiliates/withdraws/:id/pay` 无需额外 body 字段
