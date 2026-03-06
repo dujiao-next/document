@@ -23,11 +23,11 @@ As a sponsor, you can get the following exposure and benefits:
 
 > The following are standard tiers. Custom plans are available on request.
 
-| Tier | Monthly Fee | Placement Rights | Notes |
-| --- | --- | --- | --- |
-| Platinum Sponsor | 300 USD / month | Homepage sponsor block + right sidebar ad | Best exposure, recommended for brand partnerships |
-| Gold Sponsor | 200 USD / month | Right sidebar ad | Stable visibility for long-term promotion |
-| Silver Sponsor | 100 USD / month | Sponsor directory page | Entry-level brand exposure |
+| Tier | Monthly Fee     | Placement Rights                           | Notes |
+| --- |-----------------|--------------------------------------------| --- |
+| Platinum Sponsor | 500 USD / month | Homepage sponsor block + right sidebar ad + Telegram | Best exposure, recommended for brand partnerships |
+| Gold Sponsor | 300 USD / month | Right sidebar ad                           | Stable visibility for long-term promotion |
+| Silver Sponsor | 200 USD / month | Sponsor directory page                     | Entry-level brand exposure |
 
 ### Asset Recommendations
 
