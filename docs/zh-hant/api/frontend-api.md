@@ -46,6 +46,13 @@ outline: deep
   - 每個 SKU 的 `price_amount > 0`；
   - 至少存在 1 個啟用中的 SKU（`is_active=true`）。
 
+### 0.4 促銷價下沉至 SKU 級別
+
+- `PublicProduct` 新增 `skus` 字段（類型 `PublicSKU[]`），每個 SKU 包含獨立的 `promotion_price_amount`。
+- 促銷活動仍以商品為維度配置，但促銷價基於每個 SKU 的原價獨立計算。
+- 產品級 `promotion_price_amount` 現取所有 SKU 促銷價中的最低值（適用於列表頁展示）。
+- 下單邏輯不受影響（已按 SKU 價格獨立計算）。
+
 ---
 
 ## 1. 通用約定
@@ -174,11 +181,39 @@ Authorization: Bearer <user_token>
 | promotion_id | number | 命中的活動 ID（可選） |
 | promotion_name | string | 活動名稱（可選） |
 | promotion_type | string | 活動類型（可選） |
-| promotion_price_amount | string | 活動價金額（可選） |
+| promotion_price_amount | string | 活動價金額（可選）；多 SKU 時取所有 SKU 促銷價中的最低值，用於列表頁展示 |
+| skus | PublicSKU[] | SKU 列表，包含每個 SKU 的促銷價資訊；詳見 [2.1.1 PublicSKU](#_2-1-1-publicsku) |
 | manual_stock_available | number | 人工可用庫存 |
 | auto_stock_available | number | 自動可用庫存 |
 | stock_status | string | 庫存狀態：`unlimited` / `in_stock` / `low_stock` / `out_of_stock` |
 | is_sold_out | boolean | 是否售罄 |
+
+#### 2.1.1 PublicSKU
+
+`skus[]` 陣列中每個元素的結構如下：
+
+| 字段 | 類型 | 說明 |
+| --- | --- | --- |
+| id | number | SKU ID（下單時使用此 ID） |
+| product_id | number | 所屬商品 ID |
+| sku_code | string | SKU 編碼（同商品內唯一） |
+| spec_values | object | 規格值（多語言，如 `{"zh-CN":"標準版","en-US":"Standard"}`） |
+| price_amount | string | SKU 原價（字符串金額，如 `"99.00"`） |
+| promotion_price_amount | string | SKU 活動價金額（可選）；當商品命中促銷活動時，基於該 SKU 的原價獨立計算 |
+| manual_stock_total | number | 人工庫存總量（`-1` 表示無限庫存） |
+| manual_stock_locked | number | 人工庫存鎖定量 |
+| manual_stock_sold | number | 人工庫存已售量 |
+| auto_stock_available | number | 自動發貨庫存可用量 |
+| auto_stock_total | number | 自動發貨庫存總量 |
+| auto_stock_locked | number | 自動發貨庫存佔用量 |
+| auto_stock_sold | number | 自動發貨庫存已售量 |
+| upstream_stock | number | 上游庫存（`-1` 表示無限，`0` 表示售罄） |
+| is_active | boolean | 是否啟用 |
+| sort_order | number | 排序權重 |
+| created_at | string | 創建時間 |
+| updated_at | string | 更新時間 |
+
+> **促銷價計算說明：** 促銷活動仍以商品為維度配置，但促銷價會下沉到每個 SKU 獨立計算。例如某商品配置了「8 折」促銷，99 元的 SKU 促銷價為 79.20，77 元的 SKU 促銷價為 61.60。產品級的 `promotion_price_amount` 取所有 SKU 中的最低促銷價，適用於列表頁展示。
 
 ### 2.2 Post
 

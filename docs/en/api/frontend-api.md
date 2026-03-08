@@ -46,6 +46,13 @@ This document covers all current frontend APIs in `user/src/api/index.ts`, with 
   - each SKU `price_amount` must be greater than 0;
   - at least one active SKU (`is_active=true`) must exist.
 
+### 0.4 Promotion Price Extended to SKU Level
+
+- `PublicProduct` now includes a `skus` field (type `PublicSKU[]`), each SKU containing its own `promotion_price_amount`.
+- Promotions are still configured at the product level, but promotion prices are calculated independently based on each SKU's original price.
+- The product-level `promotion_price_amount` is now the lowest promotion price among all SKUs (for list page display).
+- Order processing logic is unaffected (already calculates per-SKU pricing).
+
 ---
 
 ## 1. General Conventions
@@ -171,11 +178,39 @@ Authorization: Bearer <user_token>
 
 | promotion_name | string | Promotion name (optional) |
 | promotion_type | string | Promotion type (optional) |
-| promotion_price_amount | string | Promotion price amount (optional) |
+| promotion_price_amount | string | Promotion price amount (optional); for multi-SKU products, this is the lowest promotion price among all SKUs, used for list page display |
+| skus | PublicSKU[] | SKU list with per-SKU promotion price info; see [2.1.1 PublicSKU](#_2-1-1-publicsku) |
 | manual_stock_available | number | Manually available stock |
 | auto_stock_available | number | Automatically available stock |
 | stock_status | string | Stock status: `unlimited` / `in_stock` / `low_stock` / `out_of_stock` |
 | is_sold_out | boolean | Whether sold out |
+
+#### 2.1.1 PublicSKU
+
+Each element in the `skus[]` array has the following structure:
+
+| Field | Type | Description |
+| --- | --- | --- |
+| id | number | SKU ID (use this ID when placing orders) |
+| product_id | number | Parent product ID |
+| sku_code | string | SKU code (unique within the same product) |
+| spec_values | object | Specification values (multilingual, e.g., `{"zh-CN":"标准版","en-US":"Standard"}`) |
+| price_amount | string | SKU original price (string format, e.g., `"99.00"`) |
+| promotion_price_amount | string | SKU promotion price amount (optional); when the product has an active promotion, calculated independently based on this SKU's original price |
+| manual_stock_total | number | Manual stock total (`-1` means unlimited) |
+| manual_stock_locked | number | Manual stock locked quantity |
+| manual_stock_sold | number | Manual stock sold quantity |
+| auto_stock_available | number | Auto-delivery stock available |
+| auto_stock_total | number | Auto-delivery stock total |
+| auto_stock_locked | number | Auto-delivery stock locked |
+| auto_stock_sold | number | Auto-delivery stock sold |
+| upstream_stock | number | Upstream stock (`-1` = unlimited, `0` = sold out) |
+| is_active | boolean | Whether enabled |
+| sort_order | number | Sort weight |
+| created_at | string | Creation time |
+| updated_at | string | Update time |
+
+> **Promotion price calculation:** Promotions are still configured at the product level, but promotion prices are calculated independently for each SKU. For example, if a product has a "20% off" promotion, a 99.00 SKU will have a promotion price of 79.20, while a 77.00 SKU will have a promotion price of 61.60. The product-level `promotion_price_amount` is the lowest promotion price among all SKUs, suitable for list page display.
 
 ### 2.2 Post
 

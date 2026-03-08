@@ -46,6 +46,13 @@ outline: deep
   - 每个 SKU 的 `price_amount > 0`；
   - 至少存在 1 个启用中的 SKU（`is_active=true`）。
 
+### 0.4 促销价下沉至 SKU 级别
+
+- `PublicProduct` 新增 `skus` 字段（类型 `PublicSKU[]`），每个 SKU 包含独立的 `promotion_price_amount`。
+- 促销活动仍以商品为维度配置，但促销价基于每个 SKU 的原价独立计算。
+- 产品级 `promotion_price_amount` 现取所有 SKU 促销价中的最低值（适用于列表页展示）。
+- 下单逻辑不受影响（已按 SKU 价格独立计算）。
+
 ---
 
 ## 1. 通用约定
@@ -174,11 +181,39 @@ Authorization: Bearer <user_token>
 | promotion_id | number | 命中的活动 ID（可选） |
 | promotion_name | string | 活动名称（可选） |
 | promotion_type | string | 活动类型（可选） |
-| promotion_price_amount | string | 活动价金额（可选） |
+| promotion_price_amount | string | 活动价金额（可选）；多 SKU 时取所有 SKU 促销价中的最低值，用于列表页展示 |
+| skus | PublicSKU[] | SKU 列表，包含每个 SKU 的促销价信息；详见 [2.1.1 PublicSKU](#_2-1-1-publicsku) |
 | manual_stock_available | number | 人工可用库存 |
 | auto_stock_available | number | 自动可用库存 |
 | stock_status | string | 库存状态：`unlimited` / `in_stock` / `low_stock` / `out_of_stock` |
 | is_sold_out | boolean | 是否售罄 |
+
+#### 2.1.1 PublicSKU
+
+`skus[]` 数组中每个元素的结构如下：
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| id | number | SKU ID（下单时使用此 ID） |
+| product_id | number | 所属商品 ID |
+| sku_code | string | SKU 编码（同商品内唯一） |
+| spec_values | object | 规格值（多语言，如 `{"zh-CN":"标准版","en-US":"Standard"}`） |
+| price_amount | string | SKU 原价（字符串金额，如 `"99.00"`） |
+| promotion_price_amount | string | SKU 活动价金额（可选）；当商品命中促销活动时，基于该 SKU 的原价独立计算 |
+| manual_stock_total | number | 人工库存总量（`-1` 表示无限库存） |
+| manual_stock_locked | number | 人工库存锁定量 |
+| manual_stock_sold | number | 人工库存已售量 |
+| auto_stock_available | number | 自动发货库存可用量 |
+| auto_stock_total | number | 自动发货库存总量 |
+| auto_stock_locked | number | 自动发货库存占用量 |
+| auto_stock_sold | number | 自动发货库存已售量 |
+| upstream_stock | number | 上游库存（`-1` 表示无限，`0` 表示售罄） |
+| is_active | boolean | 是否启用 |
+| sort_order | number | 排序权重 |
+| created_at | string | 创建时间 |
+| updated_at | string | 更新时间 |
+
+> **促销价计算说明：** 促销活动仍以商品为维度配置，但促销价会下沉到每个 SKU 独立计算。例如某商品配置了"8 折"促销，99 元的 SKU 促销价为 79.20，77 元的 SKU 促销价为 61.60。产品级的 `promotion_price_amount` 取所有 SKU 中的最低促销价，适用于列表页展示。
 
 ### 2.2 Post
 
