@@ -1,5 +1,14 @@
 # Changelog
 
+## [v0.0.9-beta] - 2026-03-09
+
+### Update Details:
+- Improved promotional price and SKU-level discount display, making offers clearer and prices easier to understand.
+- Adjusted SKU presentation to hide internal codes for a cleaner storefront browsing experience.
+- Optimized the admin menu and overall operation flow, making common management paths easier to use.
+- Improved mobile adaptation and browser multilingual compatibility for more stable cross-device access.
+- Enhanced admin error feedback and overall stability to reduce common issues during use.
+
 ## [v0.0.8-beta] - 2026-03-06
 
 ### Update Details:
