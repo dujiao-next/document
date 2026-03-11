@@ -16,12 +16,18 @@ This page describes the official technical service offerings and terms for Dujia
   - Server security hardening
   - Troubleshooting support
 
-## 2. Custom Development Service
+## 2. Telegram Bot Service
+
+- Price: `398USD` / year
+- Notes: standalone Telegram Bot feature license with continuous updates and iterative upgrades during the active term
+- Details: [/en/services/telegram-bot](/en/services/telegram-bot)
+
+## 3. Custom Development Service
 
 - Pricing: starts from `1000USD`
 - Notes: scope, timeline, and quote are determined by specific requirements
 
-## 3. Managed Service
+## 4. Managed Service
 
 - Pricing: `500USD` / month, `5000USD` / year
 - Service scope:

@@ -1,5 +1,14 @@
 # Changelog
 
+## [v0.1.0] - 2026-03-11
+
+### Update Details:
+- Added a Telegram Bot control center in the admin panel for unified bot setup, runtime monitoring, and channel client management.
+- Enabled product browsing, order placement, and wallet-related flows through Telegram Bot for a more complete in-chat transaction experience.
+- Added Telegram user broadcast messaging, with support for sending messages to all users or selected recipients more efficiently.
+- Improved validation in the cart, product detail, and checkout flows so purchase limits and stock feedback are more accurate.
+- Fixed duplicate gateway order number conflicts and payment request context issues to make payment creation and callbacks more reliable.
+
 ## [v0.0.9-beta] - 2026-03-09
 
 ### Update Details:
