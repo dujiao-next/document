@@ -1,25 +1,21 @@
 # 部署總覽與選型建議
 
-> 更新時間：2026-02-27
+> 更新時間：2026-03-13
 
 如果你還沒決定使用哪種部署方式，先看這頁，再進入對應教程。
 
-## 1. 新手快速開始（推薦）
+## 1. 推薦起步方式
 
-你可以直接使用社群一鍵部署腳本（支援 Docker Compose / 二進位，含更新檢查與 HTTPS ACME 配置）：
+目前官方文件僅保留可直接核驗的正式部署方案，建議依照你的環境直接進入對應教程：
 
-```bash
-curl -fsSL https://raw.githubusercontent.com/dujiao-next/community-projects/main/scripts/dujiao-next-one-click-deploy/deploy.sh | bash
-```
-
-專案說明：  
-`https://github.com/dujiao-next/community-projects/tree/main/scripts/dujiao-next-one-click-deploy`
+- 第一次部署，且希望長期穩定維護：從 [Docker Compose 部署](/zh-hant/deploy/docker-compose) 開始。
+- 已在使用 aaPanel/寶塔面板：直接查看 [aaPanel 手動部署](/zh-hant/deploy/aapanel)。
+- 需要原始碼級改造或本地建置：使用 [手動部署](/zh-hant/deploy/manual)。
 
 ## 2. 如何選擇部署方式
 
 | 方式 | 上手難度 | 適合人群 | 核心特點 | 入口文件 |
 | --- | --- | --- | --- | --- |
-| 一鍵部署腳本（社群） | 低 | 第一次部署、希望快速跑通的使用者 | 選單式部署，支援 Docker / 二進位，含更新檢查與 HTTPS | 社群腳本 README |
 | Docker Compose | 中 | 希望標準化、可重複部署的使用者 | 容器隔離、升級回滾清晰、便於自動化 | [Docker Compose 部署](/zh-hant/deploy/docker-compose) |
 | aaPanel 手動部署 | 低-中 | 已在使用寶塔面板的使用者 | 面板化操作，適合可視化運維 | [aaPanel 手動部署](/zh-hant/deploy/aapanel) |
 | 手動部署（源碼構建） | 高 | 需要深度客製化、二次開發的使用者 | 控制粒度最高，適合進階運維/開發 | [手動部署](/zh-hant/deploy/manual) |
@@ -40,7 +36,7 @@ curl -fsSL https://raw.githubusercontent.com/dujiao-next/community-projects/main
 
 ## 4. 推薦路徑
 
-- 你是新手：優先一鍵腳本；若已在寶塔環境可直接看 aaPanel 文檔。
+- 你是新手：優先 Docker Compose；若已在寶塔環境可直接看 aaPanel 文檔。
 - 你要長期穩定運維：優先 Docker Compose。
 - 你要深度改造或本地構建：使用手動部署。
 
@@ -51,5 +47,4 @@ curl -fsSL https://raw.githubusercontent.com/dujiao-next/community-projects/main
    - User / Admin 頁面是否可訪問
 2. 首次登入後臺後立即修改管理員密碼。
 3. 配置支付參數與回調地址（見 [支付配置與回調指南](/zh-hant/payment/guide)）。
-4. 配置 HTTPS（可透過一鍵腳本的 ACME 選單自動處理）。
-
+4. 配置 HTTPS（依你的部署方式在反向代理、面板或容器入口層完成）。
