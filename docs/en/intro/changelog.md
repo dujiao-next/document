@@ -1,5 +1,14 @@
 # Changelog
 
+## [v0.1.1] - 2026-03-13
+
+### Update Details:
+- Added Telegram channel affiliate features so users can open promotion access, review commission data, and submit withdrawal requests with a more complete conversion flow.
+- Added direct gift card redemption inside Telegram channels, with wallet balance and transaction history updating together for a smoother top-up flow.
+- Added fixed fee support for payment channels, with fee information shown across admin, public, and channel checkout flows for clearer pricing rules.
+- Enhanced Telegram broadcast and message delivery capabilities with image and file attachments for more flexible bulk outreach.
+- Improved bot message callbacks, the Telegram management page, and third-party account display, while fixing payment record field display issues for a clearer and more stable admin experience.
+
 ## [v0.1.0] - 2026-03-11
 
 ### Update Details:
