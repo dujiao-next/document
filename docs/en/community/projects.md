@@ -1,6 +1,6 @@
 # Community Shared Projects
 
-> Last Updated: 2026-02-17
+> Last Updated: 2026-03-14
 
 This page introduces the submission rules for community shared projects and lists the currently curated project collection.
 
@@ -49,10 +49,11 @@ Each submitted project should meet at least the following:
 
 > Note: The table below is the curated list of accepted projects.  
 > Please update this section when a new project is merged.
+> Community projects are independently maintained by contributors and are not official products by default. The official documentation may perform basic security review and listing for public projects, but does not endorse third-party functionality, stability, compatibility, or maintenance commitments.
 
 | Project | Category | Summary | Maintainer | Status |
 | --- | --- | --- | --- | --- |
-| (To be listed) | - | No publicly indexed community projects yet. You are welcome to submit the first one. | - | Pending |
+| [langge-dujiao-next-install](https://github.com/dujiao-next/community-projects/tree/main/scripts/langge-dujiao-next-install) | Scripts | A community-maintained one-click deploy and ops script covering Docker, binary, external environments, HTTPS, version checks, and basic operations. | LangGe | Active |
 
 ## 6. Maintenance Rules
 

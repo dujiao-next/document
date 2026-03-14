@@ -1,14 +1,17 @@
 # 部署總覽與選型建議
 
-> 更新時間：2026-03-13
+> 更新時間：2026-03-14
 
 如果你還沒決定使用哪種部署方式，先看這頁，再進入對應教程。
 
 ## 1. 推薦起步方式
 
-目前官方文件僅保留可直接核驗的正式部署方案，建議依照你的環境直接進入對應教程：
+目前官方文件優先保留可直接核驗的正式部署方案；如果你希望使用社群維護的一鍵選單腳本，也可以參考對應專案說明。
+
+> 提示：部署模組中收錄的社群腳本屬於第三方社群貢獻專案，並非官方出品。官方僅對公開專案做基礎安全審計與入口收錄，不對第三方作品的功能設計、穩定性、相容性或後續維護做背書。
 
 - 第一次部署，且希望長期穩定維護：從 [Docker Compose 部署](/zh-hant/deploy/docker-compose) 開始。
+- 希望使用統一選單完成部署、更新、HTTPS 與日常運維：參考社群腳本 [langge-dujiao-next-install](https://github.com/dujiao-next/community-projects/tree/main/scripts/langge-dujiao-next-install)。
 - 已在使用 aaPanel/寶塔面板：直接查看 [aaPanel 手動部署](/zh-hant/deploy/aapanel)。
 - 需要原始碼級改造或本地建置：使用 [手動部署](/zh-hant/deploy/manual)。
 
@@ -16,6 +19,7 @@
 
 | 方式 | 上手難度 | 適合人群 | 核心特點 | 入口文件 |
 | --- | --- | --- | --- | --- |
+| 社群一鍵部署腳本（LangGe） | 低-中 | 需要統一選單完成部署、更新、HTTPS 與基礎運維的使用者 | 社群維護，支援 Docker / 二進位 / 外部環境、HTTPS、版本檢查與運維選單 | [langge-dujiao-next-install](https://github.com/dujiao-next/community-projects/tree/main/scripts/langge-dujiao-next-install) |
 | Docker Compose | 中 | 希望標準化、可重複部署的使用者 | 容器隔離、升級回滾清晰、便於自動化 | [Docker Compose 部署](/zh-hant/deploy/docker-compose) |
 | aaPanel 手動部署 | 低-中 | 已在使用寶塔面板的使用者 | 面板化操作，適合可視化運維 | [aaPanel 手動部署](/zh-hant/deploy/aapanel) |
 | 手動部署（源碼構建） | 高 | 需要深度客製化、二次開發的使用者 | 控制粒度最高，適合進階運維/開發 | [手動部署](/zh-hant/deploy/manual) |
@@ -36,6 +40,7 @@
 
 ## 4. 推薦路徑
 
+- 你希望用一份社群腳本統一處理部署、更新與 HTTPS：可先閱讀 [langge-dujiao-next-install](https://github.com/dujiao-next/community-projects/tree/main/scripts/langge-dujiao-next-install) 的 README，再決定是否採用。
 - 你是新手：優先 Docker Compose；若已在寶塔環境可直接看 aaPanel 文檔。
 - 你要長期穩定運維：優先 Docker Compose。
 - 你要深度改造或本地構建：使用手動部署。

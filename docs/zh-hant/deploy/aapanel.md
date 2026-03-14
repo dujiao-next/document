@@ -41,21 +41,21 @@ cd /www/wwwroot/dujiao-next
 
 示例（文件名按你的實際 Release 產物替換）：
 
-> API 壓縮包命名遵循 GoReleaser 規則：`dujiao-next_<tag>_Linux_x86_64.tar.gz`，例如 `dujiao-next_v0.0.1-beta_Linux_x86_64.tar.gz`。
-> User 壓縮包命名示例：`dujiao-next-user-v0.0.1-beta.zip`。
-> Admin 壓縮包命名示例：`dujiao-next-admin-v0.0.1-beta.zip`。
+> API 壓縮包命名遵循 GoReleaser 規則：`dujiao-next_<tag>_Linux_x86_64.tar.gz`，例如 `dujiao-next_v0.1.1_Linux_x86_64.tar.gz`。
+> User 壓縮包命名示例：`dujiao-next-user-v0.1.1.zip`。
+> Admin 壓縮包命名示例：`dujiao-next-admin-v0.1.1.zip`。
 
 ```bash
 # API
-wget -O api.tar.gz https://github.com/dujiao-next/dujiao-next/releases/download/v0.0.3-beta/dujiao-next_v0.0.3-beta_Linux_x86_64.tar.gz
+wget -O api.tar.gz https://github.com/dujiao-next/dujiao-next/releases/download/v0.1.1/dujiao-next_v0.1.1_Linux_x86_64.tar.gz
 mkdir -p api && tar -xzf api.tar.gz -C api
 
 # User
-wget -O user.zip https://github.com/dujiao-next/user/releases/download/v0.0.3-beta/dujiao-next-user-v0.0.3-beta.zip
+wget -O user.zip https://github.com/dujiao-next/user/releases/download/v0.1.1/dujiao-next-user-v0.1.1.zip
 mkdir -p user && unzip -o user.zip -d user
 
 # Admin
-wget -O admin.zip https://github.com/dujiao-next/admin/releases/download/v0.0.3-beta/dujiao-next-admin-v0.0.3-beta.zip
+wget -O admin.zip https://github.com/dujiao-next/admin/releases/download/v0.1.1/dujiao-next-admin-v0.1.1.zip
 mkdir -p admin && unzip -o admin.zip -d admin
 ```
 
