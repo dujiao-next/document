@@ -1,5 +1,13 @@
 # Changelog
 
+## [v0.1.2] - 2026-03-17
+
+### Update Details:
+- Added a membership level system and clearer membership benefit displays so users can understand available perks and discounts at a glance.
+- Added end-to-end second-level category support, allowing admins to assign products by leaf category and customers to browse category hierarchies more clearly.
+- Added server-side time calibration to reduce issues caused by client clock drift, making time-sensitive flows more reliable.
+- Improved storefront product card layout, icon display, and rendering details for a more consistent and smoother browsing experience.
+
 ## [v0.1.1] - 2026-03-13
 
 ### Update Details:
