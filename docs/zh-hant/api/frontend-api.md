@@ -241,7 +241,7 @@ Authorization: Bearer <user_token>
 | auto_stock_sold | number | 自動發貨庫存已售量 |
 | upstream_stock | number | 上游庫存（`-1` 表示無限，`0` 表示售罄） |
 | is_active | boolean | 是否啟用 |
-| sort_order | number | 排序權重 |
+| sort_order | number | 排序權重（數值越大越靠前） |
 | created_at | string | 創建時間 |
 | updated_at | string | 更新時間 |
 
@@ -2431,7 +2431,7 @@ Authorization: Bearer <user_token>
 | price_amount | number | 是 | SKU 價格（必須大於 0） |
 | manual_stock_total | number | 否 | SKU 人工庫存（手動交付模式下生效） |
 | is_active | boolean | 否 | 是否啟用，預設 `true` |
-| sort_order | number | 否 | 排序權重，預設 `0` |
+| sort_order | number | 否 | 排序權重，預設 `0`；數值越大越靠前 |
 
 #### 請求示例（單規格相容）
 

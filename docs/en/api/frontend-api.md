@@ -238,7 +238,7 @@ Each element in the `skus[]` array has the following structure:
 | auto_stock_sold | number | Auto-delivery stock sold |
 | upstream_stock | number | Upstream stock (`-1` = unlimited, `0` = sold out) |
 | is_active | boolean | Whether enabled |
-| sort_order | number | Sort weight |
+| sort_order | number | Sort weight (higher value appears earlier) |
 | created_at | string | Creation time |
 | updated_at | string | Update time |
 
@@ -2387,7 +2387,7 @@ The following endpoints are used by the admin panel and are not frontend user AP
 | price_amount | number | Yes | SKU price (must be greater than 0) |
 | manual_stock_total | number | No | SKU manual stock (effective in manual fulfillment mode) |
 | is_active | boolean | No | Whether SKU is active, default `true` |
-| sort_order | number | No | Sort weight, default `0` |
+| sort_order | number | No | Sort weight, default `0`; higher value appears earlier |
 
 #### Request Example (Single-SKU Compatible)
 
