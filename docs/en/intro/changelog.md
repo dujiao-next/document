@@ -1,5 +1,14 @@
 # Changelog
 
+## [v0.1.5] - 2026-03-25
+
+### Update Details:
+- Added template switching with a list-mode storefront so customers can browse products faster and place orders more smoothly.
+- Added a quick-buy flow with modal and drawer entry points, while improving cart prompts and purchase interactions.
+- Added icon support for payment channels and improved the admin payment-channel list for clearer payment selection and management.
+- Improved card-secret search, import, and inventory management workflows so bulk handling in the admin panel is faster and more stable.
+- Improved the admin dashboard, mobile list-mode presentation, and notification queue stability for smoother daily operations.
+
 ## [v0.1.4] - 2026-03-23
 
 ### Update Details:
