@@ -215,8 +215,8 @@ export default defineConfigWithTheme<ConfigWithSponsor>({
         sponsorAds: [
           {
             title: 'VMRACK.NET | 讓 Dujiao-Next 部署更簡單',
-            description: '全球自動化雲基礎設施服務商，提供雲伺服器、裸金屬、CDN、媒體處理、物件儲存與網路解決方案，適合需要穩定資源與快速交付的部署場景。',
-            link: 'https://www.vmrack.net/vps/flash-deals/2032397092393959424',
+            description: '美國三網優化免備案雲服務器僅需25刀/年(≈170人民幣)，支持：支付寶/paypal/USDT。點我享低價獨家閃購！🎉',
+            link: 'https://www.vmrack.net/vps/flash-deals/2032397092393959424/?ref_code=5iXmGUMf5f5',
             image: '/vmrack.jpg',
             level: 'platinum',
             tag: '戰略品牌合作夥伴',
@@ -257,6 +257,14 @@ export default defineConfigWithTheme<ConfigWithSponsor>({
             tag: '鉑金贊助商',
           },
           {
+            title: 'GM能量 | 0.6trx一筆',
+            description: '預充值能量0.6trx一筆—最便宜的tron能量，點我使用⚡️',
+            link: 'https://t.me/gm_wallet_bot?start=tgrRHVqaWFvX3x0ZzQ5bzl0NXE',
+            level: 'platinum',
+            tag: '鉑金贊助商',
+            image: '/ads/gmtrx.jpg'
+          },
+          {
             title: '♥️成為贊助商♥️',
             description: '支持項目發展',
             link: '/zh-hant/sponsor/become-sponsor',
@@ -287,7 +295,7 @@ export default defineConfigWithTheme<ConfigWithSponsor>({
           {
             title: 'VMRACK.NET | Make Dujiao-Next deployment easier',
             description: 'A global automated cloud infrastructure provider offering cloud servers, bare metal, CDN, media processing, object storage, and networking solutions for production-grade deployment scenarios.',
-            link: 'https://www.vmrack.net/vps/flash-deals/2032397092393959424',
+            link: 'https://www.vmrack.net/vps/flash-deals/2032397092393959424/?ref_code=5iXmGUMf5f5',
             image: '/vmrack.jpg',
             level: 'platinum',
             tag: 'Strategic Brand Partner',
@@ -328,6 +336,14 @@ export default defineConfigWithTheme<ConfigWithSponsor>({
             tag: 'Platinum Sponsor',
           },
           {
+            title: 'GM Energy | 0.6 TRX in a single transaction',
+            description: 'Pre-purchased gas: 0.6 TRX per transaction—the cheapest TRON gas. Click here to use it.⚡️',
+            link: 'https://t.me/gm_wallet_bot?start=tgrRHVqaWFvX3x0ZzQ5bzl0NXE',
+            level: 'platinum',
+            tag: 'Platinum Sponsor',
+            image: '/ads/gmtrx.jpg'
+          },
+          {
             title: '♥️ Become a Sponsor ♥️',
             description: 'Support project development',
             link: '/en/sponsor/become-sponsor',
@@ -354,8 +370,8 @@ export default defineConfigWithTheme<ConfigWithSponsor>({
     sponsorAds: [
       {
         title: 'VMRACK.NET | 让Dujiao-Next部署更简单',
-        description: '全球自动化云基础设施服务商 提供先进的云服务器、裸金属、CDN、媒体处理、对象存储和网络解决方案，助力企业轻松上云。点我享低价独家闪购！🎉',
-        link: 'https://www.vmrack.net/vps/flash-deals/2032397092393959424',
+        description: '美国三网优化免备案云服务器仅需25刀/年(≈170人民币)，支持：支付宝/paypal/USDT。点我享低价独家闪购！🎉',
+        link: 'https://www.vmrack.net/vps/flash-deals/2032397092393959424/?ref_code=5iXmGUMf5f5',
         level: 'platinum',
         tag: '战略品牌合作方',
       },
@@ -395,9 +411,9 @@ export default defineConfigWithTheme<ConfigWithSponsor>({
         tag: '铂金赞助商',
       },
       {
-        title: 'GM能量 0.9trx一笔',
-        description: 'https://t.me/gm_wallet_bot，预充值能量0.9trx一笔—最便宜的不钓鱼能量',
-        link: 'https://t.me/gm_wallet_bot',
+        title: 'GM能量 ｜ 0.6trx一笔',
+        description: '预充值能量0.6trx一笔—最便宜的tron能量，点我使用⚡️',
+        link: 'https://t.me/gm_wallet_bot?start=tgrRHVqaWFvX3x0ZzQ5bzl0NXE',
         level: 'platinum',
         tag: '铂金赞助商',
         image: '/ads/gmtrx.jpg'
