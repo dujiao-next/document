@@ -1,5 +1,14 @@
 # Changelog
 
+## [v0.1.6] - 2026-03-27
+
+### Update Details:
+- Added automatic pricing and sync controls for site integration, including custom exchange-rate conversion across upstream and downstream connections.
+- Added exchange-rate conversion and target currency settings for PayPal, making cross-currency collection scenarios easier to launch.
+- Added customizable order notification email templates so merchants can tailor reminder content to different business scenarios.
+- Improved SKU alerts, mapped-product inventory checks, and SVG image upload support for smoother product management and asset setup.
+- Improved storefront browsing and checkout flows with quantity selection, one-click card-secret copying, and fixes for list-filter overlay, long card-secret overflow, and Telegram-related loading issues in restricted regions.
+
 ## [v0.1.5] - 2026-03-25
 
 ### Update Details:
