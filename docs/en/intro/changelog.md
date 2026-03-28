@@ -1,5 +1,14 @@
 # Changelog
 
+## [v0.1.7] - 2026-03-28
+
+### Update Details:
+- Added custom navigation settings and on-demand toggles for blog and public pages, making storefront homepage and navigation content easier to tailor to different business needs.
+- Added product cost-price support and improved dashboard and order-related profit reporting, so operating costs and margins are easier to track.
+- Fixed failures during large batch card-secret imports for a more stable bulk inventory loading workflow.
+- Fixed incorrect inventory alerts and mapped-product publish status detection so product sync and stock monitoring results are more accurate.
+- Improved the SKU deletion flow to reduce maintenance-related errors and keep admin operations more stable.
+
 ## [v0.1.6] - 2026-03-27
 
 ### Update Details:
