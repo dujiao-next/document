@@ -17,12 +17,12 @@
 
 ## 2. 部署方式怎么选
 
-| 方式 | 上手难度 | 适合人群 | 核心特点 | 入口文档 |
-| --- | --- | --- | --- | --- |
-| 社区一键部署脚本（LangGe） | 低-中 | 需要统一菜单完成部署、更新、HTTPS 与基础运维的用户 | 社区维护，支持 Docker / 二进制 / 外部环境、HTTPS、版本检查与运维菜单 | [langge-dujiao-next-install](https://github.com/dujiao-next/community-projects/tree/main/scripts/langge-dujiao-next-install) |
-| Docker Compose | 中 | 希望标准化、可重复部署的用户 | 容器隔离、升级回滚清晰、便于自动化 | [Docker Compose 部署](/deploy/docker-compose) |
-| aaPanel 手动部署 | 低-中 | 已在用宝塔面板的用户 | 面板化操作，适合可视化运维 | [aaPanel 手动部署](/deploy/aapanel) |
-| 手动部署（源码构建） | 高 | 需要深度定制、二次开发的用户 | 控制粒度最高，适合高级运维/开发 | [手动部署](/deploy/manual) |
+| 方式 | 上手难度 | 适合人群 | 核心特点 | 入口文档 | 视频教程                                    |   
+| --- | --- | --- | --- | --- |-----------------------------------------|
+| 社区一键部署脚本（LangGe） | 低-中 | 需要统一菜单完成部署、更新、HTTPS 与基础运维的用户 | 社区维护，支持 Docker / 二进制 / 外部环境、HTTPS、版本检查与运维菜单 | [langge-dujiao-next-install](https://github.com/dujiao-next/community-projects/tree/main/scripts/langge-dujiao-next-install) | 暂无                                      | 
+| Docker Compose | 中 | 希望标准化、可重复部署的用户 | 容器隔离、升级回滚清晰、便于自动化 | [Docker Compose 部署](/deploy/docker-compose) | 暂无                                      |  
+| aaPanel 手动部署 | 低-中 | 已在用宝塔面板的用户 | 面板化操作，适合可视化运维 | [aaPanel 手动部署](/deploy/aapanel) | [点我观看视频教程](https://t.me/dujiaoshuka/65) |  
+| 手动部署（源码构建） | 高 | 需要深度定制、二次开发的用户 | 控制粒度最高，适合高级运维/开发 | [手动部署](/deploy/manual) | 暂无                                      |    
 
 ## 3. 部署前准备清单
 
