@@ -1,5 +1,14 @@
 # Changelog
 
+## [v0.1.8] - 2026-03-30
+
+### Update Details:
+- Improved automated fulfillment and email delivery flows so oversized fulfillment content is truncated in-page with full-result downloads available, while large email payloads are now sent as attachments automatically.
+- Fixed membership-level issues so default levels for new users, upgrade trigger rules, and equal-sort threshold checks are more accurate, with clearer member discount display on the storefront.
+- Improved admin order management and manual submission display so labels, field ordering, and notification content in order details are clearer for faster processing.
+- Improved site-connection management with clearer exchange-rate profit visibility and more stable concurrent upstream sync behavior, reducing disruptions during product synchronization.
+- Improved Telegram bot broadcast management while also refining storefront product detail, payment, wallet, and category presentation flows for smoother cross-device use.
+
 ## [v0.1.7] - 2026-03-28
 
 ### Update Details:
