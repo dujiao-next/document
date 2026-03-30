@@ -4,7 +4,7 @@ outline: deep
 
 # User Frontend API Documentation
 
-> Last Updated: 2026-03-09
+> Last Updated: 2026-03-31
 
 This document covers all current frontend APIs in `user/src/api/index.ts`, with field definitions based on the following implementations:
 
@@ -22,6 +22,42 @@ This document covers all current frontend APIs in `user/src/api/index.ts`, with 
 ---
 
 ## 0. API Changelog
+
+### 0.0.1 Public API Response DTO Simplification and Security Hardening (2026-03-31)
+
+#### Breaking Changes
+
+- All order-related endpoints no longer return the auto-increment `id` field (`Order.id`, `OrderItem.id`, `Fulfillment.id`); `order_no` is now the sole order identifier.
+- Order detail route changed from `GET /orders/:id` to `GET /orders/:order_no`; cancel route changed from `POST /orders/:id/cancel` to `POST /orders/:order_no/cancel`; fulfillment download changed from `GET /orders/:id/fulfillment/download` to `GET /orders/:order_no/fulfillment/download`.
+- Guest order detail route changed from `GET /guest/orders/:id` to `GET /guest/orders/:order_no`; fulfillment download likewise.
+- Legacy routes `GET /orders/by-order-no/:order_no` and `GET /guest/orders/by-order-no/:order_no` have been removed; use `GET /orders/:order_no` directly.
+- Payment endpoints `POST /payments` and `GET /payments/latest` request parameter `order_id` changed to `order_no` (string type). Guest payment endpoints likewise.
+- `GET /payments/latest` response field `order_id` changed to `order_no`.
+
+#### Removed Fields
+
+The following fields have been permanently removed from Public API responses; the frontend should no longer depend on them:
+
+- **Order**: `id`, `parent_id`, `user_id`, `coupon_id`, `promotion_id`, `client_ip`, `updated_at`
+- **OrderItem**: `id`, `order_id`, `delivered_by`, `created_at`, `updated_at`
+- **Fulfillment**: `id`, `order_id`, `delivered_by`, `created_at`, `updated_at`
+- **PublicProduct**: `cost_price_amount`, `manual_stock_locked`, `manual_stock_sold`, `is_active`, `sort_order`, `created_at`, `updated_at`, `is_affiliate_enabled`, `is_mapped`, `seo_meta`
+- **PublicSKU**: `cost_price_amount`, `product_id`, `manual_stock_locked`, `auto_stock_total`, `auto_stock_locked`, `auto_stock_sold`, `sort_order`, `created_at`, `updated_at`
+- **Banner**: `name`, `is_active`, `start_at`, `end_at`, `sort_order`, `created_at`, `updated_at`
+- **Post**: `is_published`, `created_at`
+- **Category**: `created_at`
+- **WalletTransaction**: `order_id`
+- **AffiliateCommission**: `order_id`
+
+#### New Fields
+
+- **Order**: `member_discount_amount`, `wallet_paid_amount`, `online_paid_amount`, `refunded_amount`
+- **OrderItem**: `sku_snapshot`, `member_discount_amount`
+- **Fulfillment**: `payload_line_count`
+- **UserProfile**: `member_level_id`, `total_recharged`, `total_spent`
+- **Category**: `parent_id`, `icon`
+
+---
 
 ### 0.0 Promotion System Enhancement: Tiered Rules + Frontend Display (2026-03-09)
 
@@ -100,6 +136,7 @@ User authenticated endpoints require the following:
 ```http
 Authorization: Bearer <user_token>
 ```
+
 ### 1.3 Unified Response Structure
 
 #### Successful Response
@@ -117,6 +154,7 @@ Authorization: Bearer <user_token>
   }
 }
 ```
+
 #### Failed Response
 
 ```json
@@ -128,6 +166,7 @@ Authorization: Bearer <user_token>
   }
 }
 ```
+
 #### Top-Level Field Description
 
 | Field | Type | Description |
@@ -175,6 +214,7 @@ Authorization: Bearer <user_token>
   }
 }
 ```
+
 ---
 
 ## 2. Data Object Field Dictionary
@@ -185,37 +225,30 @@ Authorization: Bearer <user_token>
 
 | Field | Type | Description |
 | --- | --- | --- |
-| id | number | Product ID |
 | category_id | number | Category ID |
 | slug | string | Unique product identifier |
-| title | object | Multilingual title, e.g., `{ "zh-CN": "...", "en-US": "..." }` |
+| title | object | Multilingual title |
 | description | object | Multilingual summary |
 | content | object | Multilingual detailed content |
-| price_amount | string | Product price amount (string format, e.g., `"99.00"`) |
+| price_amount | string | Product price amount |
 | images | string[] | List of product images |
 | tags | string[] | List of tags |
 | purchase_type | string | Purchase access restriction: `guest` / `member` |
+| max_purchase_quantity | number | Maximum purchase quantity per order (0 means unlimited) |
 | fulfillment_type | string | Delivery type: `manual` / `auto` |
 | manual_form_schema | object | Manual delivery form schema |
-| manual_stock_total | number | Total manual stock (0 means unlimited) |
-| manual_stock_locked | number | Manual stock locked quantity |
-| manual_stock_sold | number | Manual stock sold quantity |
-| is_active | boolean | Whether the product is active |
-| sort_order | number | Sort order |
-| created_at | string | Creation time |
-| updated_at | string | Update time |
-| category | object | Category information (optional) |
-| promotion_id | number | Applied promotion ID (optional) |
-
-| promotion_name | string | Promotion name (optional) |
-| promotion_type | string | Promotion type (optional) |
-| promotion_price_amount | string | Promotion price amount (optional); for multi-SKU products, this is the lowest promotion price among all SKUs, used for list page display |
-| promotion_rules | PromotionRule[] | All active promotion rules for this product (optional); returned even when current SKU price does not meet the threshold, for frontend promotion hints; see [2.1.2 PromotionRule](#_2-1-2-promotionrule) |
-| skus | PublicSKU[] | SKU list with per-SKU promotion price info; see [2.1.1 PublicSKU](#_2-1-1-publicsku) |
 | manual_stock_available | number | Manually available stock |
 | auto_stock_available | number | Automatically available stock |
 | stock_status | string | Stock status: `unlimited` / `in_stock` / `low_stock` / `out_of_stock` |
 | is_sold_out | boolean | Whether sold out |
+| category | Category | Category information |
+| skus | PublicSKU[] | SKU list |
+| promotion_id | number | Applied promotion ID (optional) |
+| promotion_name | string | Promotion name (optional) |
+| promotion_type | string | Promotion type (optional) |
+| promotion_price_amount | string | Promotion price amount (optional) |
+| promotion_rules | PromotionRule[] | Promotion rules list (optional) |
+| member_prices | MemberLevelPrice[] | Member level price list (optional) |
 
 #### 2.1.1 PublicSKU
 
@@ -224,23 +257,16 @@ Each element in the `skus[]` array has the following structure:
 | Field | Type | Description |
 | --- | --- | --- |
 | id | number | SKU ID (use this ID when placing orders) |
-| product_id | number | Parent product ID |
 | sku_code | string | SKU code (unique within the same product) |
-| spec_values | object | Specification values (multilingual, e.g., `{"zh-CN":"标准版","en-US":"Standard"}`) |
-| price_amount | string | SKU original price (string format, e.g., `"99.00"`) |
-| promotion_price_amount | string | SKU promotion price amount (optional); when the product has an active promotion, calculated independently based on this SKU's original price |
+| spec_values | object | Specification values (multilingual) |
+| price_amount | string | SKU original price |
 | manual_stock_total | number | Manual stock total (`-1` means unlimited) |
-| manual_stock_locked | number | Manual stock locked quantity |
 | manual_stock_sold | number | Manual stock sold quantity |
 | auto_stock_available | number | Auto-delivery stock available |
-| auto_stock_total | number | Auto-delivery stock total |
-| auto_stock_locked | number | Auto-delivery stock locked |
-| auto_stock_sold | number | Auto-delivery stock sold |
 | upstream_stock | number | Upstream stock (`-1` = unlimited, `0` = sold out) |
 | is_active | boolean | Whether enabled |
-| sort_order | number | Sort weight (higher value appears earlier) |
-| created_at | string | Creation time |
-| updated_at | string | Update time |
+| promotion_price_amount | string | SKU promotion price amount (optional) |
+| member_price_amount | string | Member price amount (optional) |
 
 #### 2.1.2 PromotionRule
 
@@ -279,16 +305,13 @@ Each element in the `promotion_rules[]` array has the following structure:
 | summary | object | Multilingual summary |
 | content | object | Multilingual content |
 | thumbnail | string | Thumbnail URL |
-| is_published | boolean | Whether published |
 | published_at | string/null | Publication time |
-| created_at | string | Creation time |
 
 ### 2.3 Banner
 
 | Field | Type | Description |
 | --- | --- | --- |
 | id | number | Banner ID |
-| name | string | Backend name |
 | position | string | Placement position (e.g., `home_hero`) |
 | title | object | Multilingual title |
 | subtitle | object | Multilingual subtitle |
@@ -297,22 +320,17 @@ Each element in the `promotion_rules[]` array has the following structure:
 | link_type | string | Link type: `none` / `internal` / `external` |
 | link_value | string | Link value |
 | open_in_new_tab | boolean | Open in a new tab |
-| is_active | boolean | Is active |
-| start_at | string/null | Start time |
-| end_at | string/null | End time |
-| sort_order | number | Sort order |
-| created_at | string | Creation time |
-| updated_at | string | Update time |
 
 ### 2.4 Category
 
 | Field | Type | Description |
 | --- | --- | --- |
 | id | number | Category ID |
+| parent_id | number | Parent category ID (0 means top-level) |
 | slug | string | Unique category identifier |
 | name | object | Multilingual name |
+| icon | string | Category icon |
 | sort_order | number | Sort order |
-| created_at | string | Creation time |
 
 ### 2.5 UserProfile
 
@@ -323,6 +341,9 @@ Each element in the `promotion_rules[]` array has the following structure:
 | nickname | string | Nickname |
 | email_verified_at | string/null | Email verification time |
 | locale | string | Language (e.g., `zh-CN`) |
+| member_level_id | number | Member level ID |
+| total_recharged | string | Total recharged amount |
+| total_spent | string | Total spent amount |
 | email_change_mode | string | Email change mode: `bind_only` / `change_with_old_and_new` |
 | password_change_mode | string | Password change mode: `set_without_old` / `change_with_old` |
 
@@ -370,28 +391,24 @@ Each element in the `promotion_rules[]` array has the following structure:
 
 | Field | Type | Description |
 | --- | --- | --- |
-| id | number | Order ID |
-| order_no | string | Order number (recommended for queries) |
-| parent_id | number/null | Parent order ID |
-| user_id | number | User ID, generally 0 for guest orders |
+| order_no | string | Order number |
 | guest_email | string | Guest email (for guest orders) |
 | guest_locale | string | Guest language |
 | status | string | Order status: `pending_payment` / `paid` / `fulfilling` / `partially_delivered` / `delivered` / `completed` / `canceled` |
-| currency | string | Order currency (site-wide unified, sourced from `site_config.currency`) |
+| currency | string | Order currency |
 | original_amount | string | Original price |
 | discount_amount | string | Discount amount |
+| member_discount_amount | string | Member discount amount |
 | promotion_discount_amount | string | Promotional discount amount |
 | total_amount | string | Amount paid |
-| coupon_id | number/null | Coupon ID |
-| promotion_id | number/null | Promotion ID |
-| client_ip | string | Order IP |
+| wallet_paid_amount | string | Wallet payment amount |
+| online_paid_amount | string | Online payment amount |
+| refunded_amount | string | Refunded amount |
 | expires_at | string/null | Payment expiry time |
 | paid_at | string/null | Payment success time |
 | canceled_at | string/null | Cancellation time |
 | created_at | string | Creation time |
-| updated_at | string | Update time |
 | items | OrderItem[] | Order items |
-
 | fulfillment | Fulfillment | Delivery record (optional) |
 | children | Order[] | List of sub-orders (optional) |
 
@@ -399,51 +416,42 @@ Each element in the `promotion_rules[]` array has the following structure:
 
 | Field | Type | Description |
 | --- | --- | --- |
-| id | number | Order item ID |
-| order_id | number | Order ID |
-| product_id | number | Product ID |
 | title | object | Product title snapshot |
+| sku_snapshot | object | SKU snapshot (code/spec) |
 | tags | string[] | Product tags snapshot |
 | unit_price | string | Unit price |
 | quantity | number | Quantity |
 | total_price | string | Subtotal |
 | coupon_discount_amount | string | Coupon allocation amount |
+| member_discount_amount | string | Member discount allocation amount |
 | promotion_discount_amount | string | Promotion discount amount |
-| promotion_id | number/null | Promotion ID |
-| promotion_name | string | Promotion name (optional) |
 | fulfillment_type | string | Fulfillment type |
 | manual_form_schema_snapshot | object | Manual fulfillment form schema snapshot |
-| manual_form_submission | object | User-submitted manual form values (cleaned) |
-| created_at | string | Creation time |
-| updated_at | string | Update time |
+| manual_form_submission | object | User-submitted manual form values |
 
 ### 2.11 Fulfillment
 
 | Field | Type | Description |
 | --- | --- | --- |
-| id | number | Delivery record ID |
-| order_id | number | Order ID |
 | type | string | Delivery type: `auto` / `manual` |
 | status | string | Delivery status: `pending` / `delivered` |
 | payload | string | Text delivery content |
-| delivery_data | object | Structured delivery information (e.g., tracking number, download info, etc.) |
-| delivered_by | number/null | Delivery administrator ID |
+| payload_line_count | number | Total line count of delivery content |
+| delivery_data | object | Structured delivery information |
 | delivered_at | string/null | Delivery time |
-| created_at | string | Creation time |
-| updated_at | string | Update time |
 
 ### 2.12 PaymentLaunch
 
 | Field | Type | Description |
 | --- | --- | --- |
 | payment_id | number | Payment record ID |
-| order_id | number | Order ID (returned by `latest` API) |
+| order_no | string | Order number (returned by `latest` API) |
 | channel_id | number | Payment channel ID (returned by `latest` API) |
 | provider_type | string | Provider: `official` / `epay` |
 | channel_type | string | Channel: `alipay` / `wechat` / `paypal` / `stripe`, etc. |
 | interaction_mode | string | Interaction mode: `qr` / `redirect` / `wap` / `page` |
-| pay_url | string | Redirect payment link (redirect/wap/page) |
-| qr_code | string | QR code content (qr) |
+| pay_url | string | Redirect payment link |
+| qr_code | string | QR code content |
 | expires_at | string/null | Payment order expiration time |
 
 ---
@@ -511,6 +519,7 @@ None
   }
 }
 ```
+
 #### Response Structure (data)
 
 | Field | Type | Description |
@@ -549,7 +558,6 @@ None
   "msg": "success",
   "data": [
     {
-      "id": 1001,
       "category_id": 10,
       "slug": "netflix-plus",
       "title": { "zh-CN": "Netflix Membership" },
@@ -561,13 +569,6 @@ None
       "purchase_type": "member",
       "fulfillment_type": "manual",
       "manual_form_schema": { "fields": [] },
-      "manual_stock_total": 100,
-      "manual_stock_locked": 2,
-      "manual_stock_sold": 10,
-      "is_active": true,
-      "sort_order": 100,
-      "created_at": "2026-02-10T10:00:00Z",
-      "updated_at": "2026-02-10T10:00:00Z",
       "manual_stock_available": 88,
       "auto_stock_available": 0,
       "stock_status": "in_stock",
@@ -582,6 +583,7 @@ None
   }
 }
 ```
+
 #### Response Structure (data)
 
 - `data`: `PublicProduct[]`
@@ -601,14 +603,13 @@ None
 | --- | --- | --- | --- |
 | slug | string | Yes | Product slug |
 
-#### Example of Successful Response
+#### Successful Response Example
 
 ```json
 {
   "status_code": 0,
   "msg": "success",
   "data": {
-    "id": 1001,
     "slug": "netflix-plus",
     "title": { "zh-CN": "Netflix Membership" },
     "price_amount": "99.00",
@@ -630,6 +631,7 @@ None
   }
 }
 ```
+
 #### Response Structure (data)
 
 - `data`: `PublicProduct`
@@ -665,9 +667,7 @@ None
       "summary": { "zh-CN": "Added payment channels" },
       "content": { "zh-CN": "Detailed content" },
       "thumbnail": "/uploads/post/1.png",
-      "is_published": true,
-      "published_at": "2026-02-11T10:00:00Z",
-      "created_at": "2026-02-11T09:00:00Z"
+      "published_at": "2026-02-11T10:00:00Z"
     }
   ],
   "pagination": {
@@ -678,6 +678,7 @@ None
   }
 }
 ```
+
 #### Response Structure (data)
 
 - `data`: `Post[]`
@@ -711,13 +712,12 @@ None
     "summary": { "zh-CN": "Added payment channels" },
     "content": { "zh-CN": "Detailed content" },
     "thumbnail": "/uploads/post/1.png",
-    "is_published": true,
-    "published_at": "2026-02-11T10:00:00Z",
-    "created_at": "2026-02-11T09:00:00Z"
+    "published_at": "2026-02-11T10:00:00Z"
   }
 }
 ```
-#### Return Structure (data)
+
+#### Response Structure (data)
 
 - `data`: `Post`
 
@@ -736,7 +736,7 @@ None
 | position | string | No | `home_hero` | Banner position |
 | limit | number | No | 10 | Maximum 50 |
 
-#### Example of Successful Response
+#### Successful Response Example
 
 ```json
 {
@@ -745,7 +745,6 @@ None
   "data": [
     {
       "id": 1,
-      "name": "Homepage Hero Banner",
       "position": "home_hero",
       "title": { "zh-CN": "Welcome to D&N" },
       "subtitle": { "zh-CN": "Reliable fulfillment" },
@@ -753,18 +752,13 @@ None
       "mobile_image": "/uploads/banner/hero-mobile.png",
       "link_type": "internal",
       "link_value": "/products",
-      "open_in_new_tab": false,
-      "is_active": true,
-      "start_at": null,
-      "end_at": null,
-      "sort_order": 100,
-      "created_at": "2026-02-11T08:00:00Z",
-      "updated_at": "2026-02-11T08:00:00Z"
+      "open_in_new_tab": false
     }
   ]
 }
 ```
-#### Return Structure (data)
+
+#### Response Structure (data)
 
 - `data`: `Banner[]`
 
@@ -789,15 +783,17 @@ None
   "data": [
     {
       "id": 10,
+      "parent_id": 0,
       "slug": "memberships",
       "name": { "zh-CN": "Membership Services" },
-      "sort_order": 100,
-      "created_at": "2026-02-10T10:00:00Z"
+      "icon": "",
+      "sort_order": 100
     }
   ]
 }
 ```
-#### Return Structure (data)
+
+#### Response Structure (data)
 
 - `data`: `Category[]`
 
@@ -825,7 +821,8 @@ None
   }
 }
 ```
-#### Return Structure (data)
+
+#### Response Structure (data)
 
 | Field | Type | Description |
 | --- | --- | --- |
@@ -863,6 +860,7 @@ None
   }
 }
 ```
+
 #### Successful Response Example
 
 ```json
@@ -874,7 +872,8 @@ None
   }
 }
 ```
-#### Return Structure (data)
+
+#### Response Structure (data)
 
 | Field | Type | Description |
 | --- | --- | --- |
@@ -907,6 +906,7 @@ None
   "agreement_accepted": true
 }
 ```
+
 #### Successful Response Example
 
 ```json
@@ -925,6 +925,7 @@ None
   }
 }
 ```
+
 #### Response Structure (data)
 
 | Field | Type | Description |
@@ -964,6 +965,7 @@ None
   }
 }
 ```
+
 #### Successful Response Example
 
 ```json
@@ -982,9 +984,10 @@ None
   }
 }
 ```
-#### Return Structure (data)
 
-Consistent with the registration interface: `user   token   expires_at`
+#### Response Structure (data)
+
+Consistent with the registration interface: `user + token + expires_at`
 
 ---
 
@@ -1011,6 +1014,7 @@ Consistent with the registration interface: `user   token   expires_at`
   "new_password": "NewStrongPass123"
 }
 ```
+
 #### Successful Response Example
 
 ```json
@@ -1022,6 +1026,7 @@ Consistent with the registration interface: `user   token   expires_at`
   }
 }
 ```
+
 #### Response Structure (data)
 
 | Field | Type | Description |
@@ -1118,6 +1123,7 @@ None
   }
 }
 ```
+
 #### Response Structure (data)
 
 - `data`: `UserProfile`
@@ -1165,6 +1171,7 @@ None
   }
 }
 ```
+
 #### Response Structure (data)
 
 - `data`: `UserLoginLog[]`
@@ -1195,6 +1202,7 @@ None
   "locale": "zh-CN"
 }
 ```
+
 #### Successful Response Example
 
 ```json
@@ -1212,7 +1220,8 @@ None
   }
 }
 ```
-#### Return Structure (data)
+
+#### Response Structure (data)
 
 - `data`: `UserProfile`
 
@@ -1385,6 +1394,7 @@ None
   "new_email": "new@example.com"
 }
 ```
+
 #### Successful Response Example
 
 ```json
@@ -1396,7 +1406,8 @@ None
   }
 }
 ```
-#### Return Structure (data)
+
+#### Response Structure (data)
 
 | Field | Type | Description |
 | --- | --- | --- |
@@ -1427,6 +1438,7 @@ None
   "new_code": "654321"
 }
 ```
+
 #### Successful Response Example
 
 ```json
@@ -1444,6 +1456,7 @@ None
   }
 }
 ```
+
 #### Response Structure (data)
 
 - `data`: `UserProfile`
@@ -1473,6 +1486,7 @@ None
   "new_password": "NewPass123"
 }
 ```
+
 #### Successful Response Example
 
 ```json
@@ -1484,6 +1498,7 @@ None
   }
 }
 ```
+
 #### Response Structure (data)
 
 | Field | Type | Description |
@@ -1529,6 +1544,7 @@ None
   }
 }
 ```
+
 #### Successful Response Example
 
 ```json
@@ -1557,7 +1573,8 @@ None
   }
 }
 ```
-#### Return Structure (data)
+
+#### Response Structure (data)
 
 - `data`: `OrderPreview`
 
@@ -1593,6 +1610,7 @@ Same as `POST /orders/preview`.
   }
 }
 ```
+
 #### Successful Response Example
 
 ```json
@@ -1600,7 +1618,6 @@ Same as `POST /orders/preview`.
   "status_code": 0,
   "msg": "success",
   "data": {
-    "id": 501,
     "order_no": "DN202602110001",
     "status": "pending_payment",
     "currency": "CNY",
@@ -1611,9 +1628,6 @@ Same as `POST /orders/preview`.
     "expires_at": "2026-02-11T12:30:00Z",
     "items": [
       {
-        "id": 9001,
-        "order_id": 501,
-        "product_id": 1001,
         "title": { "zh-CN": "Netflix Membership" },
         "quantity": 1,
         "unit_price": "99.00",
@@ -1634,7 +1648,8 @@ Same as `POST /orders/preview`.
   }
 }
 ```
-#### Return Structure (data)
+
+#### Response Structure (data)
 
 - `data`: `Order`
 
@@ -1655,7 +1670,7 @@ Same as `POST /orders/preview`.
 | status | string | No | Status filter (see `Order.status` enum) |
 | order_no | string | No | Fuzzy search by order number |
 
-#### Example of Successful Response
+#### Successful Response Example
 
 ```json
 {
@@ -1663,7 +1678,6 @@ Same as `POST /orders/preview`.
   "msg": "success",
   "data": [
     {
-      "id": 501,
       "order_no": "DN202602110001",
       "status": "pending_payment",
       "currency": "CNY",
@@ -1671,9 +1685,6 @@ Same as `POST /orders/preview`.
       "created_at": "2026-02-11T12:00:00Z",
       "items": [
         {
-          "id": 9001,
-          "order_id": 501,
-          "product_id": 1001,
           "title": { "zh-CN": "Netflix Membership" },
           "quantity": 1,
           "unit_price": "99.00",
@@ -1695,6 +1706,7 @@ Same as `POST /orders/preview`.
   }
 }
 ```
+
 #### Response Structure (data)
 
 - `data`: `Order[]`
@@ -1702,17 +1714,17 @@ Same as `POST /orders/preview`.
 
 ---
 
-### 6.4 Order Details (by ID)
+### 6.4 Order Details
 
-**Endpoint**: `GET /orders/:id`
+**Endpoint**: `GET /orders/:order_no`
 
-**Authentication**: Required
+**Authentication**: Yes
 
 #### Path Parameters
 
 | Parameter | Type | Required | Description |
 | --- | --- | --- | --- |
-| id | number | Yes | Order ID |
+| order_no | string | Yes | Order number |
 
 #### Successful Response Example
 
@@ -1721,16 +1733,12 @@ Same as `POST /orders/preview`.
   "status_code": 0,
   "msg": "success",
   "data": {
-    "id": 501,
     "order_no": "DN202602110001",
     "status": "pending_payment",
     "currency": "CNY",
     "total_amount": "99.00",
     "items": [
       {
-        "id": 9001,
-        "order_id": 501,
-        "product_id": 1001,
         "title": { "zh-CN": "Netflix Membership" },
         "quantity": 1,
         "unit_price": "99.00",
@@ -1747,27 +1755,6 @@ Same as `POST /orders/preview`.
   }
 }
 ```
-#### Response Structure (data)
-
-- `data`: `Order`
-
----
-
-### 6.5 Order Details (by Order Number)
-
-**Endpoint**: `GET /orders/by-order-no/:order_no`
-
-**Authentication**: Yes
-
-#### Path Parameters
-
-| Parameter | Type | Required | Description |
-| --- | --- | --- | --- |
-| order_no | string | Yes | Order Number |
-
-#### Successful Response Example
-
-Same as `GET /orders/:id`.
 
 #### Response Structure (data)
 
@@ -1775,9 +1762,9 @@ Same as `GET /orders/:id`.
 
 ---
 
-### 6.6 Cancel Order
+### 6.5 Cancel Order
 
-**Endpoint**: `POST /orders/:id/cancel`
+**Endpoint**: `POST /orders/:order_no/cancel`
 
 **Authentication**: Yes
 
@@ -1785,7 +1772,7 @@ Same as `GET /orders/:id`.
 
 | Parameter | Type | Required | Description |
 | --- | --- | --- | --- |
-| id | number | Yes | Order ID |
+| order_no | string | Yes | Order number |
 
 #### Body Parameters
 
@@ -1798,7 +1785,6 @@ None
   "status_code": 0,
   "msg": "success",
   "data": {
-    "id": 501,
     "order_no": "DN202602110001",
     "status": "canceled",
     "currency": "CNY",
@@ -1807,13 +1793,14 @@ None
   }
 }
 ```
-#### Return Structure (data)
+
+#### Response Structure (data)
 
 - `data`: `Order`
 
 ---
 
-### 6.7 Create Payment Order
+### 6.6 Create Payment Order
 
 **Endpoint**: `POST /payments`
 
@@ -1823,17 +1810,18 @@ None
 
 | Field | Type | Required | Description |
 | --- | --- | --- | --- |
-| order_id | number | Yes | Order ID |
+| order_no | string | Yes | Order number |
 | channel_id | number | Yes | Payment Channel ID |
 
 #### Request Example
 
 ```json
 {
-  "order_id": 501,
+  "order_no": "DN202602110001",
   "channel_id": 10
 }
 ```
+
 #### Successful Response Example
 
 ```json
@@ -1851,13 +1839,14 @@ None
   }
 }
 ```
-#### Return Structure (data)
 
-- `data`: `PaymentLaunch` (usually does not include `order_id/channel_id` fields when creating a payment)
+#### Response Structure (data)
+
+- `data`: `PaymentLaunch` (usually does not include `order_no/channel_id` fields when creating a payment)
 
 ---
 
-### 6.8 Capture Payment Result
+### 6.7 Capture Payment Result
 
 **Endpoint**: `POST /payments/:id/capture`
 
@@ -1885,7 +1874,8 @@ None
   }
 }
 ```
-#### Return Structure (data)
+
+#### Response Structure (data)
 
 | Field | Type | Description |
 | --- | --- | --- |
@@ -1894,7 +1884,7 @@ None
 
 ---
 
-### 6.9 Get Latest Pending Payment Record
+### 6.8 Get Latest Pending Payment Record
 
 **Endpoint**: `GET /payments/latest`
 
@@ -1904,7 +1894,7 @@ None
 
 | Parameter | Type | Required | Description |
 | --- | --- | --- | --- |
-| order_id | number | Yes | Order ID |
+| order_no | string | Yes | Order number |
 
 #### Successful Response Example
 
@@ -1914,7 +1904,7 @@ None
   "msg": "success",
   "data": {
     "payment_id": 3001,
-    "order_id": 501,
+    "order_no": "DN202602110001",
     "channel_id": 10,
     "provider_type": "official",
     "channel_type": "alipay",
@@ -1925,7 +1915,8 @@ None
   }
 }
 ```
-#### Return Structure (data)
+
+#### Response Structure (data)
 
 - `data`: `PaymentLaunch`
 
@@ -1933,7 +1924,7 @@ None
 
 ## 7. Guest Orders and Payment Interface
 
-> Guest order access credentials: `email   order_password`.
+> Guest order access credentials: `email + order_password`.
 
 ### 7.1 Guest Order Preview
 
@@ -1974,6 +1965,7 @@ None
   }
 }
 ```
+
 #### Successful Response Example
 
 Same as `POST /orders/preview`.
@@ -2021,11 +2013,12 @@ Same as `POST /guest/orders/preview`.
   }
 }
 ```
+
 #### Successful Response Example
 
 Same as `POST /orders` (for guest orders, `user_id=0`, `guest_email` has a value).
 
-#### Return Structure (data)
+#### Response Structure (data)
 
 - `data`: `Order`
 
@@ -2055,18 +2048,13 @@ Same as `POST /orders` (for guest orders, `user_id=0`, `guest_email` has a value
   "msg": "success",
   "data": [
     {
-      "id": 601,
       "order_no": "DN202602110002",
-      "user_id": 0,
       "guest_email": "guest@example.com",
       "status": "pending_payment",
       "currency": "CNY",
       "total_amount": "99.00",
       "items": [
         {
-          "id": 9101,
-          "order_id": 601,
-          "product_id": 1001,
           "title": { "zh-CN": "Netflix Membership" },
           "quantity": 1,
           "unit_price": "99.00",
@@ -2088,6 +2076,7 @@ Same as `POST /orders` (for guest orders, `user_id=0`, `guest_email` has a value
   }
 }
 ```
+
 #### Response Structure (data)
 
 - `data`: `Order[]`
@@ -2095,38 +2084,9 @@ Same as `POST /orders` (for guest orders, `user_id=0`, `guest_email` has a value
 
 ---
 
-### 7.4 Guest Order Details (by ID)
+### 7.4 Guest Order Details
 
-**Endpoint**: `GET /guest/orders/:id`
-
-**Authentication**: No
-
-#### Path Parameters
-
-| Parameter | Type | Required | Description |
-| --- | --- | --- | --- |
-| id | number | Yes | Order ID |
-
-#### Query Parameters
-
-| Parameter | Type | Required | Description |
-| --- | --- | --- | --- |
-| email | string | Yes | Guest email |
-| order_password | string | Yes | Query password |
-
-#### Successful Response Example
-
-Same structure as user order details.
-
-#### Response Structure (data)
-
-- `data`: `Order`
-
----
-
-### 7.5 Guest Order Details (by Order Number)
-
-**Endpoint**: `GET /guest/orders/by-order-no/:order_no`
+**Endpoint**: `GET /guest/orders/:order_no`
 
 **Authentication**: No
 
@@ -2145,7 +2105,7 @@ Same structure as user order details.
 
 #### Successful Response Example
 
-Same as `GET /guest/orders/:id`.
+Same structure as user order details.
 
 #### Response Structure (data)
 
@@ -2153,7 +2113,7 @@ Same as `GET /guest/orders/:id`.
 
 ---
 
-### 7.6 Guest Create Payment
+### 7.5 Guest Create Payment
 
 **Endpoint**: `POST /guest/payments`
 
@@ -2163,9 +2123,9 @@ Same as `GET /guest/orders/:id`.
 
 | Field | Type | Required | Description |
 | --- | --- | --- | --- |
-| email | string | Yes | Visitor's email |
+| email | string | Yes | Guest email |
 | order_password | string | Yes | Query password |
-| order_id | number | Yes | Order ID |
+| order_no | string | Yes | Order number |
 | channel_id | number | Yes | Payment channel ID |
 
 #### Request Example
@@ -2174,10 +2134,11 @@ Same as `GET /guest/orders/:id`.
 {
   "email": "guest@example.com",
   "order_password": "guest-pass",
-  "order_id": 601,
+  "order_no": "DN202602110002",
   "channel_id": 10
 }
 ```
+
 #### Successful Response Example
 
 Matches the structure returned by `POST /payments`.
@@ -2188,7 +2149,7 @@ Matches the structure returned by `POST /payments`.
 
 ---
 
-### 7.7 Guest Capture Payment Result
+### 7.6 Guest Capture Payment Result
 
 **Endpoint**: `POST /guest/payments/:id/capture`
 
@@ -2215,6 +2176,7 @@ Matches the structure returned by `POST /payments`.
   "order_password": "guest-pass"
 }
 ```
+
 #### Successful Response Example
 
 Same as `POST /payments/:id/capture`.
@@ -2228,7 +2190,7 @@ Same as `POST /payments/:id/capture`.
 
 ---
 
-### 7.8 Guest Fetching Latest Pending Payment Record
+### 7.7 Guest Get Latest Pending Payment Record
 
 **Endpoint**: `GET /guest/payments/latest`
 
@@ -2240,7 +2202,7 @@ Same as `POST /payments/:id/capture`.
 | --- | --- | --- | --- |
 | email | string | Yes | Guest email |
 | order_password | string | Yes | Query password |
-| order_id | number | Yes | Order ID |
+| order_no | string | Yes | Order number |
 
 #### Successful Response Example
 
@@ -2254,14 +2216,16 @@ Same as `GET /payments/latest`.
 
 ## 8. Frontend Integration Recommendations
 
-### 8.1 Prefer Using `order_no` for Order Details
+### 8.1 All Order Endpoints Use `order_no`
 
-Whenever possible, use:
+All user-facing order endpoints now use `order_no` as the identifier, no longer exposing auto-increment IDs:
 
-- `GET /orders/by-order-no/:order_no`
-- `GET /guest/orders/by-order-no/:order_no`
-
-Avoid relying on the auto-increment `id` on the frontend long-term.
+- `GET /orders/:order_no` — Order details
+- `POST /orders/:order_no/cancel` — Cancel order
+- `GET /orders/:order_no/fulfillment/download` — Download fulfillment content
+- `GET /guest/orders/:order_no` — Guest order details
+- `GET /guest/orders/:order_no/fulfillment/download` — Guest download fulfillment content
+- `POST /payments`, `GET /payments/latest` — Use `order_no` parameter
 
 ### 8.2 Unified Error Handling
 
@@ -2280,7 +2244,7 @@ It is recommended to combine the payment process as follows:
 2. After payment completion and redirect, call `capture`
 3. Then call `latest` as a fallback polling check
 
-It can significantly reduce the perceived issue of 'payment made but the page not updating in time.'
+This can significantly reduce the perceived issue of "payment made but the page not updating in time."
 
 ---
 
@@ -2362,7 +2326,7 @@ The following endpoints are used by the admin panel and are not frontend user AP
 
 #### 9.3.1 Create Product (Multi-SKU Supported)
 
-**Endpoint**: `POST /admin/products`  
+**Endpoint**: `POST /admin/products`
 **Authentication**: Admin token
 
 #### Key Body Fields
@@ -2450,7 +2414,7 @@ The following endpoints are used by the admin panel and are not frontend user AP
 
 #### 9.3.2 Update Product (Multi-SKU Supported)
 
-**Endpoint**: `PUT /admin/products/:id`  
+**Endpoint**: `PUT /admin/products/:id`
 **Authentication**: Admin token
 
 Request body is the same as `POST /admin/products`; to update existing SKUs, pass their `id` in `skus[]`.
@@ -2491,7 +2455,7 @@ Field definition:
 
 #### 9.4.2 Public Click Tracking
 
-**Endpoint**: `POST /public/affiliate/click`  
+**Endpoint**: `POST /public/affiliate/click`
 **Authentication**: None
 
 | Field | Type | Required | Description |

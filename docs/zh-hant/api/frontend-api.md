@@ -4,7 +4,7 @@ outline: deep
 
 # User 前臺 API 文檔
 
-> 更新時間：2026-03-09
+> 更新時間：2026-03-31
 
 本文檔覆蓋 `user/src/api/index.ts` 當前全部前臺 API，字段定義以以下實現為準：
 
@@ -22,6 +22,42 @@ outline: deep
 ---
 
 ## 0. API 變更日誌
+
+### 0.0.1 Public API Response DTO 精簡與安全加固（2026-03-31）
+
+#### 破壞性變更
+
+- 所有訂單相關介面不再返回自增 `id` 字段（`Order.id`、`OrderItem.id`、`Fulfillment.id`），統一使用 `order_no` 作為訂單標識。
+- 訂單詳情路由從 `GET /orders/:id` 改為 `GET /orders/:order_no`；取消路由從 `POST /orders/:id/cancel` 改為 `POST /orders/:order_no/cancel`；交付下載從 `GET /orders/:id/fulfillment/download` 改為 `GET /orders/:order_no/fulfillment/download`。
+- 遊客訂單詳情路由從 `GET /guest/orders/:id` 改為 `GET /guest/orders/:order_no`；交付下載同理。
+- 舊路由 `GET /orders/by-order-no/:order_no` 和 `GET /guest/orders/by-order-no/:order_no` 已刪除，直接使用 `GET /orders/:order_no`。
+- 支付介面 `POST /payments` 和 `GET /payments/latest` 的請求參數 `order_id` 改為 `order_no`（string 類型）。遊客支付介面同理。
+- `GET /payments/latest` 響應中 `order_id` 改為 `order_no`。
+
+#### 移除的字段
+
+以下字段從 Public API 響應中永久移除，前端不應再依賴：
+
+- **Order**: `id`、`parent_id`、`user_id`、`coupon_id`、`promotion_id`、`client_ip`、`updated_at`
+- **OrderItem**: `id`、`order_id`、`delivered_by`、`created_at`、`updated_at`
+- **Fulfillment**: `id`、`order_id`、`delivered_by`、`created_at`、`updated_at`
+- **PublicProduct**: `cost_price_amount`、`manual_stock_locked`、`manual_stock_sold`、`is_active`、`sort_order`、`created_at`、`updated_at`、`is_affiliate_enabled`、`is_mapped`、`seo_meta`
+- **PublicSKU**: `cost_price_amount`、`product_id`、`manual_stock_locked`、`auto_stock_total`、`auto_stock_locked`、`auto_stock_sold`、`sort_order`、`created_at`、`updated_at`
+- **Banner**: `name`、`is_active`、`start_at`、`end_at`、`sort_order`、`created_at`、`updated_at`
+- **Post**: `is_published`、`created_at`
+- **Category**: `created_at`
+- **WalletTransaction**: `order_id`
+- **AffiliateCommission**: `order_id`
+
+#### 新增的字段
+
+- **Order**: `member_discount_amount`、`wallet_paid_amount`、`online_paid_amount`、`refunded_amount`
+- **OrderItem**: `sku_snapshot`、`member_discount_amount`
+- **Fulfillment**: `payload_line_count`
+- **UserProfile**: `member_level_id`、`total_recharged`、`total_spent`
+- **Category**: `parent_id`、`icon`
+
+---
 
 ### 0.0 活動價系統改進：階梯規則 + 前端展示優化（2026-03-09）
 
@@ -183,42 +219,36 @@ Authorization: Bearer <user_token>
 
 ## 2. 數據對象字段字典
 
-> 以下對象用於後續各介面“返回結構”引用。
+> 以下對象用於後續各介面「返回結構」引用。
 
 ### 2.1 PublicProduct
 
 | 字段 | 類型 | 說明 |
 | --- | --- | --- |
-| id | number | 商品 ID |
 | category_id | number | 分類 ID |
 | slug | string | 商品唯一標識 |
-| title | object | 多語言標題，例如 `{ "zh-CN": "...", "en-US": "..." }` |
+| title | object | 多語言標題 |
 | description | object | 多語言摘要 |
 | content | object | 多語言詳情內容 |
-| price_amount | string | 商品價格金額（字符串金額，如 `"99.00"`） |
+| price_amount | string | 商品價格金額 |
 | images | string[] | 商品圖片列表 |
 | tags | string[] | 標籤列表 |
 | purchase_type | string | 購買身份限制：`guest` / `member` |
+| max_purchase_quantity | number | 單次最大購買數量（0 表示不限） |
 | fulfillment_type | string | 交付類型：`manual` / `auto` |
 | manual_form_schema | object | 人工交付表單 Schema |
-| manual_stock_total | number | 人工庫存總量（0 表示不限制） |
-| manual_stock_locked | number | 人工庫存鎖定量 |
-| manual_stock_sold | number | 人工庫存已售量 |
-| is_active | boolean | 是否上架 |
-| sort_order | number | 排序 |
-| created_at | string | 創建時間 |
-| updated_at | string | 更新時間 |
-| category | object | 分類信息（可選） |
-| promotion_id | number | 命中的活動 ID（可選） |
-| promotion_name | string | 活動名稱（可選） |
-| promotion_type | string | 活動類型（可選） |
-| promotion_price_amount | string | 活動價金額（可選）；多 SKU 時取所有 SKU 促銷價中的最低值，用於列表頁展示 |
-| promotion_rules | PromotionRule[] | 該商品所有生效中的活動規則列表（可選）；即使當前 SKU 單價未滿足門檻也會返回，用於前端展示活動提示；詳見 [2.1.2 PromotionRule](#_2-1-2-promotionrule) |
-| skus | PublicSKU[] | SKU 列表，包含每個 SKU 的促銷價資訊；詳見 [2.1.1 PublicSKU](#_2-1-1-publicsku) |
 | manual_stock_available | number | 人工可用庫存 |
 | auto_stock_available | number | 自動可用庫存 |
 | stock_status | string | 庫存狀態：`unlimited` / `in_stock` / `low_stock` / `out_of_stock` |
 | is_sold_out | boolean | 是否售罄 |
+| category | Category | 分類信息 |
+| skus | PublicSKU[] | SKU 列表 |
+| promotion_id | number | 命中的活動 ID（可選） |
+| promotion_name | string | 活動名稱（可選） |
+| promotion_type | string | 活動類型（可選） |
+| promotion_price_amount | string | 活動價金額（可選） |
+| promotion_rules | PromotionRule[] | 活動規則列表（可選） |
+| member_prices | MemberLevelPrice[] | 會員等級價格列表（可選） |
 
 #### 2.1.1 PublicSKU
 
@@ -227,23 +257,16 @@ Authorization: Bearer <user_token>
 | 字段 | 類型 | 說明 |
 | --- | --- | --- |
 | id | number | SKU ID（下單時使用此 ID） |
-| product_id | number | 所屬商品 ID |
 | sku_code | string | SKU 編碼（同商品內唯一） |
-| spec_values | object | 規格值（多語言，如 `{"zh-CN":"標準版","en-US":"Standard"}`） |
-| price_amount | string | SKU 原價（字符串金額，如 `"99.00"`） |
-| promotion_price_amount | string | SKU 活動價金額（可選）；當商品命中促銷活動時，基於該 SKU 的原價獨立計算 |
+| spec_values | object | 規格值（多語言） |
+| price_amount | string | SKU 原價 |
 | manual_stock_total | number | 人工庫存總量（`-1` 表示無限庫存） |
-| manual_stock_locked | number | 人工庫存鎖定量 |
 | manual_stock_sold | number | 人工庫存已售量 |
 | auto_stock_available | number | 自動發貨庫存可用量 |
-| auto_stock_total | number | 自動發貨庫存總量 |
-| auto_stock_locked | number | 自動發貨庫存佔用量 |
-| auto_stock_sold | number | 自動發貨庫存已售量 |
 | upstream_stock | number | 上游庫存（`-1` 表示無限，`0` 表示售罄） |
 | is_active | boolean | 是否啟用 |
-| sort_order | number | 排序權重（數值越大越靠前） |
-| created_at | string | 創建時間 |
-| updated_at | string | 更新時間 |
+| promotion_price_amount | string | SKU 活動價金額（可選） |
+| member_price_amount | string | 會員價金額（可選） |
 
 #### 2.1.2 PromotionRule
 
@@ -282,16 +305,13 @@ Authorization: Bearer <user_token>
 | summary | object | 多語言摘要 |
 | content | object | 多語言內容 |
 | thumbnail | string | 縮略圖 URL |
-| is_published | boolean | 是否發佈 |
 | published_at | string/null | 發佈時間 |
-| created_at | string | 創建時間 |
 
 ### 2.3 Banner
 
 | 字段 | 類型 | 說明 |
 | --- | --- | --- |
 | id | number | Banner ID |
-| name | string | 後臺名稱 |
 | position | string | 投放位置（如 `home_hero`） |
 | title | object | 多語言標題 |
 | subtitle | object | 多語言副標題 |
@@ -300,22 +320,17 @@ Authorization: Bearer <user_token>
 | link_type | string | 跳轉類型：`none` / `internal` / `external` |
 | link_value | string | 跳轉值 |
 | open_in_new_tab | boolean | 是否新窗口打開 |
-| is_active | boolean | 是否啟用 |
-| start_at | string/null | 生效時間 |
-| end_at | string/null | 結束時間 |
-| sort_order | number | 排序 |
-| created_at | string | 創建時間 |
-| updated_at | string | 更新時間 |
 
 ### 2.4 Category
 
 | 字段 | 類型 | 說明 |
 | --- | --- | --- |
 | id | number | 分類 ID |
+| parent_id | number | 父分類 ID（0 表示一級分類） |
 | slug | string | 分類唯一標識 |
 | name | object | 多語言名稱 |
+| icon | string | 分類圖標 |
 | sort_order | number | 排序 |
-| created_at | string | 創建時間 |
 
 ### 2.5 UserProfile
 
@@ -326,6 +341,9 @@ Authorization: Bearer <user_token>
 | nickname | string | 暱稱 |
 | email_verified_at | string/null | 郵箱驗證時間 |
 | locale | string | 語言（如 `zh-CN`） |
+| member_level_id | number | 會員等級 ID |
+| total_recharged | string | 累計充值金額 |
+| total_spent | string | 累計消費金額 |
 | email_change_mode | string | 郵箱變更模式：`bind_only` / `change_with_old_and_new` |
 | password_change_mode | string | 密碼變更模式：`set_without_old` / `change_with_old` |
 
@@ -373,26 +391,23 @@ Authorization: Bearer <user_token>
 
 | 字段 | 類型 | 說明 |
 | --- | --- | --- |
-| id | number | 訂單 ID |
-| order_no | string | 訂單號（推薦用於查詢） |
-| parent_id | number/null | 父訂單 ID |
-| user_id | number | 用戶 ID，遊客訂單一般為 0 |
+| order_no | string | 訂單號 |
 | guest_email | string | 遊客郵箱（遊客訂單） |
 | guest_locale | string | 遊客語言 |
 | status | string | 訂單狀態：`pending_payment` / `paid` / `fulfilling` / `partially_delivered` / `delivered` / `completed` / `canceled` |
-| currency | string | 訂單幣種（全站統一，來源 `site_config.currency`） |
+| currency | string | 訂單幣種 |
 | original_amount | string | 原價 |
 | discount_amount | string | 優惠金額 |
+| member_discount_amount | string | 會員優惠金額 |
 | promotion_discount_amount | string | 活動優惠金額 |
 | total_amount | string | 實付金額 |
-| coupon_id | number/null | 優惠券 ID |
-| promotion_id | number/null | 活動 ID |
-| client_ip | string | 下單 IP |
+| wallet_paid_amount | string | 錢包支付金額 |
+| online_paid_amount | string | 線上支付金額 |
+| refunded_amount | string | 已退款金額 |
 | expires_at | string/null | 待支付過期時間 |
 | paid_at | string/null | 支付成功時間 |
 | canceled_at | string/null | 取消時間 |
 | created_at | string | 創建時間 |
-| updated_at | string | 更新時間 |
 | items | OrderItem[] | 訂單項 |
 | fulfillment | Fulfillment | 交付記錄（可選） |
 | children | Order[] | 子訂單列表（可選） |
@@ -401,51 +416,42 @@ Authorization: Bearer <user_token>
 
 | 字段 | 類型 | 說明 |
 | --- | --- | --- |
-| id | number | 訂單項 ID |
-| order_id | number | 訂單 ID |
-| product_id | number | 商品 ID |
 | title | object | 商品標題快照 |
+| sku_snapshot | object | SKU 快照（編碼/規格） |
 | tags | string[] | 商品標籤快照 |
 | unit_price | string | 單價 |
 | quantity | number | 數量 |
 | total_price | string | 小計 |
 | coupon_discount_amount | string | 優惠券分攤金額 |
+| member_discount_amount | string | 會員優惠分攤金額 |
 | promotion_discount_amount | string | 活動優惠金額 |
-| promotion_id | number/null | 活動 ID |
-| promotion_name | string | 活動名稱（可選） |
 | fulfillment_type | string | 交付類型 |
 | manual_form_schema_snapshot | object | 人工交付表單 Schema 快照 |
-| manual_form_submission | object | 用戶提交的人工表單值（已做清洗） |
-| created_at | string | 創建時間 |
-| updated_at | string | 更新時間 |
+| manual_form_submission | object | 用戶提交的人工表單值 |
 
 ### 2.11 Fulfillment
 
 | 字段 | 類型 | 說明 |
 | --- | --- | --- |
-| id | number | 交付記錄 ID |
-| order_id | number | 訂單 ID |
 | type | string | 交付類型：`auto` / `manual` |
 | status | string | 交付狀態：`pending` / `delivered` |
 | payload | string | 文本交付內容 |
-| delivery_data | object | 結構化交付信息（例如物流單號、下載信息等） |
-| delivered_by | number/null | 交付管理員 ID |
+| payload_line_count | number | 交付內容總行數 |
+| delivery_data | object | 結構化交付信息 |
 | delivered_at | string/null | 交付時間 |
-| created_at | string | 創建時間 |
-| updated_at | string | 更新時間 |
 
 ### 2.12 PaymentLaunch
 
 | 字段 | 類型 | 說明 |
 | --- | --- | --- |
 | payment_id | number | 支付記錄 ID |
-| order_id | number | 訂單 ID（`latest` 介面返回） |
+| order_no | string | 訂單號（`latest` 介面返回） |
 | channel_id | number | 支付渠道 ID（`latest` 介面返回） |
 | provider_type | string | 提供方：`official` / `epay` |
 | channel_type | string | 渠道：`alipay` / `wechat` / `paypal` / `stripe` 等 |
 | interaction_mode | string | 交互方式：`qr` / `redirect` / `wap` / `page` |
-| pay_url | string | 跳轉支付連結（redirect/wap/page） |
-| qr_code | string | 二維碼內容（qr） |
+| pay_url | string | 跳轉支付連結 |
+| qr_code | string | 二維碼內容 |
 | expires_at | string/null | 支付單過期時間 |
 
 ---
@@ -552,7 +558,6 @@ Authorization: Bearer <user_token>
   "msg": "success",
   "data": [
     {
-      "id": 1001,
       "category_id": 10,
       "slug": "netflix-plus",
       "title": { "zh-CN": "奈飛會員" },
@@ -564,13 +569,6 @@ Authorization: Bearer <user_token>
       "purchase_type": "member",
       "fulfillment_type": "manual",
       "manual_form_schema": { "fields": [] },
-      "manual_stock_total": 100,
-      "manual_stock_locked": 2,
-      "manual_stock_sold": 10,
-      "is_active": true,
-      "sort_order": 100,
-      "created_at": "2026-02-10T10:00:00Z",
-      "updated_at": "2026-02-10T10:00:00Z",
       "manual_stock_available": 88,
       "auto_stock_available": 0,
       "stock_status": "in_stock",
@@ -612,7 +610,6 @@ Authorization: Bearer <user_token>
   "status_code": 0,
   "msg": "success",
   "data": {
-    "id": 1001,
     "slug": "netflix-plus",
     "title": { "zh-CN": "奈飛會員" },
     "price_amount": "99.00",
@@ -670,9 +667,7 @@ Authorization: Bearer <user_token>
       "summary": { "zh-CN": "新增支付渠道" },
       "content": { "zh-CN": "詳細內容" },
       "thumbnail": "/uploads/post/1.png",
-      "is_published": true,
-      "published_at": "2026-02-11T10:00:00Z",
-      "created_at": "2026-02-11T09:00:00Z"
+      "published_at": "2026-02-11T10:00:00Z"
     }
   ],
   "pagination": {
@@ -717,9 +712,7 @@ Authorization: Bearer <user_token>
     "summary": { "zh-CN": "新增支付渠道" },
     "content": { "zh-CN": "詳細內容" },
     "thumbnail": "/uploads/post/1.png",
-    "is_published": true,
-    "published_at": "2026-02-11T10:00:00Z",
-    "created_at": "2026-02-11T09:00:00Z"
+    "published_at": "2026-02-11T10:00:00Z"
   }
 }
 ```
@@ -752,7 +745,6 @@ Authorization: Bearer <user_token>
   "data": [
     {
       "id": 1,
-      "name": "首頁頭圖",
       "position": "home_hero",
       "title": { "zh-CN": "歡迎來到 D&N" },
       "subtitle": { "zh-CN": "穩定交付" },
@@ -760,13 +752,7 @@ Authorization: Bearer <user_token>
       "mobile_image": "/uploads/banner/hero-mobile.png",
       "link_type": "internal",
       "link_value": "/products",
-      "open_in_new_tab": false,
-      "is_active": true,
-      "start_at": null,
-      "end_at": null,
-      "sort_order": 100,
-      "created_at": "2026-02-11T08:00:00Z",
-      "updated_at": "2026-02-11T08:00:00Z"
+      "open_in_new_tab": false
     }
   ]
 }
@@ -797,10 +783,11 @@ Authorization: Bearer <user_token>
   "data": [
     {
       "id": 10,
+      "parent_id": 0,
       "slug": "memberships",
       "name": { "zh-CN": "會員服務" },
-      "sort_order": 100,
-      "created_at": "2026-02-10T10:00:00Z"
+      "icon": "",
+      "sort_order": 100
     }
   ]
 }
@@ -1631,7 +1618,6 @@ Authorization: Bearer <user_token>
   "status_code": 0,
   "msg": "success",
   "data": {
-    "id": 501,
     "order_no": "DN202602110001",
     "status": "pending_payment",
     "currency": "CNY",
@@ -1642,9 +1628,6 @@ Authorization: Bearer <user_token>
     "expires_at": "2026-02-11T12:30:00Z",
     "items": [
       {
-        "id": 9001,
-        "order_id": 501,
-        "product_id": 1001,
         "title": { "zh-CN": "奈飛會員" },
         "quantity": 1,
         "unit_price": "99.00",
@@ -1695,7 +1678,6 @@ Authorization: Bearer <user_token>
   "msg": "success",
   "data": [
     {
-      "id": 501,
       "order_no": "DN202602110001",
       "status": "pending_payment",
       "currency": "CNY",
@@ -1703,9 +1685,6 @@ Authorization: Bearer <user_token>
       "created_at": "2026-02-11T12:00:00Z",
       "items": [
         {
-          "id": 9001,
-          "order_id": 501,
-          "product_id": 1001,
           "title": { "zh-CN": "奈飛會員" },
           "quantity": 1,
           "unit_price": "99.00",
@@ -1735,9 +1714,9 @@ Authorization: Bearer <user_token>
 
 ---
 
-### 6.4 訂單詳情（按 ID）
+### 6.4 訂單詳情
 
-**介面**：`GET /orders/:id`
+**介面**：`GET /orders/:order_no`
 
 **認證**：是
 
@@ -1745,7 +1724,7 @@ Authorization: Bearer <user_token>
 
 | 參數 | 類型 | 必填 | 說明 |
 | --- | --- | --- | --- |
-| id | number | 是 | 訂單 ID |
+| order_no | string | 是 | 訂單號 |
 
 #### 成功響應示例
 
@@ -1754,16 +1733,12 @@ Authorization: Bearer <user_token>
   "status_code": 0,
   "msg": "success",
   "data": {
-    "id": 501,
     "order_no": "DN202602110001",
     "status": "pending_payment",
     "currency": "CNY",
     "total_amount": "99.00",
     "items": [
       {
-        "id": 9001,
-        "order_id": 501,
-        "product_id": 1001,
         "title": { "zh-CN": "奈飛會員" },
         "quantity": 1,
         "unit_price": "99.00",
@@ -1787,9 +1762,9 @@ Authorization: Bearer <user_token>
 
 ---
 
-### 6.5 訂單詳情（按訂單號）
+### 6.5 取消訂單
 
-**介面**：`GET /orders/by-order-no/:order_no`
+**介面**：`POST /orders/:order_no/cancel`
 
 **認證**：是
 
@@ -1798,28 +1773,6 @@ Authorization: Bearer <user_token>
 | 參數 | 類型 | 必填 | 說明 |
 | --- | --- | --- | --- |
 | order_no | string | 是 | 訂單號 |
-
-#### 成功響應示例
-
-與 `GET /orders/:id` 一致。
-
-#### 返回結構（data）
-
-- `data`：`Order`
-
----
-
-### 6.6 取消訂單
-
-**介面**：`POST /orders/:id/cancel`
-
-**認證**：是
-
-#### Path 參數
-
-| 參數 | 類型 | 必填 | 說明 |
-| --- | --- | --- | --- |
-| id | number | 是 | 訂單 ID |
 
 #### Body 參數
 
@@ -1832,7 +1785,6 @@ Authorization: Bearer <user_token>
   "status_code": 0,
   "msg": "success",
   "data": {
-    "id": 501,
     "order_no": "DN202602110001",
     "status": "canceled",
     "currency": "CNY",
@@ -1848,7 +1800,7 @@ Authorization: Bearer <user_token>
 
 ---
 
-### 6.7 創建支付單
+### 6.6 創建支付單
 
 **介面**：`POST /payments`
 
@@ -1858,14 +1810,14 @@ Authorization: Bearer <user_token>
 
 | 字段 | 類型 | 必填 | 說明 |
 | --- | --- | --- | --- |
-| order_id | number | 是 | 訂單 ID |
+| order_no | string | 是 | 訂單號 |
 | channel_id | number | 是 | 支付渠道 ID |
 
 #### 請求示例
 
 ```json
 {
-  "order_id": 501,
+  "order_no": "DN202602110001",
   "channel_id": 10
 }
 ```
@@ -1890,11 +1842,11 @@ Authorization: Bearer <user_token>
 
 #### 返回結構（data）
 
-- `data`：`PaymentLaunch`（創建支付時通常不含 `order_id/channel_id` 字段）
+- `data`：`PaymentLaunch`（創建支付時通常不含 `order_no/channel_id` 字段）
 
 ---
 
-### 6.8 捕獲支付結果
+### 6.7 捕獲支付結果
 
 **介面**：`POST /payments/:id/capture`
 
@@ -1932,7 +1884,7 @@ Authorization: Bearer <user_token>
 
 ---
 
-### 6.9 獲取最新待支付記錄
+### 6.8 獲取最新待支付記錄
 
 **介面**：`GET /payments/latest`
 
@@ -1942,7 +1894,7 @@ Authorization: Bearer <user_token>
 
 | 參數 | 類型 | 必填 | 說明 |
 | --- | --- | --- | --- |
-| order_id | number | 是 | 訂單 ID |
+| order_no | string | 是 | 訂單號 |
 
 #### 成功響應示例
 
@@ -1952,7 +1904,7 @@ Authorization: Bearer <user_token>
   "msg": "success",
   "data": {
     "payment_id": 3001,
-    "order_id": 501,
+    "order_no": "DN202602110001",
     "channel_id": 10,
     "provider_type": "official",
     "channel_type": "alipay",
@@ -2064,7 +2016,7 @@ Authorization: Bearer <user_token>
 
 #### 成功響應示例
 
-與 `POST /orders` 一致（遊客單的 `user_id=0`，`guest_email` 有值）。
+與 `POST /orders` 一致（遊客單的 `guest_email` 有值）。
 
 #### 返回結構（data）
 
@@ -2096,18 +2048,13 @@ Authorization: Bearer <user_token>
   "msg": "success",
   "data": [
     {
-      "id": 601,
       "order_no": "DN202602110002",
-      "user_id": 0,
       "guest_email": "guest@example.com",
       "status": "pending_payment",
       "currency": "CNY",
       "total_amount": "99.00",
       "items": [
         {
-          "id": 9101,
-          "order_id": 601,
-          "product_id": 1001,
           "title": { "zh-CN": "奈飛會員" },
           "quantity": 1,
           "unit_price": "99.00",
@@ -2137,38 +2084,9 @@ Authorization: Bearer <user_token>
 
 ---
 
-### 7.4 遊客訂單詳情（按 ID）
+### 7.4 遊客訂單詳情
 
-**介面**：`GET /guest/orders/:id`
-
-**認證**：否
-
-#### Path 參數
-
-| 參數 | 類型 | 必填 | 說明 |
-| --- | --- | --- | --- |
-| id | number | 是 | 訂單 ID |
-
-#### Query 參數
-
-| 參數 | 類型 | 必填 | 說明 |
-| --- | --- | --- | --- |
-| email | string | 是 | 遊客郵箱 |
-| order_password | string | 是 | 查詢密碼 |
-
-#### 成功響應示例
-
-與用戶訂單詳情結構一致。
-
-#### 返回結構（data）
-
-- `data`：`Order`
-
----
-
-### 7.5 遊客訂單詳情（按訂單號）
-
-**介面**：`GET /guest/orders/by-order-no/:order_no`
+**介面**：`GET /guest/orders/:order_no`
 
 **認證**：否
 
@@ -2187,7 +2105,7 @@ Authorization: Bearer <user_token>
 
 #### 成功響應示例
 
-與 `GET /guest/orders/:id` 一致。
+與用戶訂單詳情結構一致。
 
 #### 返回結構（data）
 
@@ -2195,7 +2113,7 @@ Authorization: Bearer <user_token>
 
 ---
 
-### 7.6 遊客創建支付單
+### 7.5 遊客創建支付單
 
 **介面**：`POST /guest/payments`
 
@@ -2207,7 +2125,7 @@ Authorization: Bearer <user_token>
 | --- | --- | --- | --- |
 | email | string | 是 | 遊客郵箱 |
 | order_password | string | 是 | 查詢密碼 |
-| order_id | number | 是 | 訂單 ID |
+| order_no | string | 是 | 訂單號 |
 | channel_id | number | 是 | 支付渠道 ID |
 
 #### 請求示例
@@ -2216,7 +2134,7 @@ Authorization: Bearer <user_token>
 {
   "email": "guest@example.com",
   "order_password": "guest-pass",
-  "order_id": 601,
+  "order_no": "DN202602110002",
   "channel_id": 10
 }
 ```
@@ -2231,7 +2149,7 @@ Authorization: Bearer <user_token>
 
 ---
 
-### 7.7 遊客捕獲支付結果
+### 7.6 遊客捕獲支付結果
 
 **介面**：`POST /guest/payments/:id/capture`
 
@@ -2272,7 +2190,7 @@ Authorization: Bearer <user_token>
 
 ---
 
-### 7.8 遊客獲取最新待支付記錄
+### 7.7 遊客獲取最新待支付記錄
 
 **介面**：`GET /guest/payments/latest`
 
@@ -2284,7 +2202,7 @@ Authorization: Bearer <user_token>
 | --- | --- | --- | --- |
 | email | string | 是 | 遊客郵箱 |
 | order_password | string | 是 | 查詢密碼 |
-| order_id | number | 是 | 訂單 ID |
+| order_no | string | 是 | 訂單號 |
 
 #### 成功響應示例
 
@@ -2298,14 +2216,16 @@ Authorization: Bearer <user_token>
 
 ## 8. 前臺接入建議
 
-### 8.1 訂單詳情優先使用 `order_no`
+### 8.1 訂單介面統一使用 `order_no`
 
-儘量使用：
+所有面向用戶的訂單介面均使用 `order_no` 作為標識符，不再暴露自增 ID：
 
-- `GET /orders/by-order-no/:order_no`
-- `GET /guest/orders/by-order-no/:order_no`
-
-避免在前臺長期依賴自增 `id`。
+- `GET /orders/:order_no` — 訂單詳情
+- `POST /orders/:order_no/cancel` — 取消訂單
+- `GET /orders/:order_no/fulfillment/download` — 下載交付內容
+- `GET /guest/orders/:order_no` — 遊客訂單詳情
+- `GET /guest/orders/:order_no/fulfillment/download` — 遊客下載交付內容
+- `POST /payments`、`GET /payments/latest` — 使用 `order_no` 參數
 
 ### 8.2 統一錯誤處理
 
@@ -2324,7 +2244,7 @@ Authorization: Bearer <user_token>
 2. 支付完成回跳後，調用 `capture`
 3. 再調用 `latest` 兜底輪詢確認
 
-可顯著降低“已支付但頁面未及時更新”的感知問題。
+可顯著降低「已支付但頁面未及時更新」的感知問題。
 
 ---
 
@@ -2406,7 +2326,7 @@ Authorization: Bearer <user_token>
 
 #### 9.3.1 建立商品（支援多 SKU）
 
-**介面**：`POST /admin/products`  
+**介面**：`POST /admin/products`
 **認證**：管理員 Token
 
 #### Body 關鍵參數
@@ -2494,7 +2414,7 @@ Authorization: Bearer <user_token>
 
 #### 9.3.2 更新商品（支援多 SKU）
 
-**介面**：`PUT /admin/products/:id`  
+**介面**：`PUT /admin/products/:id`
 **認證**：管理員 Token
 
 請求結構與 `POST /admin/products` 一致；若要更新既有 SKU，請在 `skus[]` 中傳對應 `id`。
@@ -2535,7 +2455,7 @@ Authorization: Bearer <user_token>
 
 #### 9.4.2 公開點擊上報
 
-**介面**：`POST /public/affiliate/click`  
+**介面**：`POST /public/affiliate/click`
 **認證**：無需登錄
 
 | 字段 | 類型 | 必填 | 說明 |
