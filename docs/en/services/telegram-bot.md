@@ -8,7 +8,7 @@ Telegram Bot is an independent Dujiao-Next extension that extends your site capa
 
 ## 1. Pricing and Service Term
 
-- Price: limited-time early bird `398USD` / one-time license
+- Price: `800USD` / one-time license
 - Service term: one-time license
 - Update support: one-time license with ongoing updates, feature iteration, and version upgrades
 

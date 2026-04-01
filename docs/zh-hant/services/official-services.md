@@ -18,7 +18,7 @@
 
 ## 2. Telegram Bot 服務
 
-- 售價：限時早鳥價 `398USD` / 終身
+- 售價：`800USD` / 終身
 - 說明：獨立 Telegram Bot 功能終身授權，支援持續更新與迭代升級
 - 詳情頁：[/zh-hant/services/telegram-bot](/zh-hant/services/telegram-bot)
 
