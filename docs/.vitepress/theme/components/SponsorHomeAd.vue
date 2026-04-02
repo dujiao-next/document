@@ -45,6 +45,9 @@ const sectionTitle = computed(() => {
                 loading="lazy"
                 class="dn-home-sponsor-image"
               />
+              <div v-else class="dn-home-sponsor-placeholder">
+                <span class="dn-home-sponsor-placeholder-text">{{ ad.displayTitle || 'Sponsor' }}</span>
+              </div>
               <h3 class="dn-home-sponsor-card-title">{{ ad.displayTitle || 'Sponsor' }}</h3>
               <p v-if="ad.description" class="dn-home-sponsor-card-desc">{{ ad.description }}</p>
             </article>

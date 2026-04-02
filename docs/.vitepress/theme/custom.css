@@ -1,12 +1,12 @@
 .dn-sponsor-list {
-  margin-top: 16px;
+  margin-top: 12px;
   display: grid;
-  gap: 12px;
+  gap: 8px;
 }
 
 .dn-home-sponsor {
   position: relative;
-  margin-top: 28px;
+  margin-top: 20px;
   margin-bottom: 8px;
   padding: 0 24px;
 }
@@ -29,9 +29,9 @@
 }
 
 .dn-home-sponsor-title {
-  margin: 0 0 14px;
-  line-height: 24px;
-  font-size: 16px;
+  margin: 0 0 10px;
+  line-height: 22px;
+  font-size: 14px;
   font-weight: 600;
   color: var(--vp-c-text-1);
 }
@@ -39,24 +39,30 @@
 .dn-home-sponsor-items {
   display: flex;
   flex-wrap: wrap;
-  margin: -8px;
+  margin: -6px;
 }
 
 .dn-home-sponsor-item-wrap {
   width: 100%;
-  padding: 8px;
+  padding: 6px;
 }
 
-@media (min-width: 768px) {
+@media (min-width: 640px) {
   .dn-home-sponsor-item-wrap {
-    width: calc(100% / 3);
+    width: 50%;
+  }
+}
+
+@media (min-width: 960px) {
+  .dn-home-sponsor-item-wrap {
+    width: calc(100% / 4);
   }
 }
 
 .dn-home-sponsor-card {
   display: block;
   border: 1px solid var(--vp-c-bg-soft);
-  border-radius: 12px;
+  border-radius: 8px;
   height: 100%;
   background-color: var(--vp-c-bg-soft);
   text-decoration: none;
@@ -71,38 +77,69 @@ a.dn-home-sponsor-card:hover {
 .dn-home-sponsor-box {
   display: flex;
   flex-direction: column;
-  padding: 24px;
+  padding: 14px;
   height: 100%;
 }
 
 .dn-home-sponsor-image {
   width: 100%;
-  aspect-ratio: 16 / 9;
+  aspect-ratio: 2 / 1;
   object-fit: cover;
-  border-radius: 8px;
-  margin-bottom: 20px;
+  border-radius: 6px;
+  margin-bottom: 10px;
+}
+
+.dn-home-sponsor-placeholder {
+  width: 100%;
+  aspect-ratio: 2 / 1;
+  border-radius: 6px;
+  margin-bottom: 10px;
+  background: linear-gradient(135deg, var(--vp-c-brand-soft) 0%, var(--vp-c-bg-soft) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+}
+
+.dn-home-sponsor-placeholder-text {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--vp-c-brand-1);
+  text-align: center;
+  line-height: 1.3;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
 }
 
 .dn-home-sponsor-card-title {
-  line-height: 24px;
-  font-size: 16px;
+  line-height: 20px;
+  font-size: 13px;
   font-weight: 600;
   margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .dn-home-sponsor-card-desc {
   flex-grow: 1;
-  padding-top: 8px;
-  line-height: 24px;
-  font-size: 14px;
+  padding-top: 4px;
+  line-height: 18px;
+  font-size: 12px;
   font-weight: 500;
   color: var(--vp-c-text-2);
   margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .dn-sponsor-card {
   border: 1px solid var(--vp-c-divider);
-  border-radius: 12px;
+  border-radius: 8px;
   background: var(--vp-c-bg-soft);
   overflow: hidden;
 }
@@ -117,42 +154,67 @@ a.dn-home-sponsor-card:hover {
 .dn-sponsor-image {
   width: 100%;
   display: block;
-  aspect-ratio: 16 / 9;
+  aspect-ratio: 2 / 1;
   object-fit: cover;
 }
 
-.dn-sponsor-meta {
-  padding: 10px 12px 12px;
+.dn-sponsor-placeholder {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 2 / 1;
+  background: linear-gradient(135deg, var(--vp-c-brand-soft) 0%, var(--vp-c-bg-soft) 100%);
+  padding: 10px;
 }
 
-.dn-sponsor-meta--text-only {
-  padding-top: 12px;
+.dn-sponsor-placeholder-text {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--vp-c-brand-1);
+  text-align: center;
+  line-height: 1.3;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.dn-sponsor-meta {
+  padding: 8px 10px 10px;
 }
 
 .dn-sponsor-tag {
   display: inline-flex;
   align-items: center;
-  font-size: 11px;
-  line-height: 16px;
+  font-size: 10px;
+  line-height: 14px;
   color: var(--vp-c-text-2);
   border: 1px solid var(--vp-c-divider);
   border-radius: 999px;
-  padding: 0 8px;
-  margin-bottom: 8px;
+  padding: 0 6px;
+  margin-bottom: 6px;
 }
 
 .dn-sponsor-title {
-  font-size: 13px;
-  line-height: 1.45;
+  font-size: 12px;
+  line-height: 1.4;
   font-weight: 600;
   color: var(--vp-c-text-1);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .dn-sponsor-desc {
-  font-size: 12px;
-  line-height: 1.45;
+  font-size: 11px;
+  line-height: 1.4;
   color: var(--vp-c-text-2);
-  margin-top: 6px;
+  margin-top: 4px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .dn-sponsor-link:hover .dn-sponsor-title {

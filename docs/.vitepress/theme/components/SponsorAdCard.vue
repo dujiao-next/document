@@ -16,7 +16,10 @@ defineProps<{
       class="dn-sponsor-link"
     >
       <img v-if="ad.image" :src="ad.image" :alt="ad.displayTitle" loading="lazy" class="dn-sponsor-image" />
-      <div class="dn-sponsor-meta" :class="{ 'dn-sponsor-meta--text-only': !ad.image }">
+      <div v-else class="dn-sponsor-placeholder">
+        <span class="dn-sponsor-placeholder-text">{{ ad.displayTitle || 'Sponsor' }}</span>
+      </div>
+      <div class="dn-sponsor-meta">
         <div class="dn-sponsor-tag">{{ ad.tag }}</div>
         <div v-if="ad.displayTitle" class="dn-sponsor-title">{{ ad.displayTitle }}</div>
         <div v-if="ad.description" class="dn-sponsor-desc">{{ ad.description }}</div>
@@ -25,7 +28,10 @@ defineProps<{
 
     <div v-else class="dn-sponsor-plain">
       <img v-if="ad.image" :src="ad.image" :alt="ad.displayTitle" loading="lazy" class="dn-sponsor-image" />
-      <div class="dn-sponsor-meta" :class="{ 'dn-sponsor-meta--text-only': !ad.image }">
+      <div v-else class="dn-sponsor-placeholder">
+        <span class="dn-sponsor-placeholder-text">{{ ad.displayTitle || 'Sponsor' }}</span>
+      </div>
+      <div class="dn-sponsor-meta">
         <div class="dn-sponsor-tag">{{ ad.tag }}</div>
         <div v-if="ad.displayTitle" class="dn-sponsor-title">{{ ad.displayTitle }}</div>
         <div v-if="ad.description" class="dn-sponsor-desc">{{ ad.description }}</div>
