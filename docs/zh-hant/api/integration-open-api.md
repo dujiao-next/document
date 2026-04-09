@@ -122,6 +122,7 @@ headers = {
 | 方法 | 路徑 | 說明 |
 | --- | --- | --- |
 | `POST` | `/ping` | 連通性檢查 |
+| `GET` | `/categories` | 拉取分類列表 |
 | `GET` | `/products` | 拉取商品列表 |
 | `GET` | `/products/:id` | 拉取商品詳情 |
 | `POST` | `/orders` | 建立採購單（錢包自動扣款） |
@@ -186,7 +187,63 @@ headers = {
 
 ---
 
-### 4.2 GET `/products`
+### 4.2 GET `/categories`
+
+拉取上游分類列表。
+
+**請求：** 無需請求體和查詢參數。
+
+**回應欄位：**
+
+| 欄位 | 類型 | 說明 |
+| --- | --- | --- |
+| `ok` | boolean | 是否成功 |
+| `categories` | array | 分類陣列（見下方 Category 結構） |
+
+#### Category 結構
+
+| 欄位 | 類型 | 說明 |
+| --- | --- | --- |
+| `id` | number | 分類 ID |
+| `parent_id` | number | 父分類 ID（0 表示一級分類） |
+| `slug` | string | 分類唯一標識 |
+| `name` | object | 多語言名稱，如 `{"zh-CN":"遊戲儲值","en":"Game Top-up"}` |
+| `icon` | string | 分類圖示 URL |
+| `sort_order` | number | 排序權重（降序） |
+
+**回應範例：**
+
+```json
+{
+  "ok": true,
+  "categories": [
+    {
+      "id": 1,
+      "parent_id": 0,
+      "slug": "game-topup",
+      "name": { "zh-CN": "遊戲儲值", "en": "Game Top-up" },
+      "icon": "",
+      "sort_order": 10
+    },
+    {
+      "id": 2,
+      "parent_id": 1,
+      "slug": "steam",
+      "name": { "zh-CN": "Steam", "en": "Steam" },
+      "icon": "",
+      "sort_order": 5
+    }
+  ]
+}
+```
+
+::: tip 分類層級
+分類最多支援兩層：一級分類（`parent_id = 0`）和二級分類（`parent_id` 指向一級分類）。商品只能關聯到末級分類。
+:::
+
+---
+
+### 4.3 GET `/products`
 
 拉取上游商品列表（僅回傳已上架商品）。
 
@@ -298,7 +355,7 @@ headers = {
 
 ---
 
-### 4.3 GET `/products/:id`
+### 4.4 GET `/products/:id`
 
 按商品 ID 查詢詳情。
 
@@ -313,7 +370,7 @@ headers = {
 | 欄位 | 類型 | 說明 |
 | --- | --- | --- |
 | `ok` | boolean | 是否成功 |
-| `product` | object | Product 結構（同 4.2 節） |
+| `product` | object | Product 結構（同 4.3 節） |
 
 **錯誤碼：**
 
@@ -324,7 +381,7 @@ headers = {
 
 ---
 
-### 4.4 POST `/orders`
+### 4.5 POST `/orders`
 
 建立採購單。系統會自動使用對接使用者的錢包餘額付款，無需額外支付流程。
 
@@ -396,7 +453,7 @@ headers = {
 
 ---
 
-### 4.5 GET `/orders/:id`
+### 4.6 GET `/orders/:id`
 
 查詢採購單詳情。
 
@@ -474,7 +531,7 @@ headers = {
 
 ---
 
-### 4.6 POST `/orders/:id/cancel`
+### 4.7 POST `/orders/:id/cancel`
 
 取消採購單。
 

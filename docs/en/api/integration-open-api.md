@@ -122,6 +122,7 @@ headers = {
 | Method | Path | Description |
 | --- | --- | --- |
 | `POST` | `/ping` | Connectivity check |
+| `GET` | `/categories` | Fetch category list |
 | `GET` | `/products` | Fetch product list |
 | `GET` | `/products/:id` | Fetch product details |
 | `POST` | `/orders` | Create procurement order (auto wallet payment) |
@@ -186,7 +187,63 @@ Connectivity check. Also returns wallet balance, currency, and member level for 
 
 ---
 
-### 4.2 GET `/products`
+### 4.2 GET `/categories`
+
+Fetch the upstream category list.
+
+**Request:** No body or query parameters required.
+
+**Response fields:**
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `ok` | boolean | Whether successful |
+| `categories` | array | Category array (see Category structure below) |
+
+#### Category Structure
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `id` | number | Category ID |
+| `parent_id` | number | Parent category ID (0 for top-level categories) |
+| `slug` | string | Unique category identifier |
+| `name` | object | Localized name, e.g. `{"zh-CN":"Game Top-up","en":"Game Top-up"}` |
+| `icon` | string | Category icon URL |
+| `sort_order` | number | Sort weight (descending) |
+
+**Response example:**
+
+```json
+{
+  "ok": true,
+  "categories": [
+    {
+      "id": 1,
+      "parent_id": 0,
+      "slug": "game-topup",
+      "name": { "zh-CN": "Game Top-up", "en": "Game Top-up" },
+      "icon": "",
+      "sort_order": 10
+    },
+    {
+      "id": 2,
+      "parent_id": 1,
+      "slug": "steam",
+      "name": { "zh-CN": "Steam", "en": "Steam" },
+      "icon": "",
+      "sort_order": 5
+    }
+  ]
+}
+```
+
+::: tip Category Hierarchy
+Categories support up to two levels: top-level categories (`parent_id = 0`) and sub-categories (`parent_id` points to a top-level category). Products can only be associated with leaf categories.
+:::
+
+---
+
+### 4.3 GET `/products`
 
 Fetch the upstream product list (only active products are returned).
 
@@ -298,7 +355,7 @@ Fetch the upstream product list (only active products are returned).
 
 ---
 
-### 4.3 GET `/products/:id`
+### 4.4 GET `/products/:id`
 
 Fetch product details by ID.
 
@@ -313,7 +370,7 @@ Fetch product details by ID.
 | Field | Type | Description |
 | --- | --- | --- |
 | `ok` | boolean | Success flag |
-| `product` | object | Product structure (same as section 4.2) |
+| `product` | object | Product structure (same as section 4.3) |
 
 **Error codes:**
 
@@ -324,7 +381,7 @@ Fetch product details by ID.
 
 ---
 
-### 4.4 POST `/orders`
+### 4.5 POST `/orders`
 
 Create a procurement order. The system automatically deducts from the API user's wallet balance — no separate payment step required.
 
@@ -396,7 +453,7 @@ When wallet balance is insufficient or payment fails, the order is auto-canceled
 
 ---
 
-### 4.5 GET `/orders/:id`
+### 4.6 GET `/orders/:id`
 
 Query procurement order details.
 
@@ -474,7 +531,7 @@ Query procurement order details.
 
 ---
 
-### 4.6 POST `/orders/:id/cancel`
+### 4.7 POST `/orders/:id/cancel`
 
 Cancel a procurement order.
 

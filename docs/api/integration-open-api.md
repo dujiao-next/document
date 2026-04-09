@@ -122,6 +122,7 @@ headers = {
 | 方法 | 路径 | 说明 |
 | --- | --- | --- |
 | `POST` | `/ping` | 连通性检查 |
+| `GET` | `/categories` | 拉取分类列表 |
 | `GET` | `/products` | 拉取商品列表 |
 | `GET` | `/products/:id` | 拉取商品详情 |
 | `POST` | `/orders` | 创建采购单（钱包自动扣款） |
@@ -186,7 +187,63 @@ headers = {
 
 ---
 
-### 4.2 GET `/products`
+### 4.2 GET `/categories`
+
+拉取上游分类列表。
+
+**请求：** 无需请求体和查询参数。
+
+**响应字段：**
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `ok` | boolean | 是否成功 |
+| `categories` | array | 分类数组（见下方 Category 结构） |
+
+#### Category 结构
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `id` | number | 分类 ID |
+| `parent_id` | number | 父分类 ID（0 表示一级分类） |
+| `slug` | string | 分类唯一标识 |
+| `name` | object | 多语言名称，如 `{"zh-CN":"游戏充值","en":"Game Top-up"}` |
+| `icon` | string | 分类图标 URL |
+| `sort_order` | number | 排序权重（降序） |
+
+**响应示例：**
+
+```json
+{
+  "ok": true,
+  "categories": [
+    {
+      "id": 1,
+      "parent_id": 0,
+      "slug": "game-topup",
+      "name": { "zh-CN": "游戏充值", "en": "Game Top-up" },
+      "icon": "",
+      "sort_order": 10
+    },
+    {
+      "id": 2,
+      "parent_id": 1,
+      "slug": "steam",
+      "name": { "zh-CN": "Steam", "en": "Steam" },
+      "icon": "",
+      "sort_order": 5
+    }
+  ]
+}
+```
+
+::: tip 分类层级
+分类最多支持两层：一级分类（`parent_id = 0`）和二级分类（`parent_id` 指向一级分类）。商品只能关联到末级分类。
+:::
+
+---
+
+### 4.3 GET `/products`
 
 拉取上游商品列表（仅返回已上架商品）。
 
@@ -298,7 +355,7 @@ headers = {
 
 ---
 
-### 4.3 GET `/products/:id`
+### 4.4 GET `/products/:id`
 
 按商品 ID 查询详情。
 
@@ -313,7 +370,7 @@ headers = {
 | 字段 | 类型 | 说明 |
 | --- | --- | --- |
 | `ok` | boolean | 是否成功 |
-| `product` | object | Product 结构（同 4.2 节） |
+| `product` | object | Product 结构（同 4.3 节） |
 
 **错误码：**
 
@@ -324,7 +381,7 @@ headers = {
 
 ---
 
-### 4.4 POST `/orders`
+### 4.5 POST `/orders`
 
 创建采购单。系统会自动使用对接用户的钱包余额支付，无需额外支付流程。
 
@@ -396,7 +453,7 @@ headers = {
 
 ---
 
-### 4.5 GET `/orders/:id`
+### 4.6 GET `/orders/:id`
 
 查询采购单详情。
 
@@ -474,7 +531,7 @@ headers = {
 
 ---
 
-### 4.6 POST `/orders/:id/cancel`
+### 4.7 POST `/orders/:id/cancel`
 
 取消采购单。
 
