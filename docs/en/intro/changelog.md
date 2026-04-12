@@ -1,5 +1,15 @@
 # Changelog
 
+## [v1.0.2] - 2026-04-12
+
+### Update Details:
+- Added scenario-based payment channel limits with consistent wallet and checkout availability, making payment choices more flexible and predictable.
+- Streamlined order submission by removing redundant stock checks, so checkout and payment handoff feels smoother.
+- Added upstream category sync with automatic local category creation, reducing manual cleanup during product integration.
+- Added site name and site URL variables to email templates, giving merchants more complete outbound notifications.
+- Added configurable order interception rules with flexible exemptions for selected bot-order cases, making unusual order handling easier to control.
+- Improved admin profit display and payment-channel guidance text, so daily operations and configuration changes are clearer.
+
 ## [v1.0.1] - 2026-04-06
 
 ### Update Details:
