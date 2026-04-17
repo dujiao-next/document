@@ -77,6 +77,7 @@ Create products from the "Product Management" page in admin. Key fields:
 | Category | Product category |
 | Slug | Unique URL identifier for storefront access |
 | Title / Description / Details | Supports multiple languages (zh-CN / zh-TW / en-US) |
+| Delivery instructions | Rich text, multilingual. Shown **only after payment succeeds** — on the order detail, delivery email, and Telegram bot message. Use for private content: account format, login steps, support contact, activation tutorials, etc. |
 | Price | Base selling price |
 | Cost Price | Used for profit calculation |
 | Images | Product display images (multiple supported) |
