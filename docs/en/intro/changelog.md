@@ -1,5 +1,14 @@
 # Changelog
 
+## [v1.0.4] - 2026-04-22
+
+### Update Details:
+- Improved email notification compatibility to reduce delivery issues in some mailbox scenarios and make site emails more reliable.
+- Fixed a manual refund issue in SQLite deployments that could stall the admin refund flow, making refunds more reliable.
+- Refined multiple storefront pages and shared components so browsing products, checking out, and signing in feel smoother.
+- Expanded product delivery-instruction documentation for scenarios that need extra post-payment guidance.
+- Improved Docker Compose deployment guidance so first-time setup and configuration troubleshooting are easier.
+
 ## [v1.0.3] - 2026-04-20
 
 ### Update Details:
