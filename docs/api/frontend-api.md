@@ -200,6 +200,7 @@ Authorization: Bearer <user_token>
 | images | string[] | 商品图片列表 |
 | tags | string[] | 标签列表 |
 | purchase_type | string | 购买身份限制：`guest` / `member` |
+| min_purchase_quantity | number | 单次最小购买数量（0 表示不限） |
 | max_purchase_quantity | number | 单次最大购买数量（0 表示不限） |
 | fulfillment_type | string | 交付类型：`manual` / `auto` |
 | manual_form_schema | object | 人工交付表单 Schema |

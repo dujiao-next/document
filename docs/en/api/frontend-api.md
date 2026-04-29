@@ -200,6 +200,7 @@ Authorization: Bearer <user_token>
 | images | string[] | List of product images |
 | tags | string[] | List of tags |
 | purchase_type | string | Purchase access restriction: `guest` / `member` |
+| min_purchase_quantity | number | Minimum purchase quantity per order (0 means unlimited) |
 | max_purchase_quantity | number | Maximum purchase quantity per order (0 means unlimited) |
 | fulfillment_type | string | Delivery type: `manual` / `auto` |
 | manual_form_schema | object | Manual delivery form schema |
