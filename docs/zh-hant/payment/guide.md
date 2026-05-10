@@ -152,7 +152,33 @@ API 透過各站點的反向代理訪問（如 `user.example.com/api` 和 `admin
 - `return_url` 填：`https://shop.example.com/pay`
 - 支持幣種與交易類型請參考官方文檔：<https://github.com/v03413/BEpusdt/blob/main/docs/api/api.md>
 
-### 3.8 OKPay
+### 3.8 epusdt
+
+> 注意：epusdt 與 BEpusdt 是兩個獨立專案，設定欄位與簽名金鑰互不通用，請勿混用。
+
+常用必填：
+
+- 閘道地址（gateway_url，例 `https://epusdt.example.com`）
+- 商戶 PID（pid）
+- 簽名金鑰（secret_key）
+- 代幣（token，例 `usdt`）
+- 網路（network，例 `tron`）
+- 支付結果通知地址（notify_url）
+- 支付完成回跳地址（return_url）
+
+常用選填：
+
+- 法幣（currency，預設 `cny`）
+
+建議：
+
+- `notify_url` 填：`https://user.example.com/api/v1/payments/callback`
+- `return_url` 填：`https://shop.example.com/pay`
+- 僅支援跳轉模式（redirect）。下單後會跳轉到 epusdt 自帶的託管收銀台完成付款，無需後台再渲染二維碼
+- token / network 的可用組合請即時向閘道查詢：`GET <gateway_url>/payments/gmpay/v1/supported-assets`
+- 介面規範請參考官方文件：<https://epusdt.com/api/payment.html>
+
+### 3.9 OKPay
 
 常用必填：
 
@@ -175,7 +201,7 @@ API 透過各站點的反向代理訪問（如 `user.example.com/api` 和 `admin
 
 ---
 
-## 3.9 手續費設定
+## 3.10 手續費設定
 
 每個支付渠道可獨立設定手續費，用於核算實際到帳金額：
 
@@ -188,7 +214,7 @@ API 透過各站點的反向代理訪問（如 `user.example.com/api` 和 `admin
 
 ---
 
-## 3.10 互動模式
+## 3.11 互動模式
 
 建立支付渠道時需選擇互動模式，不同模式決定使用者的支付體驗：
 
@@ -210,6 +236,7 @@ API 透過各站點的反向代理訪問（如 `user.example.com/api` 和 `admin
 - 易支付
 - TokenPay
 - BEpusdt
+- epusdt
 - OKPay
 
 填寫地址：
@@ -250,7 +277,7 @@ API 透過各站點的反向代理訪問（如 `user.example.com/api` 和 `admin
 
 | 回調類型 | 預設路徑 | 說明 |
 |---------|---------|------|
-| 支付回調 | `/api/v1/payments/callback` | 支付寶/微信/易支付/TokenPay/BEpusdt/OKPay 通用 |
+| 支付回調 | `/api/v1/payments/callback` | 支付寶/微信/易支付/TokenPay/BEpusdt/epusdt/OKPay 通用 |
 | PayPal Webhook | `/api/v1/payments/webhook/paypal` | PayPal 專用 |
 | Stripe Webhook | `/api/v1/payments/webhook/stripe` | Stripe 專用 |
 | 上游回調 | `/api/v1/upstream/callback` | 上游供貨商回調 |

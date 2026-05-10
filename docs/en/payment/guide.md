@@ -152,7 +152,33 @@ Recommended:
 - `return_url`: `https://shop.example.com/pay`
 - Supported currencies and trade types: <https://github.com/v03413/BEpusdt/blob/main/docs/api/api.md>
 
-### 3.8 OKPay
+### 3.8 epusdt
+
+> Note: epusdt and BEpusdt are two independent projects. Their config fields and signing keys are not interchangeable — do not mix them.
+
+Usually required:
+
+- Gateway URL (`gateway_url`, e.g. `https://epusdt.example.com`)
+- Merchant PID (`pid`)
+- Secret key (`secret_key`)
+- Token (`token`, e.g. `usdt`)
+- Network (`network`, e.g. `tron`)
+- Notify URL (`notify_url`)
+- Return URL (`return_url`)
+
+Usually optional:
+
+- Currency (`currency`, default `cny`)
+
+Tips:
+
+- `notify_url`: `https://user.example.com/api/v1/payments/callback`
+- `return_url`: `https://shop.example.com/pay`
+- Redirect-only mode. After placing an order, buyers are redirected to epusdt's hosted checkout to complete payment — no need for the backend to render a QR code.
+- Query the live list of supported `token` / `network` combinations from the gateway: `GET <gateway_url>/payments/gmpay/v1/supported-assets`
+- API reference: <https://epusdt.com/api/payment.html>
+
+### 3.9 OKPay
 
 Usually required:
 
@@ -175,7 +201,7 @@ Recommended:
 
 ---
 
-## 3.9 Fee Configuration
+## 3.10 Fee Configuration
 
 Each payment channel can have its own fee settings for calculating the actual amount received:
 
@@ -188,7 +214,7 @@ Fees are used only for admin statistics and profit calculation. They do **not** 
 
 ---
 
-## 3.10 Interaction Modes
+## 3.11 Interaction Modes
 
 When creating a payment channel, you must select an interaction mode that determines the customer's payment experience:
 
@@ -210,6 +236,7 @@ Applies to:
 - EPay
 - TokenPay
 - BEpusdt
+- epusdt
 - OKPay
 
 Use:
@@ -250,7 +277,7 @@ You can customize these 4 callback paths:
 
 | Callback Type | Default Path | Description |
 |--------------|-------------|-------------|
-| Payment Callback | `/api/v1/payments/callback` | Shared by Alipay/WeChat/EPay/TokenPay/BEpusdt/OKPay |
+| Payment Callback | `/api/v1/payments/callback` | Shared by Alipay/WeChat/EPay/TokenPay/BEpusdt/epusdt/OKPay |
 | PayPal Webhook | `/api/v1/payments/webhook/paypal` | PayPal only |
 | Stripe Webhook | `/api/v1/payments/webhook/stripe` | Stripe only |
 | Upstream Callback | `/api/v1/upstream/callback` | Upstream supplier callback |
