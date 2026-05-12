@@ -11,7 +11,7 @@ hero:
       link: /en/intro/about
     - theme: alt
       text: Join the Community Chat
-      link: https://t.me/dujiaoka
+      link: http://t.me/dujiaonext_official
 
 features:
   - title: Complete Business Loop

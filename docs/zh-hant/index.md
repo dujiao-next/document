@@ -11,7 +11,7 @@ hero:
       link: /zh-hant/intro/about
     - theme: alt
       text: 加入交流群
-      link: https://t.me/dujiaoka
+      link: http://t.me/dujiaonext_official
 
 features:
   - title: 完整業務閉環
