@@ -109,7 +109,7 @@ API 透過各站點的反向代理訪問（如 `user.example.com/api` 和 `admin
 
 建議：
 
-- `notify_url` 填：`https://user.example.com/api/v1/payments/callback?channel_id=你的渠道ID`
+- `notify_url` 填：`https://user.example.com/api/v1/payments/callback`
 - 如果是 H5 支付，請再填 `h5_redirect_url`：`https://shop.example.com/pay`
 
 ### 3.6 TokenPay

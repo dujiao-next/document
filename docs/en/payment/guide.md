@@ -109,7 +109,7 @@ Usually required:
 
 Recommended:
 
-- `notify_url`: `https://user.example.com/api/v1/payments/callback?channel_id=YOUR_CHANNEL_ID`
+- `notify_url`: `https://user.example.com/api/v1/payments/callback`
 - For H5 mode, also fill `h5_redirect_url`: `https://shop.example.com/pay`
 
 ### 3.6 TokenPay
