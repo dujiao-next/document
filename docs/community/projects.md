@@ -51,9 +51,7 @@
 > 新项目合并后，请同步更新本节。
 > 社区项目由贡献者独立维护，默认不属于官方产品范围。官方可对公开项目做基础安全审计与入口收录，但不对第三方作品的功能、稳定性、兼容性或维护承诺做背书。
 
-| 项目名 | 分类 | 简介 | 维护者 | 状态 |
-| --- | --- | --- | --- | --- |
-| [langge-dujiao-next-install](https://github.com/dujiao-next/community-projects/tree/main/scripts/langge-dujiao-next-install) | 脚本类 | 社区维护的一键部署与运维脚本，支持 Docker、二进制、外部环境、HTTPS、版本检查与基础运维菜单。 | LangGe | Active |
+当前暂无已收录项目。
 
 ## 6. 维护约定
 

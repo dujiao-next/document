@@ -51,9 +51,7 @@
 > 新專案合併後，請同步更新本節。
 > 社群專案由貢獻者獨立維護，預設不屬於官方產品範圍。官方可對公開專案做基礎安全審計與入口收錄，但不對第三方作品的功能、穩定性、相容性或維護承諾做背書。
 
-| 專案名 | 分類 | 簡介 | 維護者 | 狀態 |
-| --- | --- | --- | --- | --- |
-| [langge-dujiao-next-install](https://github.com/dujiao-next/community-projects/tree/main/scripts/langge-dujiao-next-install) | 腳本類 | 社群維護的一鍵部署與運維腳本，支援 Docker、二進位、外部環境、HTTPS、版本檢查與基礎運維選單。 | LangGe | Active |
+目前暫無已收錄專案。
 
 ## 6. 維護約定
 

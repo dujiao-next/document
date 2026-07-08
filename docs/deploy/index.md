@@ -6,13 +6,8 @@
 
 ## 1. 推荐起步方式
 
-当前官方文档优先保留可直接核验的正式部署方案；如果你希望使用社区维护的一键菜单脚本，也可以参考对应项目说明。
-
-> 提示：部署模块中收录的社区脚本属于第三方社区贡献项目，并非官方出品。官方仅对公开项目做基础安全审计与入口收录，不对第三方作品的功能设计、稳定性、兼容性或后续维护做背书。
-
 - 完全新手 / 不想用 Docker 多容器：从 [单二进制部署](/deploy/binary) 开始（最简单）。
 - 第一次部署，且希望长期稳定维护：从 [Docker Compose 部署](/deploy/docker-compose) 开始。
-- 希望使用统一菜单完成部署、更新、HTTPS 与日常运维：参考社区脚本 [langge-dujiao-next-install](https://github.com/dujiao-next/community-projects/tree/main/scripts/langge-dujiao-next-install)。
 - 已在使用 aaPanel/宝塔面板：直接查看 [aaPanel 手动部署](/deploy/aapanel)。
 - 需要源码级改造或本地构建：使用 [手动部署](/deploy/manual)。
 
@@ -21,7 +16,6 @@
 | 方式 | 上手难度 | 适合人群 | 核心特点 | 入口文档 | 视频教程                                    |   
 | --- | --- | --- | --- | --- |-----------------------------------------|
 | 单二进制（fullstack） | 低 | 完全新手 / 不想接触 Docker 多容器 | 一个二进制 + 一个 Redis 容器，零编排 | [单二进制部署](/deploy/binary) | 暂无 |
-| 社区一键部署脚本（LangGe） | 低-中 | 需要统一菜单完成部署、更新、HTTPS 与基础运维的用户 | 社区维护，支持 Docker / 二进制 / 外部环境、HTTPS、版本检查与运维菜单 | [langge-dujiao-next-install](https://github.com/dujiao-next/community-projects/tree/main/scripts/langge-dujiao-next-install) | 暂无                                      | 
 | Docker Compose | 中 | 希望标准化、可重复部署的用户 | 容器隔离、升级回滚清晰、便于自动化 | [Docker Compose 部署](/deploy/docker-compose) | 暂无                                      |  
 | aaPanel 手动部署 | 低-中 | 已在用宝塔面板的用户 | 面板化操作，适合可视化运维 | [aaPanel 手动部署](/deploy/aapanel) | [点我观看视频教程](https://t.me/dujiaoshuka/65) |  
 | 手动部署（源码构建） | 高 | 需要深度定制、二次开发的用户 | 控制粒度最高，适合高级运维/开发 | [手动部署](/deploy/manual) | 暂无                                      |    
@@ -43,7 +37,6 @@
 ## 4. 推荐路径
 
 - 你是完全新手，只想最快跑起来：使用 [单二进制部署](/deploy/binary)。
-- 你希望用一份社区脚本统一处理部署、更新和 HTTPS：可先阅读 [langge-dujiao-next-install](https://github.com/dujiao-next/community-projects/tree/main/scripts/langge-dujiao-next-install) 的 README，再决定是否采用。
 - 你是新手：优先 Docker Compose；已在宝塔环境可直接看 aaPanel 文档。
 - 你要长期稳定运维：优先 Docker Compose。
 - 你要深度改造或本地构建：使用手动部署。
