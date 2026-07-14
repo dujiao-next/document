@@ -74,7 +74,7 @@ Telegram Bot 是 Dujiao-Next 的独立扩展功能，用于把站点能力延伸
 
 ## 5. 演示体验
 
-- 演示 Bot：<https://t.me/Dujiao_NextBot>
+- 演示 Bot：<https://telegram.me/Dujiao_NextBot>
 - 可直接体验 Telegram Bot 的基础交互能力与展示效果
 
 ## 6. 说明
@@ -84,4 +84,4 @@ Telegram Bot 是 Dujiao-Next 的独立扩展功能，用于把站点能力延伸
 
 ## 联系方式
 
-- Telegram：<https://t.me/assimon_bot>
+- Telegram：<https://telegram.me/assimon_bot>

@@ -74,7 +74,7 @@ Telegram Bot is an independent Dujiao-Next extension that extends your site capa
 
 ## 5. Demo Experience
 
-- Demo Bot: <https://t.me/Dujiao_NextBot>
+- Demo Bot: <https://telegram.me/Dujiao_NextBot>
 - You can directly experience the basic interaction capabilities and presentation of the Telegram Bot
 
 ## 6. Notes
@@ -84,4 +84,4 @@ Telegram Bot is an independent Dujiao-Next extension that extends your site capa
 
 ## Contact
 
-- Telegram: <https://t.me/assimon_bot>
+- Telegram: <https://telegram.me/assimon_bot>

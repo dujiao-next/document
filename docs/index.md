@@ -11,7 +11,7 @@ hero:
       link: /intro/about
     - theme: alt
       text: 加入交流群
-      link: http://t.me/dujiaonext_official
+      link: http://telegram.me/dujiaonext_official
 
 features:
   - title: 完整业务闭环

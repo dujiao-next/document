@@ -445,7 +445,7 @@ None
     "languages": ["zh-CN", "zh-TW", "en-US"],
     "currency": "CNY",
     "contact": {
-      "telegram": "https://t.me/dujiaostudio",
+      "telegram": "https://telegram.me/dujiaostudio",
       "whatsapp": "https://wa.me/1234567890"
     },
     "site_name": "Dujiao-Next",

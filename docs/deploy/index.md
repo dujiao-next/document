@@ -17,7 +17,7 @@
 | --- | --- | --- | --- | --- |-----------------------------------------|
 | 单二进制（fullstack） | 低 | 完全新手 / 不想接触 Docker 多容器 | 一个二进制 + 一个 Redis 容器，零编排 | [单二进制部署](/deploy/binary) | 暂无 |
 | Docker Compose | 中 | 希望标准化、可重复部署的用户 | 容器隔离、升级回滚清晰、便于自动化 | [Docker Compose 部署](/deploy/docker-compose) | 暂无                                      |  
-| aaPanel 手动部署 | 低-中 | 已在用宝塔面板的用户 | 面板化操作，适合可视化运维 | [aaPanel 手动部署](/deploy/aapanel) | [点我观看视频教程](https://t.me/dujiaoshuka/65) |  
+| aaPanel 手动部署 | 低-中 | 已在用宝塔面板的用户 | 面板化操作，适合可视化运维 | [aaPanel 手动部署](/deploy/aapanel) | [点我观看视频教程](https://telegram.me/dujiaoshuka/65) |  
 | 手动部署（源码构建） | 高 | 需要深度定制、二次开发的用户 | 控制粒度最高，适合高级运维/开发 | [手动部署](/deploy/manual) | 暂无                                      |    
 
 ## 3. 部署前准备清单

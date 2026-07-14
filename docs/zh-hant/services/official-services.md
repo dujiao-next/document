@@ -37,7 +37,7 @@
 
 ## 聯繫方式
 
-- Telegram：<https://t.me/assimon_bot>
+- Telegram：<https://telegram.me/assimon_bot>
 
 ## 服務條款
 

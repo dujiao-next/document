@@ -40,7 +40,7 @@ As a sponsor, you can get the following exposure and benefits:
 
 Please contact the maintainer via Telegram:
 
-- Contact: <https://t.me/assimon_bot>
+- Contact: <https://telegram.me/assimon_bot>
 
 Suggested DM template:
 

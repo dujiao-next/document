@@ -37,7 +37,7 @@ This page describes the official technical service offerings and terms for Dujia
 
 ## Contact
 
-- Telegram: <https://t.me/assimon_bot>
+- Telegram: <https://telegram.me/assimon_bot>
 
 ## Service Terms
 

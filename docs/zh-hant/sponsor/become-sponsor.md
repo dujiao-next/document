@@ -40,7 +40,7 @@
 
 請通過 Telegram 聯繫作者：
 
-- 聯繫方式：<https://t.me/assimon_bot>
+- 聯繫方式：<https://telegram.me/assimon_bot>
 
 建議私信模板：
 
