@@ -152,7 +152,8 @@ After=network.target
 Type=simple
 WorkingDirectory=/opt/dujiao
 ExecStart=/opt/dujiao/dujiao-next
-Restart=on-failure
+Restart=always
+RestartSec=3
 User=dujiao
 
 [Install]
@@ -165,6 +166,31 @@ sudo systemctl enable --now dujiao
 sudo journalctl -u dujiao -f
 ```
 
+::: warning 從 v1.3.1 及更早版本升級：先改 Restart=always
+如果你的 unit 現在是 `Restart=on-failure`，**在使用後臺一鍵升級之前**先改成 `Restart=always` 並執行 `systemctl daemon-reload`。
+
+原因是一鍵升級的執行者是**當前正在運行的舊程式**：它替換掉磁碟上的二進制之後，仍由它自己處理「立即重啟」。舊程式裡沒有新版本的退出碼邏輯，它會正常退出（退出碼 0），而 `Restart=on-failure` 對正常退出不做任何處理 —— 服務就此停在那裡，需要你手動 `systemctl start dujiao` 才能起來。
+
+`Restart=always` 對任何退出都會拉起，因此改完之後連這一次升級也是全自動的。改成 `always` 不影響 `systemctl stop`，顯式停止仍然正常停服。
+
+新版本跑起來之後，後續升級兩種策略都能正常工作。
+:::
+
+::: tip Restart= 決定後臺「一鍵重啟」能否使用
+後臺「系統更新」裡的一鍵重啟，是讓當前行程退出、由 systemd 拉起新二進制。因此 unit 的 `Restart=` 策略必須允許自動拉起：
+
+| `Restart=` | 一鍵重啟 | 說明 |
+| --- | --- | --- |
+| `always` | ✅ 推薦 | 任何退出都拉起；`systemctl stop` 仍能正常停服 |
+| `on-failure` | ✅ 可用 | 自更新重啟以專用非零退出碼退出，會被拉起 |
+| `on-success` / `on-abnormal` / `on-abort` | ❌ | 只認乾淨退出或信號，不認退出碼 |
+| `no` | ❌ | 退出即停服（這也是 systemd 的默認值，不寫 `Restart=` 就是它） |
+
+另外，若你在 unit 裡寫了 `SuccessExitStatus=70` 或 `RestartPreventExitStatus=70`，一鍵重啟同樣會失效 —— 70 正是自更新使用的退出碼。
+
+程式啟動時會讀取本 unit 的這三項配置並據此決定是否放出重啟按鈕。**查不到配置時按「不能重啟」處理**，後臺會改為提示你手動執行 `systemctl restart dujiao`。
+:::
+
 ## 9. 升級
 
 1. `systemctl stop dujiao`
@@ -173,6 +199,70 @@ sudo journalctl -u dujiao -f
 4. `systemctl start dujiao`
 
 資料庫遷移自動完成。前端也隨二進制一起更新，不需要另外替換靜態檔案。
+
+::: tip 手工替換不會清理一鍵升級留下的備份
+如果你之前用過後臺一鍵升級，目錄裡會留著 `dujiao-next.backup` 和 `dujiao-next.backup.json`。手工替換二進制不會動它們，所以後臺「系統更新」裡顯示的回滾目標仍然是**上一次一鍵升級前**的那一版，可能比你現在跑的版本舊好幾個版本。不想保留就直接刪掉這兩個檔案，回滾入口會隨之消失。
+:::
+
+### 回滾
+
+後臺一鍵升級會把舊二進制留成 `dujiao-next.backup`。回滾有兩條路徑：
+
+- **後臺能打開時**：進「系統更新」點回滾。
+- **新版本起不來時**：後臺本身也打不開，改在終端執行：
+
+  ```bash
+  cd /opt/dujiao
+  ./dujiao-next rollback
+  systemctl restart dujiao
+  ```
+
+  這條命令不讀 `config.yml`、不連資料庫，只做本地檔案替換，所以配置寫錯或資料庫連不上都不影響恢復。
+
+::: warning 什麼時候需要加 `--force`
+資料庫遷移一旦開始，舊程式就未必讀得懂新的表結構，所以下面三種情況命令列都會**直接拒絕**回滾，後臺則會先彈風險確認：
+
+| 情況 | 為什麼拒絕 |
+| --- | --- |
+| 新版本已經完整啟動過 | 遷移肯定跑完了 |
+| 新版本在遷移中途失敗 | 遷移在第一條 SQL 之前就已記錄，schema 可能改了一半 |
+| 找不到升級記錄，或記錄損壞 | 無法證明遷移沒跑過 |
+
+**第三種最常見**：從 v1.3.1 及更早版本一鍵升級上來的**第一次**，執行替換的是沒有這套記錄邏輯的舊程式，目錄裡只會留下一個 `dujiao-next.backup`。也就是說，如果你是從 v1.3.1 升上來、新版本又起不來，上面那條 `./dujiao-next rollback` **一定**會印出「已拒絕回滾」，這是預期行為，不是命令壞了。
+
+確認要承擔風險時先備份資料庫，再加 `--force`：
+
+```bash
+cp -r db /backup/          # SQLite；PostgreSQL 請用 pg_dump
+./dujiao-next rollback --force
+systemctl restart dujiao
+```
+:::
+
+### 啟動時提示「無法可靠記錄升級狀態」
+
+服務起不來，日誌裡是這一句：
+
+```
+无法可靠记录升级状态，已在数据库迁移前中止启动: open update lock: ... permission denied
+```
+
+意思是安裝目錄裡還留著一鍵升級的狀態檔案（`dujiao-next.backup`、`dujiao-next.backup.json`），但**服務帳號對安裝目錄沒有寫權限**，程式沒法把「資料庫遷移已經開始」記下來。
+
+這時候程式會**在動資料庫之前主動停下**：如果放它繼續跑，遷移改完 schema 卻沒有任何記錄，之後一次普通回滾就會被錯誤放行，把舊程式配上新庫。
+
+常見於安裝目錄屬主是 `root`、而 unit 裡寫了 `User=dujiao` 的部署。按提示二選一：
+
+```bash
+# 1) 讓服務帳號可寫（推薦，保留回滾能力）
+sudo chown -R dujiao /opt/dujiao
+
+# 2) 確認不再需要這個回滾點，刪掉狀態檔案
+sudo rm -f /opt/dujiao/dujiao-next.backup /opt/dujiao/dujiao-next.backup.json
+sudo systemctl restart dujiao
+```
+
+如果日誌裡是「另一个升级或回滚正在进行」，那只是兩個行程同時起來搶鎖，等幾秒重啟即可，不用改任何檔案。
 
 ## 10. 從其他部署方式遷移
 

@@ -153,7 +153,8 @@ After=network.target
 Type=simple
 WorkingDirectory=/opt/dujiao
 ExecStart=/opt/dujiao/dujiao-next
-Restart=on-failure
+Restart=always
+RestartSec=3
 User=dujiao
 
 [Install]
@@ -166,6 +167,31 @@ sudo systemctl enable --now dujiao
 sudo journalctl -u dujiao -f
 ```
 
+::: warning Upgrading from v1.3.1 or earlier: switch to `Restart=always` first
+If your unit currently says `Restart=on-failure`, change it to `Restart=always` and run `systemctl daemon-reload` **before** using the admin panel's one-click upgrade.
+
+The reason is that the upgrade is carried out by the **currently running old binary**: after it replaces the binary on disk, it is still the one that handles "restart now". The old binary has none of the new exit-code logic, so it exits normally (exit code 0) — and `Restart=on-failure` does nothing on a normal exit. The service simply stays down until you run `systemctl start dujiao` yourself.
+
+`Restart=always` relaunches on any exit, so after this change even that first upgrade is fully automatic. Switching to `always` does not affect `systemctl stop`; an explicit stop still stops the service.
+
+Once the new version is running, both policies work for subsequent upgrades.
+:::
+
+::: tip `Restart=` determines whether one-click restart works
+The one-click restart in the admin panel's "System Update" section works by letting the current process exit so systemd relaunches the new binary. The unit's `Restart=` policy must therefore allow an automatic relaunch:
+
+| `Restart=` | One-click restart | Notes |
+| --- | --- | --- |
+| `always` | ✅ Recommended | Relaunches on any exit; `systemctl stop` still stops the service normally |
+| `on-failure` | ✅ Works | A self-update restart exits with a dedicated non-zero code, so it is relaunched |
+| `on-success` / `on-abnormal` / `on-abort` | ❌ | Only react to clean exits or signals, not to exit codes |
+| `no` | ❌ | Exiting means the service stays down (this is also systemd's default when `Restart=` is omitted) |
+
+Also note that `SuccessExitStatus=70` or `RestartPreventExitStatus=70` in your unit will break one-click restart — 70 is exactly the exit code self-update uses.
+
+At startup the program reads these three settings from the unit and decides whether to expose the restart button. **If they cannot be read, it assumes restart is not possible** and the admin panel asks you to run `systemctl restart dujiao` manually instead.
+:::
+
 ## 9. Upgrading
 
 1. `systemctl stop dujiao`
@@ -174,6 +200,70 @@ sudo journalctl -u dujiao -f
 4. `systemctl start dujiao`
 
 Database migrations run automatically. The frontends are updated along with the binary — no separate static files to replace.
+
+::: tip Replacing the binary by hand does not clear a one-click upgrade's backup
+If you have used the admin panel's one-click upgrade before, `dujiao-next.backup` and `dujiao-next.backup.json` are still sitting in the directory. Replacing the binary by hand leaves them untouched, so the rollback target shown under "System Update" is still the build from **before that one-click upgrade** — potentially several versions older than what you are running now. Delete both files if you do not want to keep it; the rollback entry disappears with them.
+:::
+
+### Rolling Back
+
+The admin panel's one-click upgrade keeps the previous binary as `dujiao-next.backup`. There are two ways to roll back:
+
+- **When the admin panel still opens**: go to "System Update" and click roll back.
+- **When the new version fails to start**: the admin panel is down too, so use the terminal instead:
+
+  ```bash
+  cd /opt/dujiao
+  ./dujiao-next rollback
+  systemctl restart dujiao
+  ```
+
+  This command does not read `config.yml` and does not connect to the database — it only swaps local files, so a bad config or an unreachable database cannot block recovery.
+
+::: warning When `--force` is required
+Once database migration has started, the older binary may no longer understand the schema. The CLI therefore **refuses outright** in all three cases below, and the admin panel shows a risk confirmation first:
+
+| Case | Why it is refused |
+| --- | --- |
+| The new version started completely | Migration definitely finished |
+| The new version failed partway through migration | Migration is recorded before the first SQL statement, so the schema may be half-changed |
+| No upgrade record, or a corrupted one | There is no way to prove migration did not run |
+
+**The third case is the most common one.** On the *first* one-click upgrade from v1.3.1 or earlier, the swap is performed by the old binary, which has none of this bookkeeping — all it leaves behind is a bare `dujiao-next.backup`. So if you upgraded from v1.3.1 and the new version will not start, the `./dujiao-next rollback` above **will** print a refusal. That is expected behaviour, not a broken command.
+
+Back up your database, then pass `--force` to accept the risk:
+
+```bash
+cp -r db /backup/          # SQLite; use pg_dump for PostgreSQL
+./dujiao-next rollback --force
+systemctl restart dujiao
+```
+:::
+
+### Startup fails with "无法可靠记录升级状态"
+
+The service will not start and the log shows:
+
+```
+无法可靠记录升级状态，已在数据库迁移前中止启动: open update lock: ... permission denied
+```
+
+This means the install directory still holds the state files left by a one-click upgrade (`dujiao-next.backup`, `dujiao-next.backup.json`), but **the service account cannot write to that directory**, so the program cannot record that database migration has begun.
+
+It therefore stops **before touching the database on purpose**: letting it continue would migrate the schema with nothing recorded, and a later ordinary rollback would then be wrongly allowed, pairing the old binary with the new schema.
+
+This usually happens when the install directory is owned by `root` while the unit declares `User=dujiao`. Pick either fix:
+
+```bash
+# 1) Make the directory writable by the service account (recommended — keeps rollback available)
+sudo chown -R dujiao /opt/dujiao
+
+# 2) Drop the rollback point if you no longer need it
+sudo rm -f /opt/dujiao/dujiao-next.backup /opt/dujiao/dujiao-next.backup.json
+sudo systemctl restart dujiao
+```
+
+If the log says "另一个升级或回滚正在进行" instead, two processes simply raced for the lock. Wait a few seconds and restart — no files need changing.
 
 ## 10. Migrating from Other Deployments
 

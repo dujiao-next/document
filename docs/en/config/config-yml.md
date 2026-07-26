@@ -249,7 +249,9 @@ web:
 Additional notes:
 
 - Must start with `/`, must not end with `/`, and must not be `/` itself.
+- Each segment may only contain letters, digits and `-` `.` `_` `~` `@`, and must not be `.` or `..`. Colons and asterisks are Gin routing metacharacters (`/:tenant`, `/*admin`) that would make the admin panel swallow storefront paths or fail startup outright, so they are rejected.
 - Must not equal, contain, or be contained by `/api`, `/uploads`, or `/health`; otherwise startup fails with an error.
+- Validation runs before database initialization: an invalid value exits cleanly rather than leaving you with a migrated schema and a service that will not start.
 - A restart is required after changing it: the value is written into the admin page's `<base href>` once at startup.
 - The storefront is always mounted at `/` and is not configurable.
 - This path is only the "front door" of the admin panel, not a security boundary — endpoint security comes from
