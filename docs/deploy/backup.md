@@ -14,10 +14,12 @@ outline: deep
 
 | 内容 | 路径 | 重要性 |
 |------|------|--------|
-| 数据库 | `api/db/`（SQLite）或 PostgreSQL | 最高 |
-| 配置文件 | `api/config.yml` | 高 |
-| 上传文件 | `api/uploads/` | 高 |
-| 前端构建 | `user/dist/`、`admin/dist/` | 低（可重新构建） |
+| 数据库 | `db/`（SQLite）或 PostgreSQL | 最高 |
+| 配置文件 | `config.yml` | 高 |
+| 上传文件 | `uploads/` | 高 |
+
+> 前端已内嵌进二进制，没有需要单独备份的静态文件目录。
+> 下文路径均相对于程序运行目录（Docker 部署下对应宿主机挂载出来的 `data/` 目录）。
 
 ---
 
@@ -29,7 +31,7 @@ SQLite 数据存储在单个文件中，直接复制即可：
 
 ```bash
 # 备份
-cp api/db/dujiao.db api/db/dujiao.db.bak.$(date +%Y%m%d%H%M%S)
+cp db/dujiao.db db/dujiao.db.bak.$(date +%Y%m%d%H%M%S)
 ```
 
 > 建议在服务停止或低流量时备份，避免写入冲突。
@@ -62,7 +64,7 @@ docker compose cp postgres:/tmp/backup.dump ./backup/
 ## 3. 配置文件备份
 
 ```bash
-cp api/config.yml backup/config.yml.$(date +%Y%m%d)
+cp config.yml backup/config.yml.$(date +%Y%m%d)
 ```
 
 > `config.yml` 包含数据库密码、JWT 密钥、支付配置等敏感信息，请妥善保管备份文件。
@@ -73,10 +75,10 @@ cp api/config.yml backup/config.yml.$(date +%Y%m%d)
 
 ```bash
 # 直接复制目录
-cp -r api/uploads backup/uploads_$(date +%Y%m%d)
+cp -r uploads backup/uploads_$(date +%Y%m%d)
 
 # 或使用 rsync 增量备份
-rsync -av api/uploads/ backup/uploads/
+rsync -av uploads/ backup/uploads/
 ```
 
 Docker 环境：
@@ -133,7 +135,7 @@ echo "Backup completed: $BACKUP_DIR"
 systemctl stop dujiao-next
 
 # 恢复数据库
-cp backup/dujiao.db api/db/dujiao.db
+cp backup/dujiao.db db/dujiao.db
 
 # 启动服务
 systemctl start dujiao-next
@@ -155,8 +157,8 @@ systemctl start dujiao-next
 ### 6.3 恢复配置和上传文件
 
 ```bash
-cp backup/config.yml api/config.yml
-cp -r backup/uploads/* api/uploads/
+cp backup/config.yml config.yml
+cp -r backup/uploads/* uploads/
 ```
 
 ---

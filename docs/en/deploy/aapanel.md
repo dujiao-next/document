@@ -1,217 +1,151 @@
-# Manually Deploy Using aaPanel (Based on Releases Archive)
+# Deploy Using aaPanel (Based on Releases Archive)
 
-> Last Updated: 2026-02-27
+> Last Updated: 2026-07-26
 
 If you have not chosen a deployment method yet, start with [Deployment Overview and Selection Guide](/en/deploy/).
 
-This document is for deploying using the compiled artifacts provided in the repository Releases.
+This document covers deploying the official compiled artifact on an aaPanel/BT panel server.
 
 Features:
 
 - No need to `git clone` the source code on the server
-- No need to run `go build` / `npm run build` on the server
-- Only involves "Upload (or Download) → Extract → Configure → Start"
+- No need to run `go build` / `pnpm run build` on the server
+- Only involves "Download → Extract → Configure → Start"
+- Since v1.4.0 the frontends are embedded in the program, so you **download one archive and create one site**
 
-## 1. Panel and Software Preparation
+## 1. Panel and Software Prerequisites
 
 Install in aaPanel:
 
 - Nginx
-- PM2 manager (or Supervisor)
-- Extraction tools (`unzip` / `tar`)
-- Redis (if needed)
-- PostgreSQL (if needed)
+- PM2 Manager (or Supervisor)
+- Extraction tools (`tar`)
+- Redis (as needed)
+- PostgreSQL (as needed)
 
-> This deployment method does not rely on Git, Go, or Node.js build environment.
+> This deployment method does not require Git, Go, or a Node.js build environment.
 
-## 2. Prepare Directories
+## 2. Prepare the Directory
 
 ```bash
-mkdir -p /www/wwwroot/dujiao-next/{api,user,admin}
+mkdir -p /www/wwwroot/dujiao-next
 cd /www/wwwroot/dujiao-next
 ```
-## 3. Download and Extract the Release Package
 
-Please download the corresponding version package from the Releases of the following repositories (it is recommended that all three ends use the same version number):
+## 3. Download and Extract the Release Archive
 
-- API (main project): `https://github.com/dujiao-next/dujiao-next/releases`
-- User (user front-end): `https://github.com/dujiao-next/user/releases`
-- Admin (back-end): `https://github.com/dujiao-next/admin/releases`
+Download the archive matching your architecture from [Releases](https://github.com/dujiao-next/dujiao-next/releases).
 
-Example (replace the file name with your actual Release artifact):
-
-> The API package follows GoReleaser naming rules: `dujiao-next_<tag>_Linux_x86_64.tar.gz`, for example `dujiao-next_v1.0.0_Linux_x86_64.tar.gz`.
-> Example User package name: `dujiao-next-user-v1.0.0.zip`.
-> Example Admin package name: `dujiao-next-admin-v1.0.0.zip`.
+Naming follows GoReleaser conventions: `dujiao-next_<tag>_Linux_<arch>.tar.gz`, for example `dujiao-next_v1.4.0_Linux_x86_64.tar.gz` (use `_Linux_arm64.tar.gz` on arm64 machines).
 
 ```bash
-# API
-wget -O api.tar.gz https://github.com/dujiao-next/dujiao-next/releases/download/v1.0.0/dujiao-next_v1.0.0_Linux_x86_64.tar.gz
-mkdir -p api && tar -xzf api.tar.gz -C api
-
-# User
-wget -O user.zip https://github.com/dujiao-next/user/releases/download/v1.0.0/dujiao-next-user-v1.0.0.zip
-mkdir -p user && unzip -o user.zip -d user
-
-# Admin
-wget -O admin.zip https://github.com/dujiao-next/admin/releases/download/v1.0.0/dujiao-next-admin-v1.0.0.zip
-mkdir -p admin && unzip -o admin.zip -d admin
+wget -O dujiao.tar.gz https://github.com/dujiao-next/dujiao-next/releases/download/v1.4.0/dujiao-next_v1.4.0_Linux_x86_64.tar.gz
+tar -xzf dujiao.tar.gz
 ```
-> After extracting the API package, the `/www/wwwroot/dujiao-next/api` directory should contain:
-> - `config.yml.example`
-> - `dujiao-next`
-> - `README.md`
 
-## 4. Deploy the API (no compilation required)
+After extraction the directory should contain:
 
-Make sure the API extraction directory contains the following files: `config.yml.example`, `dujiao-next`, `README.md`.
+- `dujiao-next` (the executable with embedded frontends)
+- `config.yml.example`
+- `README.md`
+
+::: tip Note for v1.3.x users
+The old setup required downloading three archives (API, User, Admin) and creating two sites.
+Now there is one archive; the frontends live inside the program, and there are no `user/dist` or `admin/dist` directories.
+:::
+
+## 4. Configure
 
 ```bash
-cd /www/wwwroot/dujiao-next/api
+cd /www/wwwroot/dujiao-next
 cp config.yml.example config.yml
-# Edit config.yml
 chmod +x ./dujiao-next
+# edit config.yml
 ```
-> ⚠️ Important Security Reminder: You must change the `jwt.secret` and `user_jwt.secret` in `config.yml` before going live.
+
+> ⚠️ Critical security note: you must change `jwt.secret` and `user_jwt.secret` in `config.yml` before going live.
 >
-> Please use a high-strength random string of at least 32 characters. Do not use the default template values.
+> Use random strings of at least 32 characters. Never keep the template defaults.
 
-Add the startup command in aaPanel's PM2/Supervisor:
+Also change the admin entry path (the default `/admin` is a prime scanner target):
 
-> It is also recommended to set environment variables for this process (used to initialize the default admin and avoid using weak default passwords):
+```yaml
+web:
+  admin_path: "/dj-mgmt-7x9k2"   # pick your own string
+```
+
+## 5. Start with PM2 / Supervisor
+
+Add the start command in aaPanel's PM2/Supervisor:
+
+```bash
+/www/wwwroot/dujiao-next/dujiao-next
+```
+
+Set the working directory to:
+
+```text
+/www/wwwroot/dujiao-next
+```
+
+> It is also recommended to set these environment variables on the process (to initialize the default administrator and avoid weak default credentials):
 >
 > - `DJ_DEFAULT_ADMIN_USERNAME=admin`
 > - `DJ_DEFAULT_ADMIN_PASSWORD=<your strong password>`
 
-```bash
-/www/wwwroot/dujiao-next/api/dujiao-next
+After starting, check the logs — this line confirms the frontends were embedded correctly:
+
 ```
-The working directory is set to:
-
-```text
-/www/wwwroot/dujiao-next/api
+Embedded SPAs: admin (/dj-mgmt-7x9k2), user (/)
 ```
-### 4.1 Default Back-End Admin Account (First Initialization)
 
-When the `admins` table in the database is empty, the API will attempt to create a default admin account on first startup:
+### 5.1 Default Administrator Account (First Initialization)
 
-- Default username: `admin`
-- Default password: `admin123`
+When the `admins` table is empty, the first startup attempts to create a default administrator:
 
-> Strongly recommended: Change the password immediately after the first login to the admin panel.
+- Username: `admin`
+- Password: `admin123`
 
-If you have already set `DJ_DEFAULT_ADMIN_USERNAME` / `DJ_DEFAULT_ADMIN_PASSWORD` in PM2/Supervisor, those values take highest priority.
+> Strongly recommended: change the password immediately after your first login.
 
-If those environment variables are not set, you can also configure `config.yml`:
+If you set `DJ_DEFAULT_ADMIN_USERNAME` / `DJ_DEFAULT_ADMIN_PASSWORD` in PM2/Supervisor, those values take precedence.
+
+Without those environment variables, you can also configure it in `config.yml`:
 
 ```yaml
 bootstrap:
   default_admin_username: admin
-  default_admin_password: <your-strong-password>
+  default_admin_password: <your strong password>
 ```
 
-On first startup, the API will read this configuration to initialize the admin account.
+The values are read on first startup to initialize the administrator.
 
-## 5. Deploying User and Admin (No Build Required)
+## 6. Create the Site in aaPanel
 
-Requirement: The release package already contains static files ready for hosting (usually `dist`);
-if it is a ZIP package, please unzip it first and confirm that `user/dist` and `admin/dist` directories exist.
+**You only need one site:**
 
-Recommended directories:
-
-- User site root: `/www/wwwroot/dujiao-next/user/dist`
-- Admin site root: `/www/wwwroot/dujiao-next/admin/dist`
-
-## 6. Creating Sites in aaPanel
-
-It is recommended to create two sites:
-
-- Front-end site: `shop.example.com` → root directory `user/dist`
-- Admin site: `admin.example.com` → root directory `admin/dist`
-
-And apply SSL certificates for both.
+- Site domain: `shop.example.com`
+- Document root: anything (no static files are actually served — every request is proxied to the program)
+- Issue an SSL certificate for the site
 
 ## 7. Reverse Proxy Configuration
 
-Add in the outer gateway (Nginx):
+In the site's "Reverse Proxy" settings, forward the whole site to `http://127.0.0.1:8080`.
 
-- `/api` → `http://127.0.0.1:8080/api`
-- `/uploads` → `http://127.0.0.1:8080/uploads`
-- `/sitemap.xml` → `http://127.0.0.1:8080/sitemap.xml` (user frontend domain only)
-- `/robots.txt` → `http://127.0.0.1:8080/robots.txt` (user frontend domain only)
-
-### 7.1 Subdomain Deployment Example
+If you edit the Nginx configuration by hand, it looks like this:
 
 ```nginx
-# User frontend
 server {
-    listen 80;
+    listen 443 ssl http2;
     server_name shop.example.com;
 
-    root /www/wwwroot/dujiao-next/user/dist;
-    index index.html;
+    ssl_certificate     /path/to/fullchain.pem;
+    ssl_certificate_key /path/to/privkey.pem;
+
+    client_max_body_size 50m;
 
     location / {
-        try_files $uri $uri/ /index.html;
-    }
-
-    # SEO assets are generated dynamically by the backend; they must be
-    # proxied explicitly, otherwise the SPA fallback above will swallow them.
-    location = /sitemap.xml {
-        proxy_pass http://127.0.0.1:8080/sitemap.xml;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-    }
-
-    location = /robots.txt {
-        proxy_pass http://127.0.0.1:8080/robots.txt;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-    }
-
-    location /api/ {
-        proxy_pass http://127.0.0.1:8080/api/;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-    }
-
-    location /uploads/ {
-        proxy_pass http://127.0.0.1:8080/uploads/;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-    }
-}
-
-# Admin frontend
-server {
-    listen 80;
-    server_name admin.example.com;
-
-    root /www/wwwroot/dujiao-next/admin/dist;
-    index index.html;
-
-    location / {
-        try_files $uri $uri/ /index.html;
-    }
-
-    location /api/ {
-        proxy_pass http://127.0.0.1:8080/api/;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-    }
-
-    location /uploads/ {
-        proxy_pass http://127.0.0.1:8080/uploads/;
+        proxy_pass http://127.0.0.1:8080;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -219,11 +153,30 @@ server {
     }
 }
 ```
-For front-end history routing, you need to configure `try_files` to `index.html`.
 
-## 8. Security Recommendations
+Access:
 
-- Do not use default values for keys in `config.yml`
-- Only open necessary ports (80/443)
-- It is not recommended to expose the API directly on public ports
-- In production mode, please set `server.mode: release`
+- Storefront: `https://shop.example.com`
+- Admin panel: `https://shop.example.com/<web.admin_path>`
+
+::: tip What got simpler
+The old setup needed two sites and two domains, plus separate proxy rules for `/api/`, `/uploads/`,
+`/sitemap.xml`, and `/robots.txt`. All of that is now handled by one program behind a single site-wide proxy.
+:::
+
+## 8. Upgrading
+
+1. Stop the process in PM2/Supervisor
+2. Back up `db/`, `uploads/`, and `config.yml`
+3. Download the new archive and overwrite the `dujiao-next` binary
+4. Start the process again
+
+The frontends update along with the binary — no separate static files to replace.
+
+## 9. Security Recommendations
+
+- Never keep the default secrets in `config.yml`
+- Do not keep the default `/admin` for `web.admin_path`
+- Only open the necessary ports (80/443)
+- Do not expose the application port (8080) publicly — only the local Nginx should reach it
+- Set `server.mode: release` in production

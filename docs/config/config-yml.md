@@ -236,7 +236,30 @@ database:
 | `allowed_extensions` | []string | 允许后缀 | 与 MIME 对齐 |
 | `max_width` / `max_height` | int | 图片尺寸上限 | `4096` |
 
-## 5.8 `cors`
+## 5.8 `web`
+
+控制内嵌前端的挂载方式。自 v1.4.0 起用户前台与管理后台已 embed 进二进制，这一段决定后台入口路径。
+
+| 字段 | 类型 | 默认值 | 说明 | 推荐 |
+| --- | --- | --- | --- | --- |
+| `admin_path` | string | `/admin` | 管理后台的路径前缀 | **改成不易猜测的字符串** |
+
+```yaml
+web:
+  admin_path: "/dj-mgmt-7x9k2"
+```
+
+补充：
+
+- 必须以 `/` 开头、不能以 `/` 结尾，且不能是 `/`。
+- 不能与 `/api`、`/uploads`、`/health` 冲突或互为前缀，否则启动时会直接报错退出。
+- 改动后必须重启进程：该路径在启动时被一次性写进后台页面的 `<base href>`。
+- 用户前台固定挂在 `/`，不可配置。
+- 这个路径只是后台入口的「门牌」，不构成鉴权边界 —— 接口安全由 JWT + 限流保证，
+  改路径的意义是过滤自动化扫描噪音。
+- 若二进制不含内嵌前端（自行 `go build` 未加 `-tags fullstack`），本段不生效。
+
+## 5.9 `cors`
 
 | 字段 | 类型 | 说明 | 推荐 |
 | --- | --- | --- | --- |
@@ -250,7 +273,7 @@ database:
 
 - 浏览器限制：当 `allow_credentials=true` 时，`allowed_origins` 不能包含 `*`。
 
-## 5.9 `security`
+## 5.10 `security`
 
 | 字段 | 类型 | 默认值 | 说明 | 推荐 |
 | --- | --- | --- | --- | --- |
@@ -263,7 +286,7 @@ database:
 | `password_policy.require_number` | bool | `true` | 是否要求数字 | `true` |
 | `password_policy.require_special` | bool | `false` | 是否要求特殊字符 | 按需开启 |
 
-## 5.10 `email`
+## 5.11 `email`
 
 | 字段 | 类型 | 说明 | 推荐 |
 | --- | --- | --- | --- |
@@ -274,7 +297,7 @@ database:
 | `use_tls`/`use_ssl` | bool | 传输安全策略 | 二选一，按服务商文档 |
 | `verify_code.*` | mixed | 验证码有效期、频率、长度 | 常用默认值 |
 
-## 5.11 `bootstrap`
+## 5.12 `bootstrap`
 
 | 字段 | 类型 | 说明 | 推荐 |
 | --- | --- | --- | --- |
@@ -287,7 +310,7 @@ database:
 - 优先级：`DJ_DEFAULT_ADMIN_USERNAME` / `DJ_DEFAULT_ADMIN_PASSWORD`（环境变量） > `bootstrap.default_admin_username` / `bootstrap.default_admin_password`（`config.yml`） > 系统默认值。
 - 若运行在 `release` 模式且环境变量与 `config.yml` 都未提供管理员密码，系统会跳过默认管理员初始化。
 
-## 5.12 `order`
+## 5.13 `order`
 
 | 字段 | 类型 | 默认值 | 说明 | 推荐 |
 | --- | --- | --- | --- | --- |
@@ -297,7 +320,7 @@ database:
 
 - 实际生效值可能会被后台系统设置覆盖（见下方“运行时覆盖优先级”）。
 
-## 5.13 `telegram_auth`（可选）
+## 5.14 `telegram_auth`（可选）
 
 | 字段 | 类型 | 说明 | 推荐 |
 | --- | --- | --- | --- |
@@ -307,7 +330,7 @@ database:
 | `login_expire_seconds` | int | 登录有效期（秒） | `300` |
 | `replay_ttl_seconds` | int | 重放保护时长（秒） | `300` |
 
-## 5.14 `captcha`（可选）
+## 5.15 `captcha`（可选）
 
 `config.yml.example` 可能未完整展示该段，但系统已支持。
 
@@ -339,7 +362,7 @@ captcha:
     timeout_ms: 2000
 ```
 
-## 5.15 运行时覆盖优先级（重要）
+## 5.16 运行时覆盖优先级（重要）
 
 以下配置支持在后台“设置”中动态修改，且优先级高于 `config.yml`：
 
@@ -356,6 +379,7 @@ captcha:
 - `DATABASE_DSN=host=127.0.0.1 ...`
 - `JWT_SECRET=...`
 - `USER_JWT_SECRET=...`
+- `WEB_ADMIN_PATH=/dj-mgmt-7x9k2`
 - `DJ_DEFAULT_ADMIN_USERNAME=admin`
 - `DJ_DEFAULT_ADMIN_PASSWORD=<你的强密码>`
 - `REDIS_HOST=127.0.0.1`
@@ -388,5 +412,6 @@ captcha:
 - [ ] Redis/队列可用（如已启用）
 - [ ] 若使用默认启动模式 `all`，请确认 `queue.enabled=true` 且队列 Redis 可达
 - [ ] 若计划关闭队列，请确认使用 `-mode api` 启动，并知晓异步任务能力会受影响
+- [ ] `web.admin_path` 已改掉默认值 `/admin`
 - [ ] CORS 已限制到真实业务域名
 - [ ] 邮件配置已做真实发信验证（如已启用）

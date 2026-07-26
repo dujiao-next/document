@@ -1,106 +1,113 @@
 # Single Binary Deployment (Recommended for Beginners)
 
-> Who this is for: Complete beginners who don't want to deal with multi-container Docker orchestration and prefer to run everything with "one binary + one Redis container + one domain".
+> Who this is for: Complete beginners who want to run everything with "one binary + one Redis + one domain".
 
-## When to Choose This
+As of v1.4.0 the storefront and admin panel are embedded in the backend binary. Download, extract, and you have the complete service — no separate frontend deployment.
 
-| Deployment Method | Difficulty | Container Count | Domain Count |
-|---|---|---|---|
-| **Single Binary (this guide)** | Low | 1 (Redis) | 1 |
-| Docker Compose | Medium | 4-5 | 1-2 |
-| aaPanel Manual Deployment | Low-Medium | 0 (bare metal) | 1-2 |
-| Manual Source Build | High | 0 | 1-2 |
-
-## System Requirements
+## Requirements
 
 - Linux x86_64 or arm64
-- Docker (only required for running the Redis container; can be skipped if you already have a Redis service)
-- One domain + SSL certificate (for production deployment)
-- At least 512MB of memory
+- Redis (a system service, an existing instance, or a Docker container)
+- One domain + SSL certificate (for production)
+- At least 512MB RAM
 
 ## 1. Download
 
-Go to [GitHub Releases](https://github.com/dujiao-next/dujiao-next/releases) and find the latest `dujiao-all_*.tar.gz`. Pick the one matching your system architecture:
+Grab the latest `dujiao-next_*.tar.gz` from [GitHub Releases](https://github.com/dujiao-next/dujiao-next/releases), matching your architecture:
 
 ```bash
-# Example: Linux amd64
-wget https://github.com/dujiao-next/dujiao-next/releases/download/vX.Y.Z/dujiao-all_vX.Y.Z_linux_amd64.tar.gz
-tar -xzf dujiao-all_*.tar.gz
-cd <extracted-directory>
+# Example: Linux x86_64
+wget https://github.com/dujiao-next/dujiao-next/releases/download/vX.Y.Z/dujiao-next_vX.Y.Z_Linux_x86_64.tar.gz
+mkdir -p /opt/dujiao && tar -xzf dujiao-next_*.tar.gz -C /opt/dujiao
+cd /opt/dujiao
 ```
 
-## 2. Copy Configuration
+On arm64 machines, download `dujiao-next_vX.Y.Z_Linux_arm64.tar.gz`.
+
+::: tip Note for v1.3.x users
+Older releases shipped two archives — `dujiao-next_*` (API only) and `dujiao-all_*` (with frontends) —
+whose binaries were named `dujiao-api` and `dujiao-server` respectively.
+Since v1.4.0 there is a single artifact, `dujiao-next_*.tar.gz`, containing one binary named `dujiao-next`.
+:::
+
+## 2. Copy the Configuration
 
 ```bash
 cp config.yml.example config.yml
 ```
 
-## 3. Required Configuration Changes
+## 3. Fields You Must Change
 
-Open `config.yml` and update the fields below:
+Open `config.yml` and update the following:
 
-| Field | Description | Example Value |
+| Field | Description | Example |
 |---|---|---|
-| `jwt.secret` | Admin JWT secret. **Must change** | Output of `openssl rand -hex 32` |
-| `user_jwt.secret` | User JWT secret. **Must change** | Same as above, but a different value |
-| `web.admin_path` | Admin URL prefix. **Strongly recommended to change** | `/dj-mgmt-7x9k2` |
-| `redis.host` / `redis.port` | Redis address (two fields, default `127.0.0.1` + `6379`) | `127.0.0.1` + `6379` |
-| `database.driver` / `database.dsn` | Database (defaults to SQLite) | See below |
+| `jwt.secret` | Admin JWT secret — **must change** | output of `openssl rand -hex 32` |
+| `user_jwt.secret` | User JWT secret — **must change** | same, but a different value |
+| `web.admin_path` | Admin panel path prefix — **strongly recommended to change** | `/dj-mgmt-7x9k2` |
+| `redis.host` / `redis.port` | Redis address (defaults to `127.0.0.1` + `6379`) | `127.0.0.1` + `6379` |
+| `database.driver` / `database.dsn` | Database (starts with SQLite) | see below |
 
 ### About `web.admin_path` (Important)
 
-The default value `/admin` is the number-one target for automated scanners. **Strongly recommended to change it to a hard-to-guess string**:
+The default `/admin` is the number one target for automated scanners. **Change it to something hard to guess:**
 
 ```yaml
 web:
-  admin_path: "/dj-mgmt-7x9k2"   # A string of your choosing
+  admin_path: "/dj-mgmt-7x9k2"   # pick your own string
 ```
 
-This path is just the "doorplate" for the SPA entry. Changing it does not affect the admin API endpoints; API authorization is protected by JWT and rate limiting. The main reason to change this path is to filter out noise from automated scanners.
+This path is only the "front door" of the admin SPA. Changing it does not affect the admin API endpoints — those are protected by JWT and rate limiting. The point is to filter out automated scanning noise.
 
-### Database Options
+You must restart the process after changing it: the path is written into the admin page once at startup.
 
-- **SQLite (default)**: Zero configuration. Data is stored in `./db/dujiao.db`. Sufficient for a single-machine setup.
-- **PostgreSQL (recommended for production)**: Set `database.driver` to `postgres` and `database.dsn` to your connection string.
+### About the Database
 
-## 4. Start Redis
+- **SQLite (default)**: zero configuration, data lives in `./db/dujiao.db`, fine for a single machine.
+- **PostgreSQL (recommended for production)**: set `database.driver` to `postgres` and put your connection string in `database.dsn`.
 
-This package ships with a minimal Redis configuration:
+## 4. Prepare Redis
+
+If you already have Redis (a system service or another container), just point `redis.host` and `redis.port` at it.
+
+Otherwise, the simplest option is Docker:
 
 ```bash
-docker compose up -d redis
+docker run -d --name dujiao-redis --restart unless-stopped \
+  -p 127.0.0.1:6379:6379 redis:7-alpine
 ```
 
-If you already have Redis running (as a system service or another container), just update `redis.host` and `redis.port` in `config.yml` — there's no need to start a new container.
-
-## 5. Start the Binary
+## 5. Start
 
 ```bash
-./dujiao-server
+./dujiao-next
 ```
 
-The startup log will show:
+The startup log shows:
+
 ```
-🚀 Dujiao-Next API 启动中
+🚀 Dujiao-Next starting
 ...
 Embedded SPAs: admin (/dj-mgmt-7x9k2), user (/)
 ```
 
-When running, the binary automatically creates:
-- `./db/`: SQLite database
-- `./uploads/`: User-uploaded files
-- `./logs/`: Runtime logs
+The `Embedded SPAs` line confirms the frontends were embedded and mounted correctly.
 
-## 6. Access the Site
+At runtime the program creates:
+- `./db/` — SQLite database
+- `./uploads/` — user uploads
+- `./logs/` — runtime logs
 
-- **User frontend**: `http://<your-ip>:8080`
-- **Admin panel**: `http://<your-ip>:8080/<web.admin_path>` (the path you just configured)
+## 6. Access
 
-For the first login, use the default admin account (configured in the `bootstrap` section of `config.yml`). **Change the password immediately after logging in.**
+- **Storefront**: `http://<your-ip>:8080`
+- **Admin panel**: `http://<your-ip>:8080/<web.admin_path>` (the path you just set)
 
-## 7. Reverse Proxy & HTTPS (Production Deployment)
+Log in with the default administrator account (configured under `bootstrap` in `config.yml`). **Change the password immediately after logging in.**
 
-Forward a single domain `shop.example.com` to port 8080 of the binary (Nginx example):
+## 7. Reverse Proxy and HTTPS (Production)
+
+You only need one domain. Forward the entire site to port 8080 — the storefront, admin panel, API, uploads, `sitemap.xml`, and `robots.txt` are all served by that single port:
 
 ```nginx
 server {
@@ -121,24 +128,31 @@ server {
 }
 ```
 
-## 8. systemd Service
+::: tip No more per-path routing
+In v1.3.x you had to write separate `location` blocks for `/api/`, `/uploads/`, `/sitemap.xml`, and `/robots.txt`.
+Now the whole domain points at a single process, so one `location /` is enough.
+:::
 
-First create the runtime user (if you plan to run the service under a dedicated account):
+## 8. Running as a Service (systemd)
+
+First create a service user (if you want a dedicated one):
+
 ```bash
 sudo useradd -r -s /sbin/nologin -d /opt/dujiao dujiao
 sudo chown -R dujiao:dujiao /opt/dujiao
 ```
 
 `/etc/systemd/system/dujiao.service`:
+
 ```ini
 [Unit]
-Description=Dujiao-Next Fullstack
+Description=Dujiao-Next
 After=network.target
 
 [Service]
 Type=simple
 WorkingDirectory=/opt/dujiao
-ExecStart=/opt/dujiao/dujiao-server
+ExecStart=/opt/dujiao/dujiao-next
 Restart=on-failure
 User=dujiao
 
@@ -152,40 +166,47 @@ sudo systemctl enable --now dujiao
 sudo journalctl -u dujiao -f
 ```
 
-## 9. Upgrade
+## 9. Upgrading
 
 1. `systemctl stop dujiao`
-2. Back up: `cp -r db uploads /backup/`
-3. Download the new tar.gz and replace only the `dujiao-server` binary
+2. Back up: `cp -r db uploads config.yml /backup/`
+3. Download the new tar.gz and replace the `dujiao-next` binary
 4. `systemctl start dujiao`
 
-Database migrations run automatically.
+Database migrations run automatically. The frontends are updated along with the binary — no separate static files to replace.
 
 ## 10. Migrating from Other Deployments
 
-### From Docker Compose
+### From a v1.3.x split deployment
 
-1. Stop the docker-compose services
-2. Copy the existing `db/` and `uploads/` directories into the fullstack binary's working directory
-3. Copy over the `config.yml` used by docker-compose
-4. Start the fullstack binary (be sure to configure `web.admin_path`)
+1. Stop the old api / user / admin services (or containers)
+2. Copy your existing `db/`, `uploads/`, and `config.yml` into the new working directory
+3. Add the `web` section to `config.yml` and set `admin_path`
+4. Start the new binary and change your reverse proxy to forward the whole site to 8080
+5. The domain previously dedicated to the admin panel can be retired (or kept pointing at the same service)
 
-### From Manual Source Build
+See [Upgrade and Migration](/en/deploy/upgrade) for detailed steps.
 
-Same as above — paths and configuration can be reused directly.
+### From a Docker deployment
+
+Same as above — reuse the `db/`, `uploads/`, and `config.yml` you already mount.
 
 ## FAQ
 
-### Q: The admin SPA returns a 404 when loading
+### Q: The admin page returns 404
 
-Make sure the `web.admin_path` in `config.yml` matches the path you're using in the browser. If you changed `web.admin_path`, you must restart the binary for the new value to take effect.
+Make sure `web.admin_path` in `config.yml` matches the URL you are visiting. Changing `web.admin_path` requires a restart.
 
-### Q: The log keeps showing the warning `web.admin_path 仍为默认 /admin`
+### Q: `Embedded SPAs` does not appear in the startup log
 
-> Note: the warning is emitted in Simplified Chinese — the backend log strings are not yet i18n-aware. Grep for the literal Chinese text above.
+Your binary does not contain the frontends. Make sure you downloaded `dujiao-next_*.tar.gz` from GitHub Releases
+rather than building it yourself with `go build` without `-tags fullstack`.
 
-Follow the recommendation in §3 and change `web.admin_path`. The warning will go away.
+### Q: The log warns that `web.admin_path` is still the default `/admin`
 
-### Q: Can the fullstack binary and an existing Docker image be used together?
+Change `web.admin_path` as described in §3 and the warning goes away.
 
-Yes, but the same database must not be connected to by both deployments at the same time. Recommendation: pick either the Docker image approach or the single binary approach — don't mix them.
+### Q: Can I run API-only, without the embedded frontends?
+
+Yes — build from source with `go build ./cmd/server` (without `-tags fullstack`). Neither `/` nor the admin path
+will be mounted. This is a secondary-development scenario; see [Manual Deployment](/en/deploy/manual).

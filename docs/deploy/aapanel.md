@@ -1,16 +1,17 @@
-# 使用 aaPanel 手动部署（基于 Releases 压缩包）
+# 使用 aaPanel 部署（基于 Releases 压缩包）
 
-> 更新时间：2026-02-27
+> 更新时间：2026-07-26
 
 若你尚未确定部署方式，建议先阅读 [部署总览与选型建议](/deploy/)。
 
-本文档适用于你已在各仓库 Release 中提供编译产物压缩包的部署方式。
+本文档适用于用官方编译产物压缩包在宝塔/aaPanel 面板上部署。
 
 特点：
 
 - 不需要在服务器 `git clone` 源码
-- 不需要在服务器执行 `go build` / `npm run build`
-- 只做“上传（或下载）→ 解压 → 配置 → 启动”
+- 不需要在服务器执行 `go build` / `pnpm run build`
+- 只做「下载 → 解压 → 配置 → 启动」
+- 自 v1.4.0 起前端已内嵌进程序，**只需要下载一个压缩包、建一个站点**
 
 ## 1. 面板与软件准备
 
@@ -18,7 +19,7 @@
 
 - Nginx
 - PM2 管理器（或 Supervisor）
-- 解压工具（`unzip` / `tar`）
+- 解压工具（`tar`）
 - Redis（按需）
 - PostgreSQL（按需）
 
@@ -27,79 +28,80 @@
 ## 2. 准备目录
 
 ```bash
-mkdir -p /www/wwwroot/dujiao-next/{api,user,admin}
+mkdir -p /www/wwwroot/dujiao-next
 cd /www/wwwroot/dujiao-next
 ```
 
 ## 3. 下载并解压 Release 包
 
-请从以下仓库的 Releases 下载对应版本压缩包（建议三端使用同一版本号）：
+从 [Releases](https://github.com/dujiao-next/dujiao-next/releases) 下载对应架构的压缩包。
 
-- API（主项目）：`https://github.com/dujiao-next/dujiao-next/releases`
-- User（用户前台）：`https://github.com/dujiao-next/user/releases`
-- Admin（后台）：`https://github.com/dujiao-next/admin/releases`
-
-示例（文件名按你的实际 Release 产物替换）：
-
-> API 压缩包命名遵循 GoReleaser 规则：`dujiao-next_<tag>_Linux_x86_64.tar.gz`，例如 `dujiao-next_v1.0.0_Linux_x86_64.tar.gz`。
-> User 压缩包命名示例：`dujiao-next-user-v1.0.0.zip`。
-> Admin 压缩包命名示例：`dujiao-next-admin-v1.0.0.zip`。
+命名遵循 GoReleaser 规则：`dujiao-next_<tag>_Linux_<arch>.tar.gz`，例如 `dujiao-next_v1.4.0_Linux_x86_64.tar.gz`（arm64 机器选 `_Linux_arm64.tar.gz`）。
 
 ```bash
-# API
-wget -O api.tar.gz https://github.com/dujiao-next/dujiao-next/releases/download/v1.0.0/dujiao-next_v1.0.0_Linux_x86_64.tar.gz
-mkdir -p api && tar -xzf api.tar.gz -C api
-
-# User
-wget -O user.zip https://github.com/dujiao-next/user/releases/download/v1.0.0/dujiao-next-user-v1.0.0.zip
-mkdir -p user && unzip -o user.zip -d user
-
-# Admin
-wget -O admin.zip https://github.com/dujiao-next/admin/releases/download/v1.0.0/dujiao-next-admin-v1.0.0.zip
-mkdir -p admin && unzip -o admin.zip -d admin
+wget -O dujiao.tar.gz https://github.com/dujiao-next/dujiao-next/releases/download/v1.4.0/dujiao-next_v1.4.0_Linux_x86_64.tar.gz
+tar -xzf dujiao.tar.gz
 ```
 
-> API 压缩包解压后，`/www/wwwroot/dujiao-next/api` 目录中应包含：
-> - `config.yml.example`
-> - `dujiao-next`
-> - `README.md`
+解压后目录中应包含：
 
+- `dujiao-next`（内嵌前端的可执行文件）
+- `config.yml.example`
+- `README.md`
 
-## 4. 部署 API（无需编译）
+::: tip v1.3.x 用户注意
+旧版需要分别下载 API、User、Admin 三个包并建两个站点。
+现在只有一个包，前端在程序内部，不再有 `user/dist`、`admin/dist` 目录。
+:::
 
-确认 API 解压目录中存在以下文件：`config.yml.example`、`dujiao-next`、`README.md`。
+## 4. 配置
 
 ```bash
-cd /www/wwwroot/dujiao-next/api
+cd /www/wwwroot/dujiao-next
 cp config.yml.example config.yml
-# 编辑 config.yml
 chmod +x ./dujiao-next
+# 编辑 config.yml
 ```
 
 > ⚠️ 重要安全提醒：上线前必须修改 `config.yml` 中的 `jwt.secret` 与 `user_jwt.secret`。
 >
 > 请使用至少 32 位高强度随机字符串，严禁使用模板默认值。
 
+同时务必修改后台入口路径（默认 `/admin` 是扫描器首要目标）：
+
+```yaml
+web:
+  admin_path: "/dj-mgmt-7x9k2"   # 换成你自己的字符串
+```
+
+## 5. 用 PM2 / Supervisor 启动
+
 在 aaPanel 的 PM2/Supervisor 中添加启动命令：
+
+```bash
+/www/wwwroot/dujiao-next/dujiao-next
+```
+
+工作目录设置为：
+
+```text
+/www/wwwroot/dujiao-next
+```
 
 > 建议同时为该进程设置环境变量（用于初始化默认管理员，避免使用默认弱口令）：
 >
 > - `DJ_DEFAULT_ADMIN_USERNAME=admin`
 > - `DJ_DEFAULT_ADMIN_PASSWORD=<你的强密码>`
 
-```bash
-/www/wwwroot/dujiao-next/api/dujiao-next
+启动后查看日志，出现下面这行说明前端已正确内嵌：
+
+```
+Embedded SPAs: admin (/dj-mgmt-7x9k2), user (/)
 ```
 
-工作目录设置为：
+### 5.1 默认后台管理员账号（首次初始化）
 
-```text
-/www/wwwroot/dujiao-next/api
-```
-
-### 4.1 默认后台管理员账号（首次初始化）
-
-当数据库中 `admins` 表为空时，API 首次启动会尝试创建默认管理员：
+当数据库中 `admins` 表为空时，首次启动会尝试创建默认管理员：
 
 - 默认账号：`admin`
 - 默认密码：`admin123`
@@ -116,107 +118,34 @@ bootstrap:
   default_admin_password: <你的强密码>
 ```
 
-API 首次启动时会读取该配置完成管理员初始化。
-
-## 5. 部署 User 与 Admin（无需构建）
-
-要求：Release 包内已经包含可直接托管的静态文件（通常是 `dist`）；
-若是 ZIP 包，请先解压并确认 `user/dist`、`admin/dist` 目录已存在。
-
-建议目录：
-
-- User 站点根目录：`/www/wwwroot/dujiao-next/user/dist`
-- Admin 站点根目录：`/www/wwwroot/dujiao-next/admin/dist`
+首次启动时会读取该配置完成管理员初始化。
 
 ## 6. 在 aaPanel 创建站点
 
-建议两个站点：
+**只需要一个站点**：
 
-- 前台站点：`shop.example.com` → 根目录 `user/dist`
-- 后台站点：`admin.example.com` → 根目录 `admin/dist`
-
-并为两者申请 SSL 证书。
+- 站点域名：`shop.example.com`
+- 根目录：随便填（实际不会用到静态文件，所有请求都反代给程序）
+- 为站点申请 SSL 证书
 
 ## 7. 反向代理配置
 
-在外层网关（Nginx）中添加：
+在站点的「反向代理」中，把整站转发到 `http://127.0.0.1:8080` 即可。
 
-- `/api` → `http://127.0.0.1:8080/api`
-- `/uploads` → `http://127.0.0.1:8080/uploads`
-- `/sitemap.xml` → `http://127.0.0.1:8080/sitemap.xml`（仅前台域名需要）
-- `/robots.txt` → `http://127.0.0.1:8080/robots.txt`（仅前台域名需要）
-
-### 7.1 分域名部署示例
+如果你手工编辑 Nginx 配置，对应内容是：
 
 ```nginx
-# 前台 User
 server {
-    listen 80;
+    listen 443 ssl http2;
     server_name shop.example.com;
 
-    root /www/wwwroot/dujiao-next/user/dist;
-    index index.html;
+    ssl_certificate     /path/to/fullchain.pem;
+    ssl_certificate_key /path/to/privkey.pem;
+
+    client_max_body_size 50m;
 
     location / {
-        try_files $uri $uri/ /index.html;
-    }
-
-    # SEO 资源由后端动态生成，必须显式反代，否则会被上面的 SPA 兜底拦截
-    location = /sitemap.xml {
-        proxy_pass http://127.0.0.1:8080/sitemap.xml;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-    }
-
-    location = /robots.txt {
-        proxy_pass http://127.0.0.1:8080/robots.txt;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-    }
-
-    location /api/ {
-        proxy_pass http://127.0.0.1:8080/api/;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-    }
-
-    location /uploads/ {
-        proxy_pass http://127.0.0.1:8080/uploads/;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-    }
-}
-
-# 后台 Admin
-server {
-    listen 80;
-    server_name admin.example.com;
-
-    root /www/wwwroot/dujiao-next/admin/dist;
-    index index.html;
-
-    location / {
-        try_files $uri $uri/ /index.html;
-    }
-
-    location /api/ {
-        proxy_pass http://127.0.0.1:8080/api/;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-    }
-
-    location /uploads/ {
-        proxy_pass http://127.0.0.1:8080/uploads/;
+        proxy_pass http://127.0.0.1:8080;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -225,9 +154,29 @@ server {
 }
 ```
 
-## 8. 安全建议
+访问方式：
+
+- 用户前台：`https://shop.example.com`
+- 管理后台：`https://shop.example.com/<web.admin_path>`
+
+::: tip 相比旧版简化了什么
+旧版需要两个站点、两个域名，并且要给 `/api/`、`/uploads/`、`/sitemap.xml`、`/robots.txt`
+分别配置反代规则。现在这些全部由同一个程序处理，一条整站反代即可。
+:::
+
+## 8. 升级
+
+1. 在 PM2/Supervisor 停止进程
+2. 备份 `db/`、`uploads/`、`config.yml`
+3. 下载新版压缩包，覆盖 `dujiao-next` 二进制
+4. 重新启动进程
+
+前端随二进制一起更新，不需要另外替换静态文件。
+
+## 9. 安全建议
 
 - `config.yml` 中密钥不要使用默认值
+- `web.admin_path` 不要保留默认的 `/admin`
 - 仅开放必要端口（80/443）
-- API 不建议直接暴露在公网端口
+- 程序端口（8080）不要直接暴露在公网，只让本机 Nginx 访问
 - 生产模式请设置 `server.mode: release`

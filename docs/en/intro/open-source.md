@@ -4,16 +4,15 @@
 
 ## 1. Repository Links
 
-- API (Main Project): https://github.com/dujiao-next/dujiao-next
-- User (Frontend): https://github.com/dujiao-next/user
-- Admin (Backend): https://github.com/dujiao-next/admin
+- Main project (backend + storefront + admin panel): https://github.com/dujiao-next/dujiao-next
 - Document (Documentation): https://github.com/dujiao-next/document
 - Community Projects: https://github.com/dujiao-next/community-projects
 
 ## 2. Terminology
 
-- "User" in the documentation refers to the frontend project (repository name: `user`).
-- If your local folder still uses the old name `web`, just replace `user` with `web` in commands.
+- "User" in the documentation refers to the storefront, whose source lives in `frontend/user`.
+- "Admin" refers to the admin panel, whose source lives in `frontend/admin`.
+- Both used to be separate repositories; they were merged into the main repository in v1.4.0.
 
 ## 3. PR Submission Suggestions
 

@@ -14,9 +14,7 @@ This document covers all current frontend APIs in `user/src/api/index.ts`, with 
 
 ## Open Source Repository Links
 
-- API (Main Project): https://github.com/dujiao-next/dujiao-next
-- User (Frontend): https://github.com/dujiao-next/user
-- Admin (Backend): https://github.com/dujiao-next/admin
+- Main project (backend + storefront + admin panel): https://github.com/dujiao-next/dujiao-next
 - Document (Documentation): https://github.com/dujiao-next/document
 
 ---

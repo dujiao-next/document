@@ -14,10 +14,13 @@ Regular backups are essential for safeguarding your site's data. This guide cove
 
 | Item | Path | Importance |
 |------|------|------------|
-| Database | `api/db/` (SQLite) or PostgreSQL | Critical |
-| Configuration file | `api/config.yml` | High |
-| Uploaded files | `api/uploads/` | High |
-| Frontend builds | `user/dist/`, `admin/dist/` | Low (can be rebuilt) |
+| Database | `db/` (SQLite) or PostgreSQL | Critical |
+| Configuration file | `config.yml` | High |
+| Uploaded files | `uploads/` | High |
+
+> The frontends are embedded in the binary — there are no static asset directories
+> to back up separately. Paths below are relative to the program's working directory
+> (for Docker deployments, the `data/` directory mounted from the host).
 
 ---
 
@@ -29,7 +32,7 @@ SQLite data is stored in a single file -- simply copy it:
 
 ```bash
 # Back up
-cp api/db/dujiao.db api/db/dujiao.db.bak.$(date +%Y%m%d%H%M%S)
+cp db/dujiao.db db/dujiao.db.bak.$(date +%Y%m%d%H%M%S)
 ```
 
 > It is recommended to back up while the service is stopped or during low-traffic periods to avoid write conflicts.
@@ -62,7 +65,7 @@ docker compose cp postgres:/tmp/backup.dump ./backup/
 ## 3. Configuration File Backup
 
 ```bash
-cp api/config.yml backup/config.yml.$(date +%Y%m%d)
+cp config.yml backup/config.yml.$(date +%Y%m%d)
 ```
 
 > `config.yml` contains sensitive information such as database passwords, JWT secrets, and payment configurations. Store backup copies securely.
@@ -73,10 +76,10 @@ cp api/config.yml backup/config.yml.$(date +%Y%m%d)
 
 ```bash
 # Direct copy
-cp -r api/uploads backup/uploads_$(date +%Y%m%d)
+cp -r uploads backup/uploads_$(date +%Y%m%d)
 
 # Or use rsync for incremental backup
-rsync -av api/uploads/ backup/uploads/
+rsync -av uploads/ backup/uploads/
 ```
 
 Docker environment:
@@ -133,7 +136,7 @@ Add a crontab entry for scheduled execution:
 systemctl stop dujiao-next
 
 # Restore the database
-cp backup/dujiao.db api/db/dujiao.db
+cp backup/dujiao.db db/dujiao.db
 
 # Start the service
 systemctl start dujiao-next
@@ -155,8 +158,8 @@ systemctl start dujiao-next
 ### 6.3 Restore Configuration and Uploaded Files
 
 ```bash
-cp backup/config.yml api/config.yml
-cp -r backup/uploads/* api/uploads/
+cp backup/config.yml config.yml
+cp -r backup/uploads/* uploads/
 ```
 
 ---

@@ -35,27 +35,27 @@
 
 ## 3. 端口规划建议
 
-- API：`8080`
-- User：`5173`（开发）
-- Admin：`5174`（开发）
-- 文档（VitePress）：`5175`（示例，可自定义）
+- 生产环境：只需要 `8080` 一个端口。前台在 `/`，后台在 `web.admin_path`，
+  API 与上传文件也都由这个端口提供。
+- 开发环境额外使用：
+  - User 前台 dev server：`5173`
+  - Admin 后台 dev server：`5174`
+  - 文档（VitePress）：`5175`（示例，可自定义）
 
 ## 4. 开发环境自检命令
 
 ```bash
-# Go
-cd api && go version
-
-# Node / npm
+# 在仓库根目录执行
+go version
 node -v
-npm -v
-
-# User/Admin 前后台依赖安装
-cd user && npm install
-cd ../admin && npm install
+pnpm -v          # 未安装可执行 corepack enable
 
 # 后端依赖同步
-cd ../api && go mod tidy
+go mod tidy
+
+# 两端前台依赖安装
+cd frontend/user  && pnpm install
+cd ../admin       && pnpm install
 ```
 
 ## 5. 常见问题

@@ -19,6 +19,6 @@ features:
   - title: 多支付接入
     details: 支持支付寶、微信、PayPal、Stripe 等渠道，統一支付抽象與回調處理。
   - title: 可擴展可維護
-    details: API/User/Admin 三端分層清晰，便於二開與替換前臺模板。
+    details: 後端與兩端前臺分層清晰、單倉庫維護，便於二開與替換前臺模板。
 ---
 

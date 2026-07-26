@@ -19,5 +19,5 @@ features:
   - title: Multiple Payment Integrations
     details: Supports Alipay, WeChat, PayPal, Stripe, and more, with unified payment abstraction and callback handling.
   - title: Extensible and Maintainable
-    details: Clear separation of API/User/Admin layers, facilitating secondary development and frontend template replacement.
+    details: Backend and both frontends are cleanly layered in a single repository, making secondary development and template replacement straightforward.
 ---

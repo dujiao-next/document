@@ -35,27 +35,27 @@ Any of the following systems is recommended:
 
 ## 3. Suggested Port Plan
 
-- API: `8080`
-- User: `5173` (development)
-- Admin: `5174` (development)
-- Docs (VitePress): `5175` (example, configurable)
+- Production: only port `8080` is needed. The storefront is at `/`, the admin panel at
+  `web.admin_path`, and the API and uploads are served from the same port.
+- Development additionally uses:
+  - Storefront dev server: `5173`
+  - Admin dev server: `5174`
+  - Docs (VitePress): `5175` (example, configurable)
 
 ## 4. Development Environment Self-Check
 
 ```bash
-# Go
-cd api && go version
-
-# Node / npm
+# Run from the repository root
+go version
 node -v
-npm -v
-
-# Install User/Admin dependencies
-cd user && npm install
-cd ../admin && npm install
+pnpm -v          # run `corepack enable` if missing
 
 # Sync backend dependencies
-cd ../api && go mod tidy
+go mod tidy
+
+# Install frontend dependencies
+cd frontend/user  && pnpm install
+cd ../admin       && pnpm install
 ```
 
 ## 5. Common Issues

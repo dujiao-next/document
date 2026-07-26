@@ -12,7 +12,8 @@ This guide introduces the core features and workflows of the Dujiao-Next admin p
 
 ## 1. Logging In
 
-- Default address: `http://localhost:5174` (development) or your deployed admin domain
+- Default address: `http://localhost:5174` (development) or `https://your-domain/<web.admin_path>` (deployed)
+- `web.admin_path` is set in `config.yml`; it defaults to `/admin` and should be changed to something hard to guess
 - Log in with your admin credentials
 - On first deployment, the admin account is configured under the `bootstrap` section in `config.yml`
 

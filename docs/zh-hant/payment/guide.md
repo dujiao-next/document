@@ -11,12 +11,10 @@
 
 先確認你的支付回調入口可以被公網訪問。
 
-系統需要至少兩個網域：
+系統只需要一個網域，例如 `user.example.com`（或 `shop.example.com`）。
 
-- 前台商城：`user.example.com`（或 `shop.example.com`）
-- 管理後台：`admin.example.com`
-
-API 透過各站點的反向代理訪問（如 `user.example.com/api` 和 `admin.example.com/api` 均代理到後端），無需額外網域。
+前臺、後臺與 API 都由同一個服務在同一網域下提供：前臺在 `/`，後臺在 `web.admin_path`，
+API 在 `/api`。回調地址填這個網域即可，不需要額外網域。
 
 常用地址示例：
 

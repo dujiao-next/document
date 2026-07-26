@@ -1,198 +1,179 @@
-# Manual Deployment (API / User / Admin)
+# Manual Deployment (Build from Source)
 
-> Last updated: 2026-02-27
+> Last updated: 2026-07-26
 
 If you have not chosen a deployment method yet, start with [Deployment Overview and Selection Guide](/en/deploy/).
 
-This document is intended for developers who want full control over the deployment process and is divided into two parts: "Build" and "Run".
+This document is for developers who want full control over the build, or who are doing secondary development.
 
-## 1. Obtaining the Source Code
+As of v1.4.0 the frontend source lives in the main repository under `frontend/`, so **you only clone one repository**. Build output is compiled into the binary via `go:embed`.
+
+## 1. Requirements
+
+- Go (see the repository's `go.mod` for the version)
+- Node.js 24.x
+- pnpm 10.34.3 (just run `corepack enable`)
+
+## 2. Obtaining the Source Code
 
 ```bash
-mkdir dujiao-next && cd dujiao-next
-
-# API (main repository)
-git clone https://github.com/dujiao-next/dujiao-next.git api
-
-# User (frontend)
-git clone https://github.com/dujiao-next/user.git user
-
-# Admin (admin panel)
-git clone https://github.com/dujiao-next/admin.git admin
+git clone https://github.com/dujiao-next/dujiao-next.git
+cd dujiao-next
 ```
-> If you are currently using the legacy single-repository directory (`web/`), please replace `user/` below with `web/`.
 
-## 2. Backend API Deployment
+Repository layout:
 
-### 2.1 Install Dependencies and Build
+```
+dujiao-next/
+├── cmd/server/          # entry point
+├── internal/
+│   └── web/             # frontend embedding and SPA route mounting
+├── frontend/
+│   ├── admin/           # admin panel (Vue 3 + Vite)
+│   └── user/            # storefront (Vue 3 + Vite)
+├── config.yml.example
+└── .goreleaser.yaml
+```
+
+## 3. One-Command Build (Recommended)
+
+The repository already describes the full build pipeline (frontend build + embedding) in GoReleaser, so a single local command is enough:
 
 ```bash
-cd api
-go mod tidy
+goreleaser build --snapshot --single-target --clean
+```
+
+The output lands in `dist/` as a complete binary with embedded frontends. This is the exact same path CI uses for releases.
+
+If you don't have GoReleaser installed, build manually as described below.
+
+## 4. Manual Build
+
+### 4.1 Build the Frontends
+
+```bash
+# Admin panel: must use fullstack mode, which injects a <base> placeholder
+# that the backend replaces at runtime
+cd frontend/admin
+pnpm install --frozen-lockfile
+pnpm run build:fullstack
+
+# Storefront
+cd ../user
+pnpm install --frozen-lockfile
+pnpm run build
+
+cd ../..
+```
+
+::: warning admin must use build:fullstack
+`pnpm run build` (without `:fullstack`) produces the standalone-domain variant with `base` hardcoded to `/`.
+Embedded under a custom prefix, it fails to load its static assets. Always use `build:fullstack` for embedding.
+:::
+
+### 4.2 Copy Output into the Embed Directory
+
+`go:embed` can only read files inside the package directory, so the frontend output must go under `internal/web/dist/`:
+
+```bash
+rm -rf internal/web/dist
+mkdir -p internal/web/dist
+cp -r frontend/admin/dist internal/web/dist/admin
+cp -r frontend/user/dist  internal/web/dist/user
+```
+
+### 4.3 Compile the Binary
+
+```bash
+CGO_ENABLED=0 go build -trimpath -tags release,fullstack \
+  -ldflags="-s -w" \
+  -o dujiao-next ./cmd/server
+```
+
+`-tags fullstack` is the key part: without it, the resulting binary contains no frontends and serves only the API.
+
+Cross-compilation example (building a Linux binary on macOS):
+
+```bash
+GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -trimpath -tags release,fullstack \
+  -ldflags="-s -w" -o dujiao-next-linux-amd64 ./cmd/server
+```
+
+### 4.4 API Only, Without Frontends
+
+For secondary development or a custom split-frontend setup:
+
+```bash
 go build -o dujiao-api ./cmd/server
 ```
-### 2.2 Configuration File
+
+Neither `/` nor the admin path will be mounted. You then need to serve the frontend build with Nginx yourself
+and proxy `/api`, `/uploads`, `/sitemap.xml`, and `/robots.txt` to this service.
+
+## 5. Configuration
 
 ```bash
 cp config.yml.example config.yml
-# Update config.yml for your environment
+# edit config.yml for your environment
 ```
-At a minimum, the key items must be confirmed:
+
+At minimum, verify:
 
 - `server.mode` (debug/release)
 - `database.driver` / `database.dsn`
 - `jwt.secret` / `user_jwt.secret`
+- `web.admin_path` (admin entry path — **change the default `/admin`**)
 - `redis`, `queue`, `email` (enable as needed)
 
-> ⚠️ Important security reminder: Before going live, you must change `jwt.secret` and `user_jwt.secret`, and use a high-strength random string of at least 32 characters.
+> ⚠️ Critical security note: you must change `jwt.secret` and `user_jwt.secret` before going live, using random strings of at least 32 characters.
 >
-> Never use the template defaults, as it may lead to token forgery and pose serious security risks.
+> Never keep the template defaults — doing so makes tokens forgeable and is a serious security risk.
 
-### 2.3 Initialize Data (Optional)
-
-```bash
-go run ./cmd/seed
-```
-### 2.4 Running the API
+## 6. Running
 
 ```bash
-./dujiao-api
+./dujiao-next
 ```
-Default listening: `http://0.0.0.0:8080`
 
-### 2.5 Default Admin Account (Initial Setup)
+Default listen address: `http://0.0.0.0:8080`
 
-When the `admins` table in the database is empty, the system will attempt to create a default admin the first time the API starts:
+This line in the startup log confirms the frontends were embedded correctly:
 
-- Default username: `admin`
-- Default password: `admin123`
+```
+Embedded SPAs: admin (/dj-mgmt-7x9k2), user (/)
+```
 
-> Strongly recommended: After logging into the admin panel for the first time, immediately change to a strong password under "Admin -> Change Password".
+### 6.1 Default Administrator Account (First Initialization)
+
+When the `admins` table is empty, the system attempts to create a default administrator on first start:
+
+- Username: `admin`
+- Password: `admin123`
+
+> Strongly recommended: change it to a strong password right after your first login, under "Admin -> Change Password".
 
 Notes:
 
-- You can override the default values by setting environment variables before starting the API:
+- You can override the defaults with environment variables before starting:
   - `DJ_DEFAULT_ADMIN_USERNAME`
   - `DJ_DEFAULT_ADMIN_PASSWORD`
-- If `server.mode=release` and `DJ_DEFAULT_ADMIN_PASSWORD` is not set, the system will skip default admin initialization (it will not automatically create `admin/admin123`).
+- If `server.mode=release` and `DJ_DEFAULT_ADMIN_PASSWORD` is unset, default administrator initialization is skipped (no `admin/admin123` is created).
 
-## 3. User Frontend Deployment
+## 7. Nginx Reverse Proxy
 
-### 3.1 Install Dependencies and Build
-
-```bash
-cd ../user
-npm install
-npm run build
-```
-Build output directory: `user/dist`
-
-### 3.2 Running Method
-
-You can choose to:
-
-- Serve `user/dist` with Nginx
-- Or temporarily use `npm run preview` for verification
-
-## 4. Admin Backend Deployment
-
-### 4.1 Install Dependencies and Build
-
-```bash
-cd ../admin
-npm install
-npm run build
-```
-Build output directory: `admin/dist`
-
-### 4.2 Running Methods
-
-You can choose to:
-
-- Host `admin/dist` with Nginx (recommended to bind to the `/admin` path)
-- Or temporarily use `npm run preview` for verification
-
-## 5. Nginx Reverse Proxy Configuration
-
-User and Admin each require their own domain. Both frontends send requests to `/api` and `/uploads`, which are forwarded by the outer Nginx to the API service (`127.0.0.1:8080`).
-
-> The user-facing domain must additionally proxy `/sitemap.xml` and `/robots.txt` to the backend; otherwise the SPA catch-all route serves a NotFound page and search engines cannot fetch them.
-
-### 5.1 Subdomain Deployment Example
-
-- Frontend: `user.example.com` → `user/dist`
-- Admin: `admin.example.com` → `admin/dist`
+Forward the whole site to a single port — no per-path splitting required:
 
 ```nginx
-# User frontend
 server {
-    listen 80;
-    server_name user.example.com;
+    listen 443 ssl http2;
+    server_name shop.example.com;
+    ssl_certificate     /path/to/fullchain.pem;
+    ssl_certificate_key /path/to/privkey.pem;
 
-    root /var/www/dujiao-next/user/dist;
-    index index.html;
+    client_max_body_size 50m;
 
     location / {
-        try_files $uri $uri/ /index.html;
-    }
-
-    # SEO assets are generated dynamically by the backend; they must be
-    # proxied explicitly, otherwise the SPA fallback above will swallow them.
-    location = /sitemap.xml {
-        proxy_pass http://127.0.0.1:8080/sitemap.xml;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-    }
-
-    location = /robots.txt {
-        proxy_pass http://127.0.0.1:8080/robots.txt;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-    }
-
-    location /api/ {
-        proxy_pass http://127.0.0.1:8080/api/;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-    }
-
-    location /uploads/ {
-        proxy_pass http://127.0.0.1:8080/uploads/;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-    }
-}
-
-# Admin frontend
-server {
-    listen 80;
-    server_name admin.example.com;
-
-    root /var/www/dujiao-next/admin/dist;
-    index index.html;
-
-    location / {
-        try_files $uri $uri/ /index.html;
-    }
-
-    location /api/ {
-        proxy_pass http://127.0.0.1:8080/api/;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-    }
-
-    location /uploads/ {
-        proxy_pass http://127.0.0.1:8080/uploads/;
+        proxy_pass http://127.0.0.1:8080;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -200,17 +181,31 @@ server {
     }
 }
 ```
-Also recommended:
 
-- Enable HTTPS and enforce redirect to 443
-- Frontend SPA routing must retain `try_files ... /index.html`
+## 8. Local Development
 
-## 6. Suggestions for Start, Stop, and Upgrade
+During development you don't need to embed the frontends every time — run three processes and get hot reload:
 
-- It is recommended to manage the API with `systemd` / `supervisor`
-- When releasing, execute in order:
-  1. Stop the API
-  2. Update the code and rebuild
-  3. Replace `user/dist` and `admin/dist`
-  4. Start the API
+```bash
+# Terminal 1: backend (no fullstack tag, SPAs not mounted)
+go run ./cmd/server
+
+# Terminal 2: storefront at http://localhost:5173
+cd frontend/user && pnpm run dev
+
+# Terminal 3: admin panel at http://localhost:5174
+cd frontend/admin && pnpm run dev
+```
+
+Both Vite dev servers are preconfigured to proxy `/api` and `/uploads` to `localhost:8080`;
+the storefront also proxies `/sitemap.xml` and `/robots.txt`.
+
+## 9. Start/Stop and Upgrade Notes
+
+- Use `systemd` / `supervisor` to supervise the process (see the systemd unit example in [Single Binary Deployment](/en/deploy/binary#_8-running-as-a-service-systemd))
+- Release in this order:
+  1. Stop the service
+  2. Pull changes and rebuild (the frontends are compiled into the binary)
+  3. Replace the binary
+  4. Start the service
   5. Check the health endpoint: `GET /health`

@@ -1,14 +1,19 @@
 # Docker Compose 部署（Docker Hub 镜像）
 
-> 更新时间：2026-02-27
+> 更新时间：2026-07-26
 
 若你尚未确定部署方式，建议先阅读 [部署总览与选型建议](/deploy/)。
 
 ## 1. 镜像对应关系
 
-- API：`dujiaonext/api:tagname`
-- User（用户前台）：`dujiaonext/user:tagname`
-- Admin（后台）：`dujiaonext/admin:tagname`
+- 全栈服务：`dujiaonext/api:tagname`
+
+自 v1.4.0 起，用户前台与管理后台的前端已经内嵌进这一个镜像，**不再有 `dujiaonext/user` 与 `dujiaonext/admin` 镜像**。整套服务只需要 2 个容器（SQLite 方案）或 3 个容器（PostgreSQL 方案）。
+
+::: tip 从 v1.3.x 升级
+原来的 `dujiaonext/user` / `dujiaonext/admin` 容器可以直接删除，前端不再需要单独部署。
+迁移步骤见 [升级与迁移](/deploy/upgrade)。
+:::
 
 ## 2. 准备部署目录
 
@@ -22,16 +27,16 @@ chmod -R 0777 ./data/logs ./data/db ./data/uploads ./data/redis ./data/postgres
 
 目录说明：
 
-- `config/`：API 配置文件（`config.yml`）
+- `config/`：配置文件（`config.yml`）
 - `data/db`：SQLite 数据目录（仅 SQLite 方案使用）
 - `data/uploads`：上传文件目录
-- `data/logs`：API 日志目录
+- `data/logs`：日志目录
 - `data/redis`：Redis 数据目录
 - `data/postgres`：PostgreSQL 数据目录（仅 PostgreSQL 方案使用）
 
-## 3. 准备 API 配置文件
+## 3. 准备配置文件
 
-API 容器默认读取 `/app/config.yml`，先下载模板：
+容器默认读取 `/app/config.yml`，先下载模板：
 
 ```bash
 curl -L https://raw.githubusercontent.com/dujiao-next/dujiao-next/main/config.yml.example -o ./config/config.yml
@@ -46,7 +51,18 @@ curl -L https://raw.githubusercontent.com/dujiao-next/dujiao-next/main/config.ym
 >
 > 请务必使用高强度随机字符串（建议至少 32 位），严禁使用模板默认值。否则会导致 Token 可伪造，存在严重安全风险。
 
-### 3.1 方案 A：SQLite + Redis（推荐轻量部署）
+### 3.1 后台入口路径（新增，务必设置）
+
+前端内嵌后，后台不再有独立域名，而是挂在同一个站点的某个路径下。默认 `/admin` 是扫描器的头号目标，**强烈建议改掉**：
+
+```yaml
+web:
+  admin_path: "/dj-mgmt-7x9k2"   # 换成你自己的字符串
+```
+
+改完需要重启容器才会生效。
+
+### 3.2 方案 A：SQLite + Redis（推荐轻量部署）
 
 ```yaml
 database:
@@ -73,7 +89,7 @@ queue:
     critical: 5
 ```
 
-### 3.2 方案 B：PostgreSQL + Redis（推荐生产）
+### 3.3 方案 B：PostgreSQL + Redis（推荐生产）
 
 ```yaml
 database:
@@ -108,9 +124,8 @@ queue:
 TAG=latest
 TZ=Asia/Shanghai
 
-API_PORT=8080
-USER_PORT=8081
-ADMIN_PORT=8082
+# 只需要一个端口了
+APP_PORT=8080
 
 # 默认管理员（仅首次初始化时生效）
 DJ_DEFAULT_ADMIN_USERNAME=admin
@@ -132,7 +147,7 @@ POSTGRES_PASSWORD=dujiao_pass
 > 因此本文档遵循两条原则：
 >
 > 1. **Redis / PostgreSQL 不导出任何端口**，仅通过内部 `dujiao-net` 网络供 `api` 容器访问。
-> 2. **API / User / Admin 端口绑定 `127.0.0.1`**，仅允许本机 Nginx 反代，不对公网开放。
+> 2. **应用端口绑定 `127.0.0.1`**，仅允许本机 Nginx 反代，不对公网开放。
 >
 > 如需临时从宿主机调试 Redis/PostgreSQL，可用 `docker exec` 进入容器，或为对应服务临时添加 `ports: - "127.0.0.1:6379:6379"`（同样仅绑定本机回环）。
 
@@ -168,7 +183,7 @@ services:
       DJ_DEFAULT_ADMIN_USERNAME: ${DJ_DEFAULT_ADMIN_USERNAME}
       DJ_DEFAULT_ADMIN_PASSWORD: ${DJ_DEFAULT_ADMIN_PASSWORD}
     ports:
-      - "127.0.0.1:${API_PORT}:8080"
+      - "127.0.0.1:${APP_PORT}:8080"
     volumes:
       - ./config/config.yml:/app/config.yml:ro
       - ./data/db:/app/db
@@ -182,34 +197,6 @@ services:
       interval: 10s
       timeout: 3s
       retries: 10
-    networks:
-      - dujiao-net
-
-  user:
-    image: dujiaonext/user:${TAG}
-    container_name: dujiaonext-user
-    restart: unless-stopped
-    environment:
-      TZ: ${TZ}
-    ports:
-      - "127.0.0.1:${USER_PORT}:80"
-    depends_on:
-      api:
-        condition: service_healthy
-    networks:
-      - dujiao-net
-
-  admin:
-    image: dujiaonext/admin:${TAG}
-    container_name: dujiaonext-admin
-    restart: unless-stopped
-    environment:
-      TZ: ${TZ}
-    ports:
-      - "127.0.0.1:${ADMIN_PORT}:80"
-    depends_on:
-      api:
-        condition: service_healthy
     networks:
       - dujiao-net
 
@@ -267,7 +254,7 @@ services:
       DJ_DEFAULT_ADMIN_USERNAME: ${DJ_DEFAULT_ADMIN_USERNAME}
       DJ_DEFAULT_ADMIN_PASSWORD: ${DJ_DEFAULT_ADMIN_PASSWORD}
     ports:
-      - "127.0.0.1:${API_PORT}:8080"
+      - "127.0.0.1:${APP_PORT}:8080"
     volumes:
       - ./config/config.yml:/app/config.yml:ro
       - ./data/uploads:/app/uploads
@@ -285,124 +272,26 @@ services:
     networks:
       - dujiao-net
 
-  user:
-    image: dujiaonext/user:${TAG}
-    container_name: dujiaonext-user
-    restart: unless-stopped
-    environment:
-      TZ: ${TZ}
-    ports:
-      - "127.0.0.1:${USER_PORT}:80"
-    depends_on:
-      api:
-        condition: service_healthy
-    networks:
-      - dujiao-net
-
-  admin:
-    image: dujiaonext/admin:${TAG}
-    container_name: dujiaonext-admin
-    restart: unless-stopped
-    environment:
-      TZ: ${TZ}
-    ports:
-      - "127.0.0.1:${ADMIN_PORT}:80"
-    depends_on:
-      api:
-        condition: service_healthy
-    networks:
-      - dujiao-net
-
 networks:
   dujiao-net:
     driver: bridge
 ```
 
-## 6. 外层 Nginx 反向代理（必需）
+## 6. 外层 Nginx 反向代理
 
-`user` 与 `admin` 分别通过各自域名的 `/api`、`/uploads` 路径访问后端，因此你需要在最外层网关（Nginx/Ingress）配置反向代理。前台域名还需要把 `/sitemap.xml` 与 `/robots.txt` 反代到后端，否则会被 SPA 路由兜底为 NotFound，搜索引擎抓不到。
-
-> 下方示例使用默认端口：
->
-> - API: `127.0.0.1:8080`
-> - User: `127.0.0.1:8081`
-> - Admin: `127.0.0.1:8082`
->
-> 如果你在 `.env` 修改了端口，请同步替换。
-
-### 6.1 分域名部署示例
+前台、后台、API、上传文件、`sitemap.xml`、`robots.txt` 全部由同一个端口提供，因此反代只需要一个域名、一条 `location /`：
 
 ```nginx
-# 前台 User
 server {
-    listen 80;
-    server_name user.example.com;
+    listen 443 ssl http2;
+    server_name shop.example.com;
+    ssl_certificate     /path/to/fullchain.pem;
+    ssl_certificate_key /path/to/privkey.pem;
+
+    client_max_body_size 50m;
 
     location / {
-        proxy_pass http://127.0.0.1:8081;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-    }
-
-    # SEO 资源由后端动态生成，必须显式反代，否则会被上面的 SPA 兜底拦截
-    location = /sitemap.xml {
-        proxy_pass http://127.0.0.1:8080/sitemap.xml;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-    }
-
-    location = /robots.txt {
-        proxy_pass http://127.0.0.1:8080/robots.txt;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-    }
-
-    location /api/ {
-        proxy_pass http://127.0.0.1:8080/api/;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-    }
-
-    location /uploads/ {
-        proxy_pass http://127.0.0.1:8080/uploads/;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-    }
-}
-
-# 后台 Admin
-server {
-    listen 80;
-    server_name admin.example.com;
-
-    location / {
-        proxy_pass http://127.0.0.1:8082;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-    }
-
-    location /api/ {
-        proxy_pass http://127.0.0.1:8080/api/;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-    }
-
-    location /uploads/ {
-        proxy_pass http://127.0.0.1:8080/uploads/;
+        proxy_pass http://127.0.0.1:8080;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -410,6 +299,15 @@ server {
     }
 }
 ```
+
+访问方式：
+
+- 用户前台：`https://shop.example.com`
+- 管理后台：`https://shop.example.com/<web.admin_path>`
+
+::: tip 相比 v1.3.x 简化了什么
+旧版需要两个 `server` 块（前台域名 + 后台域名），并且要给 `/api/`、`/uploads/`、`/sitemap.xml`、`/robots.txt` 分别写 `location` 转发到 API 容器，漏了任何一条都会出问题（最常见的是 SEO 资源被 SPA 兜底成 404）。现在这些路径都由同一个进程处理，不需要再拆分。
+:::
 
 ## 7. 启动与运维命令
 
@@ -437,7 +335,7 @@ docker compose --env-file .env -f docker-compose.sqlite.yml down
 
 ### 7.4 默认后台管理员账号（首次初始化）
 
-当数据库中 `admins` 表为空，且 API 首次启动时，会使用以下默认管理员：
+当数据库中 `admins` 表为空，且服务首次启动时，会使用以下默认管理员：
 
 - 默认账号：`admin`
 - 默认密码：`admin123`
@@ -455,9 +353,11 @@ docker compose --env-file .env -f docker-compose.sqlite.yml down
 
 升级：
 
-1. 修改 `.env` 中 `TAG` 为目标版本（例如 `v1.0.0`）
+1. 修改 `.env` 中 `TAG` 为目标版本（例如 `v1.4.0`）
 2. 执行 `docker compose --env-file .env -f <你的方案文件> pull`
 3. 执行 `docker compose --env-file .env -f <你的方案文件> up -d`
+
+前端随镜像一起更新，不需要额外操作。
 
 回滚：
 
@@ -468,14 +368,20 @@ docker compose --env-file .env -f docker-compose.sqlite.yml down
 
 由于容器端口已绑定到 `127.0.0.1`，请在**服务器本机**检查：
 
-- API：`http://127.0.0.1:${API_PORT}/health`
-- User：`http://127.0.0.1:${USER_PORT}`
-- Admin：`http://127.0.0.1:${ADMIN_PORT}`
+- 健康检查：`curl http://127.0.0.1:${APP_PORT}/health`
+- 用户前台：`curl -I http://127.0.0.1:${APP_PORT}/`
+- 管理后台：`curl -I http://127.0.0.1:${APP_PORT}/<web.admin_path>/`
 
 外部用户应通过配置好的域名（经 Nginx 反代）访问。
+
+启动日志里应该能看到这一行，说明前端已正确内嵌并挂载：
+
+```
+Embedded SPAs: admin (/dj-mgmt-7x9k2), user (/)
+```
 
 如页面可打开但接口异常，优先检查：
 
 1. `config.yml` 中数据库与 Redis 地址是否与容器名一致（`postgres` / `redis`）
-2. 外层网关是否已配置 `/api`、`/uploads` 反向代理（前台还需 `/sitemap.xml`、`/robots.txt`）
-3. API 与 Redis/PostgreSQL 健康状态（`docker compose ps`）
+2. `web.admin_path` 是否与你访问的路径一致（改动后需重启容器）
+3. 容器与 Redis/PostgreSQL 健康状态（`docker compose ps`）

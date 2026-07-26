@@ -1,50 +1,68 @@
 # Docker Compose Deployment (Docker Hub Images)
 
-> Last Updated: 2026-02-27
+> Last Updated: 2026-07-26
 
 If you have not chosen a deployment method yet, start with [Deployment Overview and Selection Guide](/en/deploy/).
 
 ## 1. Image Correspondence
 
-- API: `dujiaonext/api:tagname`
-- User (Frontend): `dujiaonext/user:tagname`
-- Admin (Backend): `dujiaonext/admin:tagname`
+- Full-stack service: `dujiaonext/api:tagname`
 
-## 2. Prepare Deployment Directory
+As of v1.4.0 the storefront and admin panel frontends are embedded in this single image, so **the `dujiaonext/user` and `dujiaonext/admin` images no longer exist**. The whole stack needs 2 containers (SQLite) or 3 containers (PostgreSQL).
+
+::: tip Upgrading from v1.3.x
+You can simply delete the old `dujiaonext/user` / `dujiaonext/admin` containers — the frontends no longer
+need separate deployment. See [Upgrade and Migration](/en/deploy/upgrade) for the migration steps.
+:::
+
+## 2. Prepare the Deployment Directory
 
 ```bash
 mkdir -p /opt/dujiao-next/{config,data/db,data/uploads,data/logs,data/redis,data/postgres}
 cd /opt/dujiao-next
 
-# Important: avoid permission issues on log/database directories (API container runs as non-root by default)
+# Important: avoid permission errors on log/database directories (the api container runs as non-root)
 chmod -R 0777 ./data/logs ./data/db ./data/uploads ./data/redis ./data/postgres
 ```
-Directory Description:
 
-- `config/`: API configuration files (`config.yml`)
-- `data/db`: SQLite data directory (used only for the SQLite setup)
-- `data/uploads`: Uploads directory
-- `data/logs`: API logs directory
-- `data/redis`: Redis data directory
-- `data/postgres`: PostgreSQL data directory (used only for the PostgreSQL setup)
+Directory reference:
 
-## 3. Prepare the API Configuration File
+- `config/` — configuration file (`config.yml`)
+- `data/db` — SQLite data directory (SQLite setup only)
+- `data/uploads` — uploaded files
+- `data/logs` — logs
+- `data/redis` — Redis data
+- `data/postgres` — PostgreSQL data (PostgreSQL setup only)
 
-The API container reads `/app/config.yml` by default. First, download the template:
+## 3. Prepare the Configuration File
+
+The container reads `/app/config.yml` by default. Download the template first:
 
 ```bash
 curl -L https://raw.githubusercontent.com/dujiao-next/dujiao-next/main/config.yml.example -o ./config/config.yml
 ```
-You need to modify the database and Redis configuration in `./config/config.yml` according to the plan.
 
-> ⚠️ Important Security Reminder: You must change the JWT secret before going live.
->
-> - `jwt.secret` (Admin login token)
-> - `user_jwt.secret` (Frontend user login token)
->
-> Be sure to use a high-strength random string (at least 32 characters recommended). Do not use the default template values. Otherwise, tokens can be forged, posing a serious security risk.
+Then edit `./config/config.yml` for your chosen database and Redis setup.
 
-### 3.1 Plan A: SQLite + Redis (Recommended for lightweight deployment)
+> ⚠️ Critical security note: you must change the JWT secrets before going live.
+>
+> - `jwt.secret` (admin login tokens)
+> - `user_jwt.secret` (storefront user login tokens)
+>
+> Use high-entropy random strings (at least 32 characters). Never keep the template defaults — doing so makes tokens forgeable and is a serious security risk.
+
+### 3.1 Admin Entry Path (New — Set This)
+
+With the frontends embedded, the admin panel no longer has its own domain; it is mounted at a path on the same site. The default `/admin` is a prime scanner target, so **change it**:
+
+```yaml
+web:
+  admin_path: "/dj-mgmt-7x9k2"   # pick your own string
+```
+
+Restart the container after changing it.
+
+### 3.2 Option A: SQLite + Redis (Recommended for Lightweight Deployments)
 
 ```yaml
 database:
@@ -70,7 +88,8 @@ queue:
     default: 10
     critical: 5
 ```
-### 3.2 Plan B: PostgreSQL Redis (Recommended for Production)
+
+### 3.3 Option B: PostgreSQL + Redis (Recommended for Production)
 
 ```yaml
 database:
@@ -96,44 +115,45 @@ queue:
     default: 10
     critical: 5
 ```
-## 4. Create `.env`
 
-Create a new file at `/opt/dujiao-next/.env`:
+## 4. Write the `.env` File
+
+Create `/opt/dujiao-next/.env`:
 
 ```env
 TAG=latest
 TZ=Asia/Shanghai
 
-API_PORT=8080
-USER_PORT=8081
-ADMIN_PORT=8082
+# Only one port is needed now
+APP_PORT=8080
 
-# Default admin account (only effective during first-time initialization)
+# Default administrator (applies on first initialization only)
 DJ_DEFAULT_ADMIN_USERNAME=admin
 DJ_DEFAULT_ADMIN_PASSWORD=admin123
 
 # Redis
 REDIS_PASSWORD=your-strong-redis-password
 
-# PostgreSQL (required for PostgreSQL deployment profile)
+# PostgreSQL (required for the PostgreSQL setup)
 POSTGRES_DB=dujiao_next
 POSTGRES_USER=dujiao
 POSTGRES_PASSWORD=dujiao_pass
 ```
-> 🔒 **Security notice (must read): Docker bypasses the host firewall**
->
-> Docker implements port publishing by writing directly into the `DOCKER` iptables chain, which **completely bypasses host firewalls such as ufw and firewalld**. If you write `ports: - "6379:6379"` in compose, Redis / PostgreSQL will be exposed to the public internet even when ufw only allows 80/443 — trivially scannable and brute-forceable.
->
-> This document therefore follows two rules:
->
-> 1. **Redis / PostgreSQL publish no ports at all** — they are reachable only through the internal `dujiao-net` network from the `api` container.
-> 2. **API / User / Admin ports are bound to `127.0.0.1`** — reachable only from a local Nginx reverse proxy, not from the public internet.
->
-> For ad-hoc debugging of Redis/PostgreSQL from the host, use `docker exec` into the container, or temporarily add `ports: - "127.0.0.1:6379:6379"` (which also binds only to loopback).
 
-## 5. Writing Compose Files
+> 🔒 **Security warning (please read): Docker bypasses host firewalls**
+>
+> Docker implements port mapping by writing directly to the iptables `DOCKER` chain, **completely bypassing ufw / firewalld rules**. If you write `ports: - "6379:6379"` in your compose file, Redis will be exposed to the public internet even if ufw only allows 80/443 — an easy target for scanners and brute-force attacks.
+>
+> This guide therefore follows two rules:
+>
+> 1. **Redis / PostgreSQL expose no ports at all** — they are reachable only over the internal `dujiao-net` network from the `api` container.
+> 2. **The application port binds to `127.0.0.1`**, so only the local Nginx reverse proxy can reach it.
+>
+> To debug Redis/PostgreSQL from the host temporarily, use `docker exec`, or add `ports: - "127.0.0.1:6379:6379"` (loopback only) for that service.
 
-## 5.1 Option A (SQLite Redis): `docker-compose.sqlite.yml`
+## 5. Write the Compose File
+
+## 5.1 Option A (SQLite + Redis): `docker-compose.sqlite.yml`
 
 ```yaml
 services:
@@ -163,7 +183,7 @@ services:
       DJ_DEFAULT_ADMIN_USERNAME: ${DJ_DEFAULT_ADMIN_USERNAME}
       DJ_DEFAULT_ADMIN_PASSWORD: ${DJ_DEFAULT_ADMIN_PASSWORD}
     ports:
-      - "127.0.0.1:${API_PORT}:8080"
+      - "127.0.0.1:${APP_PORT}:8080"
     volumes:
       - ./config/config.yml:/app/config.yml:ro
       - ./data/db:/app/db
@@ -180,39 +200,12 @@ services:
     networks:
       - dujiao-net
 
-  user:
-    image: dujiaonext/user:${TAG}
-    container_name: dujiaonext-user
-    restart: unless-stopped
-    environment:
-      TZ: ${TZ}
-    ports:
-      - "127.0.0.1:${USER_PORT}:80"
-    depends_on:
-      api:
-        condition: service_healthy
-    networks:
-      - dujiao-net
-
-  admin:
-    image: dujiaonext/admin:${TAG}
-    container_name: dujiaonext-admin
-    restart: unless-stopped
-    environment:
-      TZ: ${TZ}
-    ports:
-      - "127.0.0.1:${ADMIN_PORT}:80"
-    depends_on:
-      api:
-        condition: service_healthy
-    networks:
-      - dujiao-net
-
 networks:
   dujiao-net:
     driver: bridge
 ```
-## 5.2 Plan B (PostgreSQL Redis): `docker-compose.postgres.yml`
+
+## 5.2 Option B (PostgreSQL + Redis): `docker-compose.postgres.yml`
 
 ```yaml
 services:
@@ -261,7 +254,7 @@ services:
       DJ_DEFAULT_ADMIN_USERNAME: ${DJ_DEFAULT_ADMIN_USERNAME}
       DJ_DEFAULT_ADMIN_PASSWORD: ${DJ_DEFAULT_ADMIN_PASSWORD}
     ports:
-      - "127.0.0.1:${API_PORT}:8080"
+      - "127.0.0.1:${APP_PORT}:8080"
     volumes:
       - ./config/config.yml:/app/config.yml:ro
       - ./data/uploads:/app/uploads
@@ -279,124 +272,26 @@ services:
     networks:
       - dujiao-net
 
-  user:
-    image: dujiaonext/user:${TAG}
-    container_name: dujiaonext-user
-    restart: unless-stopped
-    environment:
-      TZ: ${TZ}
-    ports:
-      - "127.0.0.1:${USER_PORT}:80"
-    depends_on:
-      api:
-        condition: service_healthy
-    networks:
-      - dujiao-net
-
-  admin:
-    image: dujiaonext/admin:${TAG}
-    container_name: dujiaonext-admin
-    restart: unless-stopped
-    environment:
-      TZ: ${TZ}
-    ports:
-      - "127.0.0.1:${ADMIN_PORT}:80"
-    depends_on:
-      api:
-        condition: service_healthy
-    networks:
-      - dujiao-net
-
 networks:
   dujiao-net:
     driver: bridge
 ```
-## 6. Outer Nginx Reverse Proxy (Required)
 
-Both `user` and `admin` access the backend via `/api` and `/uploads`, so you need to configure a reverse proxy at the outermost gateway (Nginx/Ingress). The user-facing domain must additionally proxy `/sitemap.xml` and `/robots.txt` to the backend; otherwise the SPA catch-all route serves a NotFound page and search engines cannot fetch them.
+## 6. Nginx Reverse Proxy
 
-> The example below uses the default ports:
->
-> - API: `127.0.0.1:8080`
-> - User: `127.0.0.1:8081`
-> - Admin: `127.0.0.1:8082`
->
-> If you have modified the ports in `.env`, please replace them accordingly.
-
-### 6.1 Subdomain Deployment Example
+The storefront, admin panel, API, uploads, `sitemap.xml`, and `robots.txt` are all served on the same port, so the reverse proxy needs one domain and one `location /`:
 
 ```nginx
-# User frontend
 server {
-    listen 80;
-    server_name user.example.com;
+    listen 443 ssl http2;
+    server_name shop.example.com;
+    ssl_certificate     /path/to/fullchain.pem;
+    ssl_certificate_key /path/to/privkey.pem;
+
+    client_max_body_size 50m;
 
     location / {
-        proxy_pass http://127.0.0.1:8081;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-    }
-
-    # SEO assets are generated dynamically by the backend; they must be
-    # proxied explicitly, otherwise the SPA fallback above will swallow them.
-    location = /sitemap.xml {
-        proxy_pass http://127.0.0.1:8080/sitemap.xml;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-    }
-
-    location = /robots.txt {
-        proxy_pass http://127.0.0.1:8080/robots.txt;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-    }
-
-    location /api/ {
-        proxy_pass http://127.0.0.1:8080/api/;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-    }
-
-    location /uploads/ {
-        proxy_pass http://127.0.0.1:8080/uploads/;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-    }
-}
-
-# Admin frontend
-server {
-    listen 80;
-    server_name admin.example.com;
-
-    location / {
-        proxy_pass http://127.0.0.1:8082;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-    }
-
-    location /api/ {
-        proxy_pass http://127.0.0.1:8080/api/;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-    }
-
-    location /uploads/ {
-        proxy_pass http://127.0.0.1:8080/uploads/;
+        proxy_pass http://127.0.0.1:8080;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -404,20 +299,30 @@ server {
     }
 }
 ```
-If there is no `/api` and `/uploads` proxy, the User/Admin pages can open, but the API and file uploads will fail to work.
 
-## 7. Startup and Operations Commands
+Access:
 
-### 7.1 Startup (SQLite Redis)
+- Storefront: `https://shop.example.com`
+- Admin panel: `https://shop.example.com/<web.admin_path>`
+
+::: tip What got simpler compared to v1.3.x
+The old setup needed two `server` blocks (storefront domain + admin domain) plus individual `location` rules forwarding `/api/`, `/uploads/`, `/sitemap.xml`, and `/robots.txt` to the API container. Missing any one of them caused problems — most commonly SEO resources being swallowed by the SPA fallback and returning 404. All of those paths are now handled by the same process.
+:::
+
+## 7. Startup and Operations
+
+### 7.1 Start (SQLite + Redis)
 
 ```bash
 docker compose --env-file .env -f docker-compose.sqlite.yml up -d
 ```
-### 7.2 Startup (PostgreSQL Redis)
+
+### 7.2 Start (PostgreSQL + Redis)
 
 ```bash
 docker compose --env-file .env -f docker-compose.postgres.yml up -d
 ```
+
 ### 7.3 Common Commands
 
 ```bash
@@ -425,49 +330,58 @@ docker compose --env-file .env -f docker-compose.sqlite.yml ps
 docker compose --env-file .env -f docker-compose.sqlite.yml logs -f api
 docker compose --env-file .env -f docker-compose.sqlite.yml down
 ```
-> If using the PostgreSQL setup, simply replace the filename with `docker-compose.postgres.yml`.
 
-### 7.4 Default Admin Account for Backend (First Initialization)
+> For the PostgreSQL setup, substitute `docker-compose.postgres.yml` for the filename.
 
-When the `admins` table in the database is empty and the API is started for the first time, the following default admin account will be used:
+### 7.4 Default Administrator Account (First Initialization)
 
-- Default username: `admin`
-- Default password: `admin123`
+When the `admins` table is empty and the service starts for the first time, it creates:
 
-> Strongly recommended: Change the password immediately after the first login.
+- Username: `admin`
+- Password: `admin123`
 
-If you want to use a custom admin account during deployment, modify the following in your `.env` file:
+> Strongly recommended: change the password immediately after your first login.
+
+To use a custom administrator from the start, set these in `.env`:
 
 - `DJ_DEFAULT_ADMIN_USERNAME`
 - `DJ_DEFAULT_ADMIN_PASSWORD`
 
-And ensure that the `api` service in your compose file has these environment variables injected.
+and make sure the `api` service in your compose file passes them through.
 
 ## 8. Upgrade and Rollback
 
 Upgrade:
 
-1. Change `TAG` in `.env` to the target version (e.g., `v1.0.0`)
-2. Run `docker compose --env-file .env -f <your-compose-file> pull`
-3. Run `docker compose --env-file .env -f <your-compose-file> up -d`
+1. Set `TAG` in `.env` to the target version (e.g. `v1.4.0`)
+2. Run `docker compose --env-file .env -f <your compose file> pull`
+3. Run `docker compose --env-file .env -f <your compose file> up -d`
+
+The frontends are updated along with the image — nothing extra to do.
 
 Rollback:
 
-1. Change `TAG` back to the previous version
-2. Run `docker compose --env-file .env -f <your-compose-file> up -d`
+1. Set `TAG` back to the previous version
+2. Run `docker compose --env-file .env -f <your compose file> up -d`
 
 ## 9. Access and Connectivity Checks
 
-Since container ports are bound to `127.0.0.1`, check from the **server itself**:
+Since container ports bind to `127.0.0.1`, run these checks **on the server itself**:
 
-- API: `http://127.0.0.1:${API_PORT}/health`
-- User: `http://127.0.0.1:${USER_PORT}`
-- Admin: `http://127.0.0.1:${ADMIN_PORT}`
+- Health check: `curl http://127.0.0.1:${APP_PORT}/health`
+- Storefront: `curl -I http://127.0.0.1:${APP_PORT}/`
+- Admin panel: `curl -I http://127.0.0.1:${APP_PORT}/<web.admin_path>/`
 
-External users should access the services through the configured domains via the Nginx reverse proxy.
+External users should access the service through your configured domain via the Nginx reverse proxy.
 
-If the pages load but the API endpoints fail, first check:
+The startup log should contain this line, confirming the frontends were embedded and mounted:
 
-1. Whether the database and Redis addresses in `config.yml` match the container names (`postgres` / `redis`)
-2. Whether the external gateway has configured `/api` and `/uploads` reverse proxy (the user-facing domain also needs `/sitemap.xml` and `/robots.txt`)
-3. The health status of API, Redis, and PostgreSQL (`docker compose ps`)
+```
+Embedded SPAs: admin (/dj-mgmt-7x9k2), user (/)
+```
+
+If pages load but API calls fail, check in this order:
+
+1. Whether the database and Redis hosts in `config.yml` match the container names (`postgres` / `redis`)
+2. Whether `web.admin_path` matches the path you are visiting (restart the container after changing it)
+3. Container and Redis/PostgreSQL health (`docker compose ps`)

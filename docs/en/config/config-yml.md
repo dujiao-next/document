@@ -233,7 +233,30 @@ Additional notes:
 | `allowed_extensions` | []string | Allowed file extensions | Match with MIME types |
 | `max_width` / `max_height` | int | Maximum image dimensions | `4096` |
 
-## 5.8 `cors`
+## 5.8 `web`
+
+Controls how the embedded frontends are mounted. Since v1.4.0 the storefront and admin panel are embedded in the binary, and this section determines the admin entry path.
+
+| Field | Type | Default | Description | Recommendation |
+| --- | --- | --- | --- | --- |
+| `admin_path` | string | `/admin` | Path prefix for the admin panel | **Change it to something hard to guess** |
+
+```yaml
+web:
+  admin_path: "/dj-mgmt-7x9k2"
+```
+
+Additional notes:
+
+- Must start with `/`, must not end with `/`, and must not be `/` itself.
+- Must not equal, contain, or be contained by `/api`, `/uploads`, or `/health`; otherwise startup fails with an error.
+- A restart is required after changing it: the value is written into the admin page's `<base href>` once at startup.
+- The storefront is always mounted at `/` and is not configurable.
+- This path is only the "front door" of the admin panel, not a security boundary — endpoint security comes from
+  JWT and rate limiting. Changing it filters out automated scanning noise.
+- If the binary has no embedded frontends (built with `go build` without `-tags fullstack`), this section has no effect.
+
+## 5.9 `cors`
 
 | Field | Type | Description | Recommendation |
 | --- | --- | --- | --- |
@@ -247,7 +270,7 @@ Additional notes:
 
 - Browser constraint: when `allow_credentials=true`, `allowed_origins` must not contain `*`.
 
-## 5.9 `security`
+## 5.10 `security`
 
 | Field | Type | Default | Description | Recommended |
 | --- | --- | --- | --- | --- |
@@ -260,7 +283,7 @@ Additional notes:
 | `password_policy.require_number` | bool | `true` | Whether to require digits | `true` |
 | `password_policy.require_special` | bool | `false` | Whether to require special characters | Enable as needed |
 
-## 5.10 `email`
+## 5.11 `email`
 
 | Field | Type | Description | Recommended |
 | --- | --- | --- | --- |
@@ -271,7 +294,7 @@ Additional notes:
 | `use_tls`/`use_ssl` | bool | Transport security strategy | Choose one, follow provider documentation |
 | `verify_code.*` | mixed | Verification code validity, frequency, length | Default values commonly used |
 
-## 5.11 `bootstrap`
+## 5.12 `bootstrap`
 
 | Field | Type | Description | Recommended |
 | --- | --- | --- | --- |
@@ -284,7 +307,7 @@ Additional notes:
 - Priority: `DJ_DEFAULT_ADMIN_USERNAME` / `DJ_DEFAULT_ADMIN_PASSWORD` (environment variables) > `bootstrap.default_admin_username` / `bootstrap.default_admin_password` (`config.yml`) > system defaults.
 - In `release` mode, if no admin password is provided in either environment variables or `config.yml`, default admin initialization will be skipped.
 
-## 5.12 `order`
+## 5.13 `order`
 
 | Field | Type | Default | Description | Recommended |
 | --- | --- | --- | --- | --- |
@@ -294,7 +317,7 @@ Additional notes:
 
 - The effective value may be overridden by admin settings (see "Runtime Override Priority" below).
 
-## 5.13 `telegram_auth` (optional)
+## 5.14 `telegram_auth` (optional)
 
 | Field | Type | Description | Recommended |
 | --- | --- | --- | --- |
@@ -304,7 +327,7 @@ Additional notes:
 | `login_expire_seconds` | int | Login validity (seconds) | `300` |
 | `replay_ttl_seconds` | int | Replay protection TTL (seconds) | `300` |
 
-## 5.14 `captcha` (optional)
+## 5.15 `captcha` (optional)
 
 `config.yml.example` may not show this section completely, but it is supported by the system.
 
@@ -336,7 +359,7 @@ captcha:
     timeout_ms: 2000
 ```
 
-## 5.15 Runtime Override Priority (Important)
+## 5.16 Runtime Override Priority (Important)
 
 The following items can be changed dynamically in admin settings and have higher priority than `config.yml`:
 
@@ -352,6 +375,7 @@ If you changed `config.yml` but behavior did not change, check admin settings fi
 - `DATABASE_DSN=host=127.0.0.1 ...`
 - `JWT_SECRET=...`
 - `USER_JWT_SECRET=...`
+- `WEB_ADMIN_PATH=/dj-mgmt-7x9k2`
 - `DJ_DEFAULT_ADMIN_USERNAME=admin`
 - `DJ_DEFAULT_ADMIN_PASSWORD=<your-strong-password>`
 - `REDIS_HOST=127.0.0.1`
@@ -384,5 +408,6 @@ Rule: '.' in the configuration key is converted to '_'.
 - [ ] Redis/queue available (if enabled)
 - [ ] If using default startup mode `all`, ensure `queue.enabled=true` and queue Redis is reachable
 - [ ] If queue is intentionally disabled, start with `-mode api` and accept reduced async capabilities
+- [ ] `web.admin_path` no longer uses the default `/admin`
 - [ ] CORS is restricted to real business domains
 - [ ] Email configuration has been authenticated (if enabled)

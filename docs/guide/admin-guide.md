@@ -12,7 +12,8 @@ outline: deep
 
 ## 1. 登录后台
 
-- 默认地址：`http://localhost:5174`（开发环境）或你部署的管理后台域名
+- 默认地址：`http://localhost:5174`（开发环境）或 `https://你的域名/<web.admin_path>`（部署后）
+- `web.admin_path` 在 `config.yml` 中配置，默认 `/admin`，建议改成不易猜测的路径
 - 使用管理员账号密码登录
 - 首次部署时管理员账号在 `config.yml` 的 `bootstrap` 节点配置
 

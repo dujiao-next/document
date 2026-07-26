@@ -33,9 +33,9 @@
 
 ## 3. 链接与仓库命名
 
-- API：<https://github.com/dujiao-next/dujiao-next>
-- User：<https://github.com/dujiao-next/user>
-- Admin：<https://github.com/dujiao-next/admin>
+- 主项目（API + User + Admin）：<https://github.com/dujiao-next/dujiao-next>
+  - 用户前台源码位于 `frontend/user`
+  - 管理后台源码位于 `frontend/admin`
 - Document：<https://github.com/dujiao-next/document>
 
 ## 4. 文档编写建议

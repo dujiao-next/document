@@ -34,8 +34,8 @@ This page standardizes core terms used across Dujiao-Next documentation to reduc
 ## 3. Repository Mapping
 
 - API: <https://github.com/dujiao-next/dujiao-next>
-- User: <https://github.com/dujiao-next/user>
-- Admin: <https://github.com/dujiao-next/admin>
+  - storefront source lives in `frontend/user`
+  - admin panel source lives in `frontend/admin`
 - Document: <https://github.com/dujiao-next/document>
 
 ## 4. Writing Guidelines

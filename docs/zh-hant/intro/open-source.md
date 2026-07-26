@@ -4,16 +4,15 @@
 
 ## 1. 倉庫地址
 
-- API（主項目）：https://github.com/dujiao-next/dujiao-next
-- User（用戶前臺）：https://github.com/dujiao-next/user
-- Admin（後臺）：https://github.com/dujiao-next/admin
+- 主項目（後端 + 用戶前臺 + 管理後臺）：https://github.com/dujiao-next/dujiao-next
 - Document（文檔）：https://github.com/dujiao-next/document
 - Community Projects（社群共享專案）：https://github.com/dujiao-next/community-projects
 
 ## 2. 術語說明
 
-- 文檔中的“User”指用戶前臺項目（倉庫名：`user`）。
-- 若你本地仍是歷史目錄名 `web`，僅需將命令裡的 `user` 替換成 `web`。
+- 文檔中的「User」指用戶前臺，源碼位於 `frontend/user`。
+- 「Admin」指管理後臺，源碼位於 `frontend/admin`。
+- 兩者原本是獨立倉庫，v1.4.0 起已併入主倉庫。
 
 ## 3. 提交 PR 建議
 

@@ -11,12 +11,11 @@ You only need two outcomes:
 
 Make sure your payment callback endpoint is publicly reachable.
 
-The system requires at least two domains:
+The system needs only one domain, for example `user.example.com` (or `shop.example.com`).
 
-- User storefront: `user.example.com` (or `shop.example.com`)
-- Admin panel: `admin.example.com`
-
-The API is accessed through each site's reverse proxy (e.g., `user.example.com/api` and `admin.example.com/api` both proxy to the backend) and does not require a separate domain.
+The storefront, admin panel, and API are all served by the same service on that domain: the storefront
+at `/`, the admin panel at `web.admin_path`, and the API at `/api`. Use this domain for callback URLs —
+no additional domain is required.
 
 Common URL examples:
 

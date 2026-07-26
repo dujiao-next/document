@@ -142,8 +142,7 @@ Restrict CORS to only allow your frontend domains:
 ```yaml
 cors:
   allowed_origins:
-    - "https://shop.example.com"
-    - "https://admin.example.com"
+    - "https://shop.example.com"   # storefront and admin share one domain
   allowed_methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"]
   allow_credentials: true
   max_age: 600

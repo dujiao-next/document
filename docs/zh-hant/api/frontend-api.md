@@ -14,9 +14,7 @@ outline: deep
 
 ## 開源倉庫地址
 
-- API（主項目）：https://github.com/dujiao-next/dujiao-next
-- User（用戶前臺）：https://github.com/dujiao-next/user
-- Admin（後臺）：https://github.com/dujiao-next/admin
+- 主項目（後端 + 用戶前臺 + 管理後臺）：https://github.com/dujiao-next/dujiao-next
 - Document（文檔）：https://github.com/dujiao-next/document
 
 ---

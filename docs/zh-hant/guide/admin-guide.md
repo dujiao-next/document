@@ -12,7 +12,8 @@ outline: deep
 
 ## 1. 登入後台
 
-- 預設地址：`http://localhost:5174`（開發環境）或你部署的管理後台網域
+- 預設地址：`http://localhost:5174`（開發環境）或 `https://你的網域/<web.admin_path>`（部署後）
+- `web.admin_path` 在 `config.yml` 中設定，預設 `/admin`，建議改成不易猜測的路徑
 - 使用管理員帳號密碼登入
 - 首次部署時管理員帳號在 `config.yml` 的 `bootstrap` 節點設定
 

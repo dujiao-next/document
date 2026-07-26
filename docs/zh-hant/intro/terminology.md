@@ -34,8 +34,8 @@
 ## 3. 連結與倉庫命名
 
 - API：<https://github.com/dujiao-next/dujiao-next>
-- User：<https://github.com/dujiao-next/user>
-- Admin：<https://github.com/dujiao-next/admin>
+  - 用戶前臺源碼位於 `frontend/user`
+  - 管理後臺源碼位於 `frontend/admin`
 - Document：<https://github.com/dujiao-next/document>
 
 ## 4. 文件撰寫建議

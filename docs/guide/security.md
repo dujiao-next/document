@@ -142,8 +142,7 @@ captcha:
 ```yaml
 cors:
   allowed_origins:
-    - "https://shop.example.com"
-    - "https://admin.example.com"
+    - "https://shop.example.com"   # 前台与后台同域，只需要这一个
   allowed_methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"]
   allow_credentials: true
   max_age: 600

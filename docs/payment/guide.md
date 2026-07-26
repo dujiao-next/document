@@ -11,12 +11,10 @@
 
 先确认你的支付回调入口可以被公网访问。
 
-系统需要至少两个域名：
+系统只需要一个域名，例如 `user.example.com`（或 `shop.example.com`）。
 
-- 前台商城：`user.example.com`（或 `shop.example.com`）
-- 管理后台：`admin.example.com`
-
-API 通过各站点的反向代理访问（如 `user.example.com/api` 和 `admin.example.com/api` 均代理到后端），无需额外域名。
+前台、后台与 API 都由同一个服务在同一域名下提供：前台在 `/`，后台在 `web.admin_path`，
+API 在 `/api`。回调地址填这个域名即可，不需要额外域名。
 
 常用地址示例：
 
