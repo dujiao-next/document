@@ -20,6 +20,7 @@ If you are running a v1.3.x or earlier split deployment, see [Upgrade and Migrat
 - Complete beginners / want to avoid Docker: start with [Single Binary Deployment](/en/deploy/binary) (simplest).
 - You want a standardized, repeatable setup: start with [Docker Compose Deployment](/en/deploy/docker-compose).
 - You already run aaPanel: go directly to [aaPanel Deployment](/en/deploy/aapanel).
+- You already run 1Panel: go directly to [1Panel Deployment](/en/deploy/1panel).
 - You need source-level customization or local builds: use [Manual Deployment](/en/deploy/manual).
 
 ## 3. How to Choose a Deployment Method
@@ -29,6 +30,7 @@ If you are running a v1.3.x or earlier split deployment, see [Upgrade and Migrat
 | Single Binary | Low | Complete beginners / want to avoid Docker | Download, extract, run — no compilation | [Single Binary Deployment](/en/deploy/binary) |
 | Docker Compose | Medium | Users who need standardized and repeatable deployment | One image + Redis, clear upgrade/rollback path | [Docker Compose Deployment](/en/deploy/docker-compose) |
 | aaPanel Deployment | Low-Medium | Users already running aaPanel | GUI-oriented operations, suitable for panel-based maintenance | [aaPanel Deployment](/en/deploy/aapanel) |
+| 1Panel Deployment | Low-Medium | Users already running 1Panel | Compose, reverse proxy, certificates and backups all in the panel | [1Panel Deployment](/en/deploy/1panel) |
 | Manual Deployment (Build from source) | High | Advanced customization and secondary development | Highest control and flexibility | [Manual Deployment](/en/deploy/manual) |
 
 Whichever you pick, you end up running the same binary with embedded frontends. The only difference is how you obtain it and what supervises the process.

@@ -20,6 +20,7 @@
 - 完全新手 / 不想接触 Docker：从 [单二进制部署](/deploy/binary) 开始（最简单）。
 - 希望标准化、可重复部署：从 [Docker Compose 部署](/deploy/docker-compose) 开始。
 - 已在使用 aaPanel/宝塔面板：直接查看 [aaPanel 部署](/deploy/aapanel)。
+- 已在使用 1Panel：直接查看 [1Panel 部署](/deploy/1panel)。
 - 需要源码级改造或本地构建：使用 [手动部署](/deploy/manual)。
 
 ## 3. 部署方式怎么选
@@ -29,6 +30,7 @@
 | 单二进制 | 低 | 完全新手 / 不想接触 Docker | 下载解压即跑，无需编译 | [单二进制部署](/deploy/binary) | 暂无 |
 | Docker Compose | 中 | 希望标准化、可重复部署的用户 | 单镜像 + Redis，升级回滚清晰 | [Docker Compose 部署](/deploy/docker-compose) | 暂无 |
 | aaPanel 部署 | 低-中 | 已在用宝塔面板的用户 | 面板化操作，适合可视化运维 | [aaPanel 部署](/deploy/aapanel) | [点我观看视频教程](https://telegram.me/dujiaoshuka/65) |
+| 1Panel 部署 | 低-中 | 已在用 1Panel 的用户 | 面板内完成编排、反代、证书、备份 | [1Panel 部署](/deploy/1panel) | 暂无 |
 | 手动部署（源码构建） | 高 | 需要深度定制、二次开发的用户 | 控制粒度最高，适合高级运维/开发 | [手动部署](/deploy/manual) | 暂无 |
 
 无论选哪种，最终运行的都是同一个内嵌前端的二进制，区别只在于「怎么拿到它」和「谁来守护进程」。

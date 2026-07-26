@@ -20,6 +20,7 @@
 - 完全新手 / 不想用 Docker：從 [單二進制部署](/zh-hant/deploy/binary) 開始（最簡單）。
 - 希望標準化、可重複部署：從 [Docker Compose 部署](/zh-hant/deploy/docker-compose) 開始。
 - 已在使用 aaPanel/寶塔面板：直接查看 [aaPanel 部署](/zh-hant/deploy/aapanel)。
+- 已在使用 1Panel：直接查看 [1Panel 部署](/zh-hant/deploy/1panel)。
 - 需要原始碼級改造或本地建置：使用 [手動部署](/zh-hant/deploy/manual)。
 
 ## 3. 如何選擇部署方式
@@ -29,6 +30,7 @@
 | 單二進制 | 低 | 完全新手 / 不想接觸 Docker | 下載解壓縮即跑，無需編譯 | [單二進制部署](/zh-hant/deploy/binary) |
 | Docker Compose | 中 | 希望標準化、可重複部署的使用者 | 單映像檔 + Redis，升級回滾清晰 | [Docker Compose 部署](/zh-hant/deploy/docker-compose) |
 | aaPanel 部署 | 低-中 | 已在使用寶塔面板的使用者 | 面板化操作，適合可視化運維 | [aaPanel 部署](/zh-hant/deploy/aapanel) |
+| 1Panel 部署 | 低-中 | 已在使用 1Panel 的使用者 | 面板內完成編排、反代、憑證、備份 | [1Panel 部署](/zh-hant/deploy/1panel) |
 | 手動部署（源碼構建） | 高 | 需要深度客製化、二次開發的使用者 | 控制粒度最高，適合進階運維/開發 | [手動部署](/zh-hant/deploy/manual) |
 
 無論選哪種，最終執行的都是同一個內嵌前端的二進制，差別只在於「怎麼拿到它」和「由誰守護行程」。
