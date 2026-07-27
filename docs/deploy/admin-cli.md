@@ -141,8 +141,8 @@ sudo -u dujiao /opt/dujiao/dujiao-next admin reset-password --username admin
 
 ```bash
 # 进入容器执行(容器内 WORKDIR 已是 /app,config.yml 通过 volume 挂载)
-docker compose exec api ./dujiao-next admin list-admins
-docker compose exec api ./dujiao-next admin reset-password --username admin
+docker compose exec dujiao-next ./dujiao-next admin list-admins
+docker compose exec dujiao-next ./dujiao-next admin reset-password --username admin
 
 # 或一次性容器
 docker compose run --rm api ./dujiao-next admin reset-2fa --username admin

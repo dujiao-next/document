@@ -24,7 +24,7 @@ lsof -i :8080
 
 1. 确认容器正在运行：`docker compose ps`
 2. 检查端口映射是否正确
-3. 查看容器日志：`docker compose logs -f api`
+3. 查看容器日志：`docker compose logs -f dujiao-next`
 4. 确认防火墙是否放行了对应端口
 
 ### Q：首次启动后管理员账号是什么

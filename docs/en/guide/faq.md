@@ -24,7 +24,7 @@ Change the port or stop the conflicting process, then restart.
 
 1. Verify the container is running: `docker compose ps`
 2. Check that port mappings are correct
-3. View container logs: `docker compose logs -f api`
+3. View container logs: `docker compose logs -f dujiao-next`
 4. Confirm your firewall allows traffic on the mapped port
 
 ### Q: What is the admin account after first startup?

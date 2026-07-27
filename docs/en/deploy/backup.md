@@ -53,7 +53,7 @@ pg_dump -U dujiao -d dujiao --data-only -f dujiao_data_$(date +%Y%m%d).sql
 
 ```bash
 # SQLite (copy directly from the container)
-docker compose cp api:/app/db/dujiao.db ./backup/dujiao.db
+docker compose cp dujiao-next:/app/db/dujiao.db ./backup/dujiao.db
 
 # PostgreSQL (using pg_dump)
 docker compose exec postgres pg_dump -U dujiao -d dujiao -F c -f /tmp/backup.dump
@@ -85,7 +85,7 @@ rsync -av uploads/ backup/uploads/
 Docker environment:
 
 ```bash
-docker compose cp api:/app/uploads ./backup/uploads
+docker compose cp dujiao-next:/app/uploads ./backup/uploads
 ```
 
 ---
