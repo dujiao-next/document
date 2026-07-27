@@ -108,6 +108,16 @@ Always read the [Changelog](/en/intro/changelog) before upgrading to understand:
 - Database schema changes
 - New configuration fields
 
+### 1.3 Check In-Flight Payments and the Authorization Baseline
+
+When an upgrade introduces strict callback amount/currency validation or changes DujiaoPay configuration:
+
+- In admin, filter for pending records with `provider_type=dujiaopay`. Prefer to let them complete or expire before upgrading.
+- If you must upgrade with in-flight payments, verify that the channel's `fiat_currency` matches the currency stored on those payment records. Do not change that channel's fiat currency until the in-flight records are cleared.
+- Prepare test administrators for the six built-in roles (`readonly_auditor`, `operations`, `support`, `integration`, `finance`, and `system_admin`) for post-upgrade authorization smoke tests.
+
+The new version can adopt the signed webhook currency in a limited compatibility path when the signature, channel, provider order ID, merchant order ID, and amount all match and the old payment has no new-version fiat snapshot. This pre-upgrade check still avoids relying on that compatibility path. A currency mismatch on a payment that already has a new-version snapshot remains rejected. If this has already happened, retain the original callback and payment record for manual reconciliation; do not bypass amount or currency validation manually.
+
 ---
 
 ## 2. Binary Deployment Upgrade
@@ -203,6 +213,7 @@ Verify in this order:
 5. **Create a test order**: place an order on the storefront and complete payment
 6. **Payment callback**: confirm callbacks are processed
 7. **Email notifications**: confirm outbound email works
+8. **Built-in role authorization**: sign in with a test administrator for each built-in role and verify menu visibility, read/write access, and expected 403 boundaries
 
 ---
 
