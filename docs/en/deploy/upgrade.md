@@ -40,7 +40,7 @@ v1.4.0 **embeds the storefront and admin panel frontends into the backend binary
    docker compose -f <your compose file> down
    ```
 
-3. Edit your compose file: **delete the `user` and `admin` services**, keeping only `redis` (+ `postgres`) and `api`.
+3. Edit your compose file: **delete the `user` and `admin` services**, keeping only `redis` (+ `postgres`) and `dujiao-next`.
    See [Docker Compose Deployment](/en/deploy/docker-compose#_5-write-the-compose-file) for a complete example.
 
 4. Add a `web` section to `config.yml` with a hard-to-guess admin path:
@@ -57,7 +57,7 @@ v1.4.0 **embeds the storefront and admin panel frontends into the backend binary
    ```bash
    docker compose --env-file .env -f <your compose file> pull
    docker compose --env-file .env -f <your compose file> up -d
-   docker compose logs -f api
+   docker compose logs -f dujiao-next
    ```
 
    Seeing `Embedded SPAs: admin (/dj-mgmt-7x9k2), user (/)` in the log means it worked.
@@ -99,9 +99,9 @@ v1.4.0 **embeds the storefront and admin panel frontends into the backend binary
 
 See the [Backup & Restore](/en/deploy/backup) guide.
 
-### 1.2 Read the Changelog
+### 1.2 Read the Release Notes
 
-Always read the [Changelog](/en/intro/changelog) before upgrading to understand:
+Always read the [GitHub release notes](https://github.com/dujiao-next/dujiao-next/releases) for your target version before upgrading to understand:
 
 - New features and configuration options
 - Breaking changes
@@ -177,8 +177,8 @@ Or build manually — see [Manual Deployment](/en/deploy/manual#_4-manual-build)
 ### 4.1 Back Up
 
 ```bash
-docker compose exec api cp /app/db/dujiao.db /app/db/dujiao.db.bak
-docker compose cp api:/app/config.yml ./config.yml.bak
+docker compose exec dujiao-next cp /app/db/dujiao.db /app/db/dujiao.db.bak
+docker compose cp dujiao-next:/app/config.yml ./config.yml.bak
 ```
 
 ### 4.2 Pull the New Image
@@ -197,7 +197,7 @@ docker compose --env-file .env -f <your compose file> up -d
 ### 4.4 Check the Logs
 
 ```bash
-docker compose logs -f api
+docker compose logs -f dujiao-next
 ```
 
 ---

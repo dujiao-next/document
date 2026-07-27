@@ -40,7 +40,7 @@ v1.4.0 把用戶前臺與管理後臺的前端**內嵌進了後端二進制**，
    docker compose -f <你的 compose 檔案> down
    ```
 
-3. 修改 compose 檔案：**刪除 `user` 與 `admin` 兩個 service**，只保留 `redis`（+ `postgres`）與 `api`。
+3. 修改 compose 檔案：**刪除 `user` 與 `admin` 兩個 service**，只保留 `redis`（+ `postgres`）與 `dujiao-next`。
    完整範例見 [Docker Compose 部署](/zh-hant/deploy/docker-compose#_5-編寫-compose-檔案)。
 
 4. 在 `config.yml` 補上 `web` 段，設定一個不易猜測的後臺路徑：
@@ -57,7 +57,7 @@ v1.4.0 把用戶前臺與管理後臺的前端**內嵌進了後端二進制**，
    ```bash
    docker compose --env-file .env -f <你的 compose 檔案> pull
    docker compose --env-file .env -f <你的 compose 檔案> up -d
-   docker compose logs -f api
+   docker compose logs -f dujiao-next
    ```
 
    日誌出現 `Embedded SPAs: admin (/dj-mgmt-7x9k2), user (/)` 即為成功。
@@ -99,9 +99,9 @@ v1.4.0 把用戶前臺與管理後臺的前端**內嵌進了後端二進制**，
 
 參考 [備份與恢復](/zh-hant/deploy/backup) 指南。
 
-### 1.2 查看更新日誌
+### 1.2 查看 Release 說明
 
-升級前務必閱讀 [更新日誌](/zh-hant/intro/changelog)，了解：
+升級前務必閱讀目標版本的 [GitHub Release 說明](https://github.com/dujiao-next/dujiao-next/releases)，了解：
 
 - 新增功能和配置項
 - 破壞性變更（Breaking Changes）
@@ -177,8 +177,8 @@ goreleaser build --snapshot --single-target --clean
 ### 4.1 備份
 
 ```bash
-docker compose exec api cp /app/db/dujiao.db /app/db/dujiao.db.bak
-docker compose cp api:/app/config.yml ./config.yml.bak
+docker compose exec dujiao-next cp /app/db/dujiao.db /app/db/dujiao.db.bak
+docker compose cp dujiao-next:/app/config.yml ./config.yml.bak
 ```
 
 ### 4.2 更新鏡像
@@ -197,7 +197,7 @@ docker compose --env-file .env -f <你的方案檔案> up -d
 ### 4.4 檢查日誌
 
 ```bash
-docker compose logs -f api
+docker compose logs -f dujiao-next
 ```
 
 ---
