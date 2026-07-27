@@ -16,7 +16,7 @@ Dujiao-Next 自 v1.4.0 起是**单进程、单端口、单域名**的程序（�
 
 | | 路径 A：容器编排 | 路径 B：二进制 + 进程守护 |
 | --- | --- | --- |
-| 运行形态 | Docker 容器（`dujiaonext/api` 镜像） | 宿主机进程（Release 压缩包解出的二进制） |
+| 运行形态 | Docker 容器（`dujiaonext/dujiao-next` 镜像） | 宿主机进程（Release 压缩包解出的二进制） |
 | 1Panel 中的位置 | 容器 → 编排 | 工具箱 → 进程守护（Supervisor） |
 | 环境依赖 | 只要 Docker（1Panel 自带） | 需先装 Supervisor |
 | 升级方式 | 拉新镜像重建容器 | 后台「一键升级」下载替换，或手动换二进制 |
@@ -231,9 +231,9 @@ services:
     networks:
       - dujiao-net
 
-  api:
-    image: dujiaonext/api:latest
-    container_name: dujiaonext-api
+  dujiao-next:
+    image: dujiaonext/dujiao-next:latest
+    container_name: dujiao-next
     restart: unless-stopped
     environment:
       TZ: Asia/Shanghai
@@ -301,9 +301,9 @@ services:
     networks:
       - dujiao-net
 
-  api:
-    image: dujiaonext/api:latest
-    container_name: dujiaonext-api
+  dujiao-next:
+    image: dujiaonext/dujiao-next:latest
+    container_name: dujiao-next
     restart: unless-stopped
     environment:
       TZ: Asia/Shanghai
@@ -338,7 +338,7 @@ networks:
 这是**刻意的**，也是 1Panel 场景下最安全的写法：
 
 - Docker 的端口映射直接写 iptables 的 `DOCKER` 链，**会绕过 ufw / firewalld 和 1Panel 防火墙**。写了 `ports: - "8080:8080"`，哪怕你面板里只放行了 80/443，8080 照样能被公网扫到。
-- 不映射端口后，`dujiaonext-api` 只能通过 `1panel-network` 被 OpenResty 访问，Redis / PostgreSQL 则只在 `dujiao-net` 内可见，外网完全够不着。
+- 不映射端口后，`dujiao-next` 只能通过 `1panel-network` 被 OpenResty 访问，Redis / PostgreSQL 则只在 `dujiao-net` 内可见，外网完全够不着。
 
 需要临时调试时，用「容器 → 容器 → 终端」进容器执行 `wget -qO- http://127.0.0.1:8080/health` 即可，不必开端口。
 :::
@@ -353,7 +353,7 @@ networks:
 
 在「容器 → 编排 → dujiao-next」查看容器列表，三个（或两个）容器都应是 `running` / `healthy`。
 
-点 `dujiaonext-api` 的「日志」，看到这一行说明前端已正确内嵌：
+点 `dujiao-next` 的「日志」，看到这一行说明前端已正确内嵌：
 
 ```
 Embedded SPAs: admin (/dj-mgmt-7x9k2), user (/)
@@ -496,7 +496,7 @@ Embedded SPAs: admin (/dj-mgmt-7x9k2), user (/)
 - **类型**：选择「反向代理」
 - **主域名**：`shop.example.com`
 - **代理地址**：按你的路径填
-  - 路径 A（容器编排）：`http://dujiaonext-api:8080`
+  - 路径 A（容器编排）：`http://dujiao-next:8080`
   - 路径 B（二进制守护）：`http://172.17.0.1:8080`
 
 ::: danger 最常见的坑：代理地址千万别填 127.0.0.1
@@ -568,7 +568,7 @@ client_max_body_size 50m;
 在「容器 → 编排 → dujiao-next」中编辑 compose，把镜像 tag 改成目标版本：
 
 ```yaml
-image: dujiaonext/api:v1.4.0
+image: dujiaonext/dujiao-next:v1.4.0
 ```
 
 保存后点「重新部署」（或在终端执行）：
@@ -689,13 +689,13 @@ SQLite 直接复制 `.db` 文件在有写入时可能拿到不一致的快照。
 
 1. **代理地址是不是填了 `127.0.0.1`？** 这是最常见原因，见第 5.1 节的说明。
 2. 容器/进程是不是真的在跑？「容器 → 容器」或「工具箱 → 进程守护」看状态。
-3. 路径 A：`dujiaonext-api` 是否加入了 `1panel-network`？用 `docker network inspect 1panel-network` 确认里面能看到这个容器。
+3. 路径 A：`dujiao-next` 是否加入了 `1panel-network`？用 `docker network inspect 1panel-network` 确认里面能看到这个容器。
 4. 路径 B：`server.host` 是不是被改成了 `127.0.0.1`？必须是 `0.0.0.0`。
 5. 在终端直接测一下后端通不通：
 
 ```bash
 # 路径 A
-docker exec dujiaonext-api wget -qO- http://127.0.0.1:8080/health
+docker exec dujiao-next wget -qO- http://127.0.0.1:8080/health
 # 路径 B
 curl http://127.0.0.1:8080/health
 ```

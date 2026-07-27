@@ -6,7 +6,7 @@ If you have not chosen a deployment method yet, start with [Deployment Overview 
 
 ## 1. Image Correspondence
 
-- Full-stack service: `dujiaonext/api:tagname`
+- Full-stack service: `dujiaonext/dujiao-next:tagname`
 
 As of v1.4.0 the storefront and admin panel frontends are embedded in this single image, so **the `dujiaonext/user` and `dujiaonext/admin` images no longer exist**. The whole stack needs 2 containers (SQLite) or 3 containers (PostgreSQL).
 
@@ -174,9 +174,9 @@ services:
     networks:
       - dujiao-net
 
-  api:
-    image: dujiaonext/api:${TAG}
-    container_name: dujiaonext-api
+  dujiao-next:
+    image: dujiaonext/dujiao-next:${TAG}
+    container_name: dujiao-next
     restart: unless-stopped
     environment:
       TZ: ${TZ}
@@ -245,9 +245,9 @@ services:
     networks:
       - dujiao-net
 
-  api:
-    image: dujiaonext/api:${TAG}
-    container_name: dujiaonext-api
+  dujiao-next:
+    image: dujiaonext/dujiao-next:${TAG}
+    container_name: dujiao-next
     restart: unless-stopped
     environment:
       TZ: ${TZ}

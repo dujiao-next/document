@@ -16,7 +16,7 @@ Dujiao-Next 自 v1.4.0 起是**單行程、單連接埠、單網域**的程式�
 
 | | 路徑 A：容器編排 | 路徑 B：二進制 + 行程守護 |
 | --- | --- | --- |
-| 執行形態 | Docker 容器（`dujiaonext/api` 映像） | 主機行程（Release 壓縮包解出的二進制） |
+| 執行形態 | Docker 容器（`dujiaonext/dujiao-next` 映像） | 主機行程（Release 壓縮包解出的二進制） |
 | 1Panel 中的位置 | 容器 → 編排 | 工具箱 → 行程守護（Supervisor） |
 | 環境依賴 | 只要 Docker（1Panel 自帶） | 需先安裝 Supervisor |
 | 升級方式 | 拉新映像重建容器 | 後臺「一鍵升級」下載替換，或手動換二進制 |
@@ -231,9 +231,9 @@ services:
     networks:
       - dujiao-net
 
-  api:
-    image: dujiaonext/api:latest
-    container_name: dujiaonext-api
+  dujiao-next:
+    image: dujiaonext/dujiao-next:latest
+    container_name: dujiao-next
     restart: unless-stopped
     environment:
       TZ: Asia/Shanghai
@@ -301,9 +301,9 @@ services:
     networks:
       - dujiao-net
 
-  api:
-    image: dujiaonext/api:latest
-    container_name: dujiaonext-api
+  dujiao-next:
+    image: dujiaonext/dujiao-next:latest
+    container_name: dujiao-next
     restart: unless-stopped
     environment:
       TZ: Asia/Shanghai
@@ -338,7 +338,7 @@ networks:
 這是**刻意的**，也是 1Panel 場景下最安全的寫法：
 
 - Docker 的連接埠映射直接寫 iptables 的 `DOCKER` 鏈，**會繞過 ufw / firewalld 與 1Panel 防火牆**。寫了 `ports: - "8080:8080"`，哪怕你面板裡只放行了 80/443，8080 照樣能被公網掃到。
-- 不映射連接埠後，`dujiaonext-api` 只能透過 `1panel-network` 被 OpenResty 存取，Redis / PostgreSQL 則只在 `dujiao-net` 內可見，外網完全構不著。
+- 不映射連接埠後，`dujiao-next` 只能透過 `1panel-network` 被 OpenResty 存取，Redis / PostgreSQL 則只在 `dujiao-net` 內可見，外網完全構不著。
 
 需要臨時偵錯時，用「容器 → 容器 → 終端」進容器執行 `wget -qO- http://127.0.0.1:8080/health` 即可，不必開連接埠。
 :::
@@ -353,7 +353,7 @@ networks:
 
 在「容器 → 編排 → dujiao-next」查看容器列表，三個（或兩個）容器都應是 `running` / `healthy`。
 
-點 `dujiaonext-api` 的「日誌」，看到這一行說明前端已正確內嵌：
+點 `dujiao-next` 的「日誌」，看到這一行說明前端已正確內嵌：
 
 ```
 Embedded SPAs: admin (/dj-mgmt-7x9k2), user (/)
@@ -496,7 +496,7 @@ Embedded SPAs: admin (/dj-mgmt-7x9k2), user (/)
 - **類型**：選擇「反向代理」
 - **主網域**：`shop.example.com`
 - **代理地址**：按你的路徑填
-  - 路徑 A（容器編排）：`http://dujiaonext-api:8080`
+  - 路徑 A（容器編排）：`http://dujiao-next:8080`
   - 路徑 B（二進制守護）：`http://172.17.0.1:8080`
 
 ::: danger 最常見的坑：代理地址千萬別填 127.0.0.1
@@ -568,7 +568,7 @@ client_max_body_size 50m;
 在「容器 → 編排 → dujiao-next」中編輯 compose，把映像 tag 改成目標版本：
 
 ```yaml
-image: dujiaonext/api:v1.4.0
+image: dujiaonext/dujiao-next:v1.4.0
 ```
 
 儲存後點「重新部署」（或在終端執行）：
@@ -689,13 +689,13 @@ SQLite 直接複製 `.db` 檔案在有寫入時可能拿到不一致的快照。
 
 1. **代理地址是不是填了 `127.0.0.1`？** 這是最常見原因，見第 5.1 節的說明。
 2. 容器/行程是不是真的在跑？「容器 → 容器」或「工具箱 → 行程守護」看狀態。
-3. 路徑 A：`dujiaonext-api` 是否加入了 `1panel-network`？用 `docker network inspect 1panel-network` 確認裡面能看到這個容器。
+3. 路徑 A：`dujiao-next` 是否加入了 `1panel-network`？用 `docker network inspect 1panel-network` 確認裡面能看到這個容器。
 4. 路徑 B：`server.host` 是不是被改成了 `127.0.0.1`？必須是 `0.0.0.0`。
 5. 在終端直接測一下後端通不通：
 
 ```bash
 # 路徑 A
-docker exec dujiaonext-api wget -qO- http://127.0.0.1:8080/health
+docker exec dujiao-next wget -qO- http://127.0.0.1:8080/health
 # 路徑 B
 curl http://127.0.0.1:8080/health
 ```

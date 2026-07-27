@@ -16,7 +16,7 @@ Since v1.4.0 Dujiao-Next is a **single process, single port, single domain** pro
 
 | | Path A: Container Orchestration | Path B: Binary + Supervisor |
 | --- | --- | --- |
-| Runtime form | Docker container (`dujiaonext/api` image) | Host process (binary from the Release archive) |
+| Runtime form | Docker container (`dujiaonext/dujiao-next` image) | Host process (binary from the Release archive) |
 | Where in 1Panel | Containers → Compose | Toolbox → Supervisor |
 | Prerequisites | Only Docker (bundled with 1Panel) | Supervisor must be installed first |
 | Upgrade method | Pull a new image, recreate the container | Admin "One-Click Upgrade", or swap the binary manually |
@@ -231,9 +231,9 @@ services:
     networks:
       - dujiao-net
 
-  api:
-    image: dujiaonext/api:latest
-    container_name: dujiaonext-api
+  dujiao-next:
+    image: dujiaonext/dujiao-next:latest
+    container_name: dujiao-next
     restart: unless-stopped
     environment:
       TZ: Asia/Shanghai
@@ -301,9 +301,9 @@ services:
     networks:
       - dujiao-net
 
-  api:
-    image: dujiaonext/api:latest
-    container_name: dujiaonext-api
+  dujiao-next:
+    image: dujiaonext/dujiao-next:latest
+    container_name: dujiao-next
     restart: unless-stopped
     environment:
       TZ: Asia/Shanghai
@@ -338,7 +338,7 @@ networks:
 This is **deliberate**, and it is the safest arrangement under 1Panel:
 
 - Docker port publishing writes straight into the iptables `DOCKER` chain and **bypasses ufw / firewalld and the 1Panel firewall**. If you add `ports: - "8080:8080"`, port 8080 is reachable from the internet even when the panel firewall only allows 80/443.
-- With no published ports, `dujiaonext-api` is reachable only by OpenResty through `1panel-network`, while Redis and PostgreSQL stay visible only inside `dujiao-net` — completely out of reach from outside.
+- With no published ports, `dujiao-next` is reachable only by OpenResty through `1panel-network`, while Redis and PostgreSQL stay visible only inside `dujiao-net` — completely out of reach from outside.
 
 For ad-hoc debugging, open "Containers → Containers → Terminal" and run `wget -qO- http://127.0.0.1:8080/health` inside the container; you never need to publish a port.
 :::
@@ -353,7 +353,7 @@ Click "Confirm" and 1Panel pulls the images and starts everything.
 
 Open "Containers → Compose → dujiao-next" and check the container list — all three (or two) containers should be `running` / `healthy`.
 
-Open the logs for `dujiaonext-api`. This line confirms the frontends are correctly embedded:
+Open the logs for `dujiao-next`. This line confirms the frontends are correctly embedded:
 
 ```
 Embedded SPAs: admin (/dj-mgmt-7x9k2), user (/)
@@ -496,7 +496,7 @@ Go to "Websites → Websites → Create Website":
 - **Type**: choose "Reverse Proxy"
 - **Primary domain**: `shop.example.com`
 - **Proxy address**: depends on your path
-  - Path A (compose): `http://dujiaonext-api:8080`
+  - Path A (compose): `http://dujiao-next:8080`
   - Path B (binary + supervisor): `http://172.17.0.1:8080`
 
 ::: danger The most common mistake: never use 127.0.0.1 as the proxy address
@@ -568,7 +568,7 @@ Log in with `admin` and the password you set via environment variable or `config
 Edit the compose file under "Containers → Compose → dujiao-next" and set the image tag to your target version:
 
 ```yaml
-image: dujiaonext/api:v1.4.0
+image: dujiaonext/dujiao-next:v1.4.0
 ```
 
 Save and redeploy (or run it in the terminal):
@@ -689,13 +689,13 @@ Check in this order:
 
 1. **Is the proxy address `127.0.0.1`?** This is by far the most common cause — see §5.1.
 2. Is the container/process actually running? Check "Containers → Containers" or "Toolbox → Supervisor".
-3. Path A: is `dujiaonext-api` on `1panel-network`? Confirm with `docker network inspect 1panel-network`.
+3. Path A: is `dujiao-next` on `1panel-network`? Confirm with `docker network inspect 1panel-network`.
 4. Path B: was `server.host` changed to `127.0.0.1`? It must be `0.0.0.0`.
 5. Test the backend directly from the terminal:
 
 ```bash
 # Path A
-docker exec dujiaonext-api wget -qO- http://127.0.0.1:8080/health
+docker exec dujiao-next wget -qO- http://127.0.0.1:8080/health
 # Path B
 curl http://127.0.0.1:8080/health
 ```

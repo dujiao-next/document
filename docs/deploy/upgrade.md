@@ -19,7 +19,7 @@ v1.4.0 把用户前台与管理后台的前端**内嵌进了后端二进制**，
 | | v1.3.x 及更早 | v1.4.0 起 |
 |---|---|---|
 | 部署单元 | api + user + admin 三个服务 | 一个进程 |
-| Docker 镜像 | `dujiaonext/api`、`dujiaonext/user`、`dujiaonext/admin` | 只有 `dujiaonext/api` |
+| Docker 镜像 | `dujiaonext/api`、`dujiaonext/user`、`dujiaonext/admin` | 只有 `dujiaonext/dujiao-next`（旧名 `dujiaonext/api` 仍作为过渡别名同步推送） |
 | 容器数量 | 4-5 个 | 2-3 个 |
 | 发布产物 | `dujiao-next_*.tar.gz`（纯 API）+ `dujiao-all_*.tar.gz`（含前端） | 只有 `dujiao-next_*.tar.gz` |
 | 二进制名 | `dujiao-api` / `dujiao-server` | `dujiao-next` |

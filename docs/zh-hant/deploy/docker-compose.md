@@ -6,7 +6,7 @@
 
 ## 1. 鏡像對應關係
 
-- 全端服務：`dujiaonext/api:tagname`
+- 全端服務：`dujiaonext/dujiao-next:tagname`
 
 自 v1.4.0 起，用戶前臺與管理後臺的前端已經內嵌進這一個鏡像，**不再有 `dujiaonext/user` 與 `dujiaonext/admin` 鏡像**。整套服務只需要 2 個容器（SQLite 方案）或 3 個容器（PostgreSQL 方案）。
 
@@ -174,9 +174,9 @@ services:
     networks:
       - dujiao-net
 
-  api:
-    image: dujiaonext/api:${TAG}
-    container_name: dujiaonext-api
+  dujiao-next:
+    image: dujiaonext/dujiao-next:${TAG}
+    container_name: dujiao-next
     restart: unless-stopped
     environment:
       TZ: ${TZ}
@@ -245,9 +245,9 @@ services:
     networks:
       - dujiao-net
 
-  api:
-    image: dujiaonext/api:${TAG}
-    container_name: dujiaonext-api
+  dujiao-next:
+    image: dujiaonext/dujiao-next:${TAG}
+    container_name: dujiao-next
     restart: unless-stopped
     environment:
       TZ: ${TZ}

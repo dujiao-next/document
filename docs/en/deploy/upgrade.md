@@ -19,7 +19,7 @@ v1.4.0 **embeds the storefront and admin panel frontends into the backend binary
 | | v1.3.x and earlier | v1.4.0 onward |
 |---|---|---|
 | Deployment units | api + user + admin (three services) | one process |
-| Docker images | `dujiaonext/api`, `dujiaonext/user`, `dujiaonext/admin` | only `dujiaonext/api` |
+| Docker images | `dujiaonext/api`, `dujiaonext/user`, `dujiaonext/admin` | only `dujiaonext/dujiao-next` (the old `dujiaonext/api` is still pushed as a transitional alias) |
 | Container count | 4-5 | 2-3 |
 | Release artifacts | `dujiao-next_*.tar.gz` (API only) + `dujiao-all_*.tar.gz` (with frontends) | only `dujiao-next_*.tar.gz` |
 | Binary name | `dujiao-api` / `dujiao-server` | `dujiao-next` |
