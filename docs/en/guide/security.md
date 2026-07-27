@@ -137,7 +137,7 @@ HTTPS is mandatory for production environments:
 
 ### 4.2 CORS Configuration
 
-Restrict CORS to only allow your frontend domains:
+Restrict CORS to only allow your site domain:
 
 ```yaml
 cors:

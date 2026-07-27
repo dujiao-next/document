@@ -11,15 +11,15 @@
 
 先確認你的支付回調入口可以被公網訪問。
 
-系統只需要一個網域，例如 `user.example.com`（或 `shop.example.com`）。
+系統只需要一個網域，例如 `shop.example.com`。
 
 前臺、後臺與 API 都由同一個服務在同一網域下提供：前臺在 `/`，後臺在 `web.admin_path`，
 API 在 `/api`。回調地址填這個網域即可，不需要額外網域。
 
 常用地址示例：
 
-- 支付結果通知地址（回調）：`https://user.example.com/api/v1/payments/callback`
-- 用戶支付完成返回頁（回跳）：`https://user.example.com/pay`
+- 支付結果通知地址（回調）：`https://shop.example.com/api/v1/payments/callback`
+- 用戶支付完成返回頁（回跳）：`https://shop.example.com/pay`
 
 ## 2. 後台操作路徑
 
@@ -47,7 +47,7 @@ API 在 `/api`。回調地址填這個網域即可，不需要額外網域。
 
 建議：
 
-- `notify_url` 填：`https://user.example.com/api/v1/payments/callback`
+- `notify_url` 填：`https://shop.example.com/api/v1/payments/callback`
 - `return_url` 填：`https://shop.example.com/pay`
 
 ### 3.2 PayPal
@@ -91,7 +91,7 @@ API 在 `/api`。回調地址填這個網域即可，不需要額外網域。
 
 建議：
 
-- `notify_url` 填：`https://user.example.com/api/v1/payments/callback`
+- `notify_url` 填：`https://shop.example.com/api/v1/payments/callback`
 - 若你使用手機網站/電腦網站支付，也要填 `return_url`：`https://shop.example.com/pay`
 
 ### 3.5 微信支付
@@ -107,7 +107,7 @@ API 在 `/api`。回調地址填這個網域即可，不需要額外網域。
 
 建議：
 
-- `notify_url` 填：`https://user.example.com/api/v1/payments/callback`
+- `notify_url` 填：`https://shop.example.com/api/v1/payments/callback`
 - 如果是 H5 支付，請再填 `h5_redirect_url`：`https://shop.example.com/pay`
 
 ### 3.6 TokenPay
@@ -126,7 +126,7 @@ API 在 `/api`。回調地址填這個網域即可，不需要額外網域。
 
 建議：
 
-- `notify_url` 填：`https://user.example.com/api/v1/payments/callback`
+- `notify_url` 填：`https://shop.example.com/api/v1/payments/callback`
 - `redirect_url` 填：`https://shop.example.com/pay`
 - 支持幣種請參考官方文檔：<https://github.com/LightCountry/TokenPay/blob/master/Wiki/docs.md>
 
@@ -146,7 +146,7 @@ API 在 `/api`。回調地址填這個網域即可，不需要額外網域。
 
 建議：
 
-- `notify_url` 填：`https://user.example.com/api/v1/payments/callback`
+- `notify_url` 填：`https://shop.example.com/api/v1/payments/callback`
 - `return_url` 填：`https://shop.example.com/pay`
 - 支持幣種與交易類型請參考官方文檔：<https://github.com/v03413/BEpusdt/blob/main/docs/api/api.md>
 
@@ -170,7 +170,7 @@ API 在 `/api`。回調地址填這個網域即可，不需要額外網域。
 
 建議：
 
-- `notify_url` 填：`https://user.example.com/api/v1/payments/callback`
+- `notify_url` 填：`https://shop.example.com/api/v1/payments/callback`
 - `return_url` 填：`https://shop.example.com/pay`
 - 僅支援跳轉模式（redirect）。下單後會跳轉到 epusdt 自帶的託管收銀台完成付款，無需後台再渲染二維碼
 - token / network 的可用組合請即時向閘道查詢：`GET <gateway_url>/payments/gmpay/v1/supported-assets`
@@ -194,7 +194,7 @@ API 在 `/api`。回調地址填這個網域即可，不需要額外網域。
 
 建議：
 
-- `callback_url` 填：`https://user.example.com/api/v1/payments/callback`
+- `callback_url` 填：`https://shop.example.com/api/v1/payments/callback`
 - `return_url` 填：`https://shop.example.com/pay`
 
 ### 3.10 DujiaoPay
@@ -218,8 +218,8 @@ API 在 `/api`。回調地址填這個網域即可，不需要額外網域。
 建議：
 
 - `success_url` 和 `cancel_url` 都填：`https://shop.example.com/pay`
-- DujiaoPay 控制台的 Webhook URL 填：`https://user.example.com/api/v1/payments/webhook/dujiaopay?channel_id=你的渠道ID`
-- 如果暫時不知道渠道 ID，也可以先填：`https://user.example.com/api/v1/payments/webhook/dujiaopay`，系統會按啟用的 DujiaoPay 渠道逐個用 `webhook_secret` 驗簽匹配
+- DujiaoPay 控制台的 Webhook URL 填：`https://shop.example.com/api/v1/payments/webhook/dujiaopay?channel_id=你的渠道ID`
+- 如果暫時不知道渠道 ID，也可以先填：`https://shop.example.com/api/v1/payments/webhook/dujiaopay`，系統會按啟用的 DujiaoPay 渠道逐個用 `webhook_secret` 驗簽匹配
 - 互動模式選擇 `qr` 時，前台會展示錢包二維碼、錢包地址、鏈上應付數量、鏈和支付幣種；互動模式選擇 `redirect` 時，使用者會跳轉到 DujiaoPay 收銀台
 - 支援的鏈與幣種以 DujiaoPay 官方文件為準：<https://www.dujiaopay.com/docs>
 
@@ -265,13 +265,13 @@ API 在 `/api`。回調地址填這個網域即可，不需要額外網域。
 
 填寫地址：
 
-- `POST https://user.example.com/api/v1/payments/callback`
+- `POST https://shop.example.com/api/v1/payments/callback`
 
 ### 4.2 PayPal（單獨 Webhook 地址）
 
 填寫地址：
 
-- `POST https://user.example.com/api/v1/payments/webhook/paypal?channel_id=你的渠道ID`
+- `POST https://shop.example.com/api/v1/payments/webhook/paypal?channel_id=你的渠道ID`
 
 說明：
 
@@ -281,7 +281,7 @@ API 在 `/api`。回調地址填這個網域即可，不需要額外網域。
 
 填寫地址：
 
-- `POST https://user.example.com/api/v1/payments/webhook/stripe?channel_id=你的渠道ID`
+- `POST https://shop.example.com/api/v1/payments/webhook/stripe?channel_id=你的渠道ID`
 
 說明：
 
@@ -291,7 +291,7 @@ API 在 `/api`。回調地址填這個網域即可，不需要額外網域。
 
 填寫地址：
 
-- `POST https://user.example.com/api/v1/payments/webhook/dujiaopay?channel_id=你的渠道ID`
+- `POST https://shop.example.com/api/v1/payments/webhook/dujiaopay?channel_id=你的渠道ID`
 
 說明：
 
@@ -333,12 +333,12 @@ API 在 `/api`。回調地址填這個網域即可，不需要額外網域。
 
 例如，你將支付回調路由改為 `/api/my-secret/pay-notify`，則：
 
-- 原來填：`https://user.example.com/api/v1/payments/callback`
-- 現在填：`https://user.example.com/api/my-secret/pay-notify`
+- 原來填：`https://shop.example.com/api/v1/payments/callback`
+- 現在填：`https://shop.example.com/api/my-secret/pay-notify`
 
 DujiaoPay 使用單獨的 Webhook 路由。如果你將 DujiaoPay Webhook 路由改為 `/api/my-secret/dujiaopay-webhook`，則 DujiaoPay 控制台裡也要同步改成：
 
-- `https://user.example.com/api/my-secret/dujiaopay-webhook?channel_id=你的渠道ID`
+- `https://shop.example.com/api/my-secret/dujiaopay-webhook?channel_id=你的渠道ID`
 
 否則支付平台的回調通知將無法到達你的伺服器。
 :::
@@ -365,7 +365,7 @@ DujiaoPay 使用單獨的 Webhook 路由。如果你將 DujiaoPay Webhook 路由
 優先檢查：
 
 - 回調地址是否填錯網域/路徑（如果設定了自訂回調路由，請確認各渠道的 `notify_url` / `callback_url` / Webhook URL 已同步更新）
-- API 網域是否可以被公網訪問
+- 站點網域是否可以被公網訪問
 - 支付平台後台是否有回調失敗記錄
 
 ### Q2：支付完成後沒有回到前台支付頁

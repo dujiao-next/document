@@ -11,7 +11,7 @@ You only need two outcomes:
 
 Make sure your payment callback endpoint is publicly reachable.
 
-The system needs only one domain, for example `user.example.com` (or `shop.example.com`).
+The system needs only one domain, for example `shop.example.com`.
 
 The storefront, admin panel, and API are all served by the same service on that domain: the storefront
 at `/`, the admin panel at `web.admin_path`, and the API at `/api`. Use this domain for callback URLs —
@@ -19,8 +19,8 @@ no additional domain is required.
 
 Common URL examples:
 
-- Payment notification URL (callback): `https://user.example.com/api/v1/payments/callback`
-- Customer return page after payment: `https://user.example.com/pay`
+- Payment notification URL (callback): `https://shop.example.com/api/v1/payments/callback`
+- Customer return page after payment: `https://shop.example.com/pay`
 
 ## 2. Where to Configure in Admin
 
@@ -48,7 +48,7 @@ Usually required:
 
 Recommended:
 
-- `notify_url`: `https://user.example.com/api/v1/payments/callback`
+- `notify_url`: `https://shop.example.com/api/v1/payments/callback`
 - `return_url`: `https://shop.example.com/pay`
 
 ### 3.2 PayPal
@@ -92,7 +92,7 @@ Usually required:
 
 Recommended:
 
-- `notify_url`: `https://user.example.com/api/v1/payments/callback`
+- `notify_url`: `https://shop.example.com/api/v1/payments/callback`
 - If you use WAP/Desktop payments, also fill `return_url`: `https://shop.example.com/pay`
 
 ### 3.5 WeChat Pay
@@ -108,7 +108,7 @@ Usually required:
 
 Recommended:
 
-- `notify_url`: `https://user.example.com/api/v1/payments/callback`
+- `notify_url`: `https://shop.example.com/api/v1/payments/callback`
 - For H5 mode, also fill `h5_redirect_url`: `https://shop.example.com/pay`
 
 ### 3.6 TokenPay
@@ -127,7 +127,7 @@ Common optional fields:
 
 Recommended:
 
-- `notify_url`: `https://user.example.com/api/v1/payments/callback`
+- `notify_url`: `https://shop.example.com/api/v1/payments/callback`
 - `redirect_url`: `https://shop.example.com/pay`
 - Supported currencies: <https://github.com/LightCountry/TokenPay/blob/master/Wiki/docs.md>
 
@@ -147,7 +147,7 @@ Common optional fields:
 
 Recommended:
 
-- `notify_url`: `https://user.example.com/api/v1/payments/callback`
+- `notify_url`: `https://shop.example.com/api/v1/payments/callback`
 - `return_url`: `https://shop.example.com/pay`
 - Supported currencies and trade types: <https://github.com/v03413/BEpusdt/blob/main/docs/api/api.md>
 
@@ -171,7 +171,7 @@ Usually optional:
 
 Tips:
 
-- `notify_url`: `https://user.example.com/api/v1/payments/callback`
+- `notify_url`: `https://shop.example.com/api/v1/payments/callback`
 - `return_url`: `https://shop.example.com/pay`
 - Redirect-only mode. After placing an order, buyers are redirected to epusdt's hosted checkout to complete payment — no need for the backend to render a QR code.
 - Query the live list of supported `token` / `network` combinations from the gateway: `GET <gateway_url>/payments/gmpay/v1/supported-assets`
@@ -195,7 +195,7 @@ Common optional fields:
 
 Recommended:
 
-- `callback_url`: `https://user.example.com/api/v1/payments/callback`
+- `callback_url`: `https://shop.example.com/api/v1/payments/callback`
 - `return_url`: `https://shop.example.com/pay`
 
 ### 3.10 DujiaoPay
@@ -219,8 +219,8 @@ Usually optional:
 Recommended:
 
 - Set both `success_url` and `cancel_url` to `https://shop.example.com/pay`
-- Set the DujiaoPay console Webhook URL to `https://user.example.com/api/v1/payments/webhook/dujiaopay?channel_id=YOUR_CHANNEL_ID`
-- If you do not know the channel ID yet, you can use `https://user.example.com/api/v1/payments/webhook/dujiaopay`; the system will try enabled DujiaoPay channels one by one and match them by `webhook_secret`
+- Set the DujiaoPay console Webhook URL to `https://shop.example.com/api/v1/payments/webhook/dujiaopay?channel_id=YOUR_CHANNEL_ID`
+- If you do not know the channel ID yet, you can use `https://shop.example.com/api/v1/payments/webhook/dujiaopay`; the system will try enabled DujiaoPay channels one by one and match them by `webhook_secret`
 - In `qr` interaction mode, the storefront displays the wallet QR code, wallet address, on-chain amount due, chain, and payment token; in `redirect` mode, the customer is redirected to the DujiaoPay checkout
 - Supported chains and tokens should follow the official DujiaoPay docs: <https://www.dujiaopay.com/docs>
 
@@ -266,13 +266,13 @@ Applies to:
 
 Use:
 
-- `POST https://user.example.com/api/v1/payments/callback`
+- `POST https://shop.example.com/api/v1/payments/callback`
 
 ### 4.2 PayPal (separate webhook URL)
 
 Use:
 
-- `POST https://user.example.com/api/v1/payments/webhook/paypal?channel_id=YOUR_CHANNEL_ID`
+- `POST https://shop.example.com/api/v1/payments/webhook/paypal?channel_id=YOUR_CHANNEL_ID`
 
 Note:
 
@@ -282,7 +282,7 @@ Note:
 
 Use:
 
-- `POST https://user.example.com/api/v1/payments/webhook/stripe?channel_id=YOUR_CHANNEL_ID`
+- `POST https://shop.example.com/api/v1/payments/webhook/stripe?channel_id=YOUR_CHANNEL_ID`
 
 Note:
 
@@ -292,7 +292,7 @@ Note:
 
 Use:
 
-- `POST https://user.example.com/api/v1/payments/webhook/dujiaopay?channel_id=YOUR_CHANNEL_ID`
+- `POST https://shop.example.com/api/v1/payments/webhook/dujiaopay?channel_id=YOUR_CHANNEL_ID`
 
 Note:
 
@@ -334,12 +334,12 @@ After customizing callback routes, you **must** update the notification URL (`no
 
 For example, if you set the payment callback route to `/api/my-secret/pay-notify`:
 
-- Before: `https://user.example.com/api/v1/payments/callback`
-- After: `https://user.example.com/api/my-secret/pay-notify`
+- Before: `https://shop.example.com/api/v1/payments/callback`
+- After: `https://shop.example.com/api/my-secret/pay-notify`
 
 DujiaoPay uses a separate webhook route. If you set the DujiaoPay Webhook route to `/api/my-secret/dujiaopay-webhook`, update the DujiaoPay console Webhook URL to:
 
-- `https://user.example.com/api/my-secret/dujiaopay-webhook?channel_id=YOUR_CHANNEL_ID`
+- `https://shop.example.com/api/my-secret/dujiaopay-webhook?channel_id=YOUR_CHANNEL_ID`
 
 Otherwise, payment provider callbacks will not reach your server.
 :::
@@ -366,7 +366,7 @@ Test in this order:
 Check first:
 
 - Callback URL typo (domain/path) — if you configured custom callback routes, make sure each channel's `notify_url` / `callback_url` / Webhook URL has been updated accordingly
-- API domain not publicly reachable
+- Site domain not publicly reachable
 - Failed callback logs in payment provider console
 
 ### Q2: User does not return to your payment page

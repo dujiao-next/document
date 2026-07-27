@@ -54,7 +54,7 @@ Dujiao-Next is an open source system for the "digital goods sales and delivery" 
 ## 5. Demo sites
 
 - Frontend: https://demo.dujiao-next.com
-- Admin: https://demo-admin.dujiao-next.com
+- Admin: https://demo.dujiao-next.com/admin/
 - Test admin account: `test`
 - Test admin password: `Test123456`
 

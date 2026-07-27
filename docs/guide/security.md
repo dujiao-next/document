@@ -137,7 +137,7 @@ captcha:
 
 ### 4.2 CORS 配置
 
-收紧 CORS，仅允许你的前端域名：
+收紧 CORS，仅允许你的站点域名：
 
 ```yaml
 cors:

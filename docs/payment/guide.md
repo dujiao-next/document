@@ -11,15 +11,15 @@
 
 先确认你的支付回调入口可以被公网访问。
 
-系统只需要一个域名，例如 `user.example.com`（或 `shop.example.com`）。
+系统只需要一个域名，例如 `shop.example.com`。
 
 前台、后台与 API 都由同一个服务在同一域名下提供：前台在 `/`，后台在 `web.admin_path`，
 API 在 `/api`。回调地址填这个域名即可，不需要额外域名。
 
 常用地址示例：
 
-- 支付结果通知地址（回调）：`https://user.example.com/api/v1/payments/callback`
-- 用户支付完成返回页（回跳）：`https://user.example.com/pay`
+- 支付结果通知地址（回调）：`https://shop.example.com/api/v1/payments/callback`
+- 用户支付完成返回页（回跳）：`https://shop.example.com/pay`
 
 ## 2. 后台操作路径
 
@@ -47,7 +47,7 @@ API 在 `/api`。回调地址填这个域名即可，不需要额外域名。
 
 建议：
 
-- `notify_url` 填：`https://user.example.com/api/v1/payments/callback`
+- `notify_url` 填：`https://shop.example.com/api/v1/payments/callback`
 - `return_url` 填：`https://shop.example.com/pay`
 
 ### 3.2 PayPal
@@ -91,7 +91,7 @@ API 在 `/api`。回调地址填这个域名即可，不需要额外域名。
 
 建议：
 
-- `notify_url` 填：`https://user.example.com/api/v1/payments/callback`
+- `notify_url` 填：`https://shop.example.com/api/v1/payments/callback`
 - 若你使用手机网站/电脑网站支付，也要填写 `return_url`：`https://shop.example.com/pay`
 
 ### 3.5 微信支付
@@ -107,7 +107,7 @@ API 在 `/api`。回调地址填这个域名即可，不需要额外域名。
 
 建议：
 
-- `notify_url` 填：`https://user.example.com/api/v1/payments/callback`
+- `notify_url` 填：`https://shop.example.com/api/v1/payments/callback`
 - 如果是 H5 支付，请再填 `h5_redirect_url`：`https://shop.example.com/pay`
 
 ### 3.6 TokenPay
@@ -126,7 +126,7 @@ API 在 `/api`。回调地址填这个域名即可，不需要额外域名。
 
 建议：
 
-- `notify_url` 填：`https://user.example.com/api/v1/payments/callback`
+- `notify_url` 填：`https://shop.example.com/api/v1/payments/callback`
 - `redirect_url` 填：`https://shop.example.com/pay`
 - 支持币种请参考官方文档：<https://github.com/LightCountry/TokenPay/blob/master/Wiki/docs.md>
 
@@ -146,7 +146,7 @@ API 在 `/api`。回调地址填这个域名即可，不需要额外域名。
 
 建议：
 
-- `notify_url` 填：`https://user.example.com/api/v1/payments/callback`
+- `notify_url` 填：`https://shop.example.com/api/v1/payments/callback`
 - `return_url` 填：`https://shop.example.com/pay`
 - 支持币种与交易类型请参考官方文档：<https://github.com/v03413/BEpusdt/blob/main/docs/api/api.md>
 
@@ -170,7 +170,7 @@ API 在 `/api`。回调地址填这个域名即可，不需要额外域名。
 
 建议：
 
-- `notify_url` 填：`https://user.example.com/api/v1/payments/callback`
+- `notify_url` 填：`https://shop.example.com/api/v1/payments/callback`
 - `return_url` 填：`https://shop.example.com/pay`
 - 仅支持跳转模式（redirect）。下单后会跳转到 epusdt 自带的托管收银台完成付款，不需要后台再渲染二维码
 - token / network 的可用组合请实时向网关查询：`GET <gateway_url>/payments/gmpay/v1/supported-assets`
@@ -194,7 +194,7 @@ API 在 `/api`。回调地址填这个域名即可，不需要额外域名。
 
 建议：
 
-- `callback_url` 填：`https://user.example.com/api/v1/payments/callback`
+- `callback_url` 填：`https://shop.example.com/api/v1/payments/callback`
 - `return_url` 填：`https://shop.example.com/pay`
 
 ### 3.10 DujiaoPay
@@ -218,8 +218,8 @@ API 在 `/api`。回调地址填这个域名即可，不需要额外域名。
 建议：
 
 - `success_url` 和 `cancel_url` 都填：`https://shop.example.com/pay`
-- DujiaoPay 控制台的 Webhook URL 填：`https://user.example.com/api/v1/payments/webhook/dujiaopay?channel_id=你的渠道ID`
-- 如果暂时不知道渠道 ID，也可以先填：`https://user.example.com/api/v1/payments/webhook/dujiaopay`，系统会按启用的 DujiaoPay 渠道逐个用 `webhook_secret` 验签匹配
+- DujiaoPay 控制台的 Webhook URL 填：`https://shop.example.com/api/v1/payments/webhook/dujiaopay?channel_id=你的渠道ID`
+- 如果暂时不知道渠道 ID，也可以先填：`https://shop.example.com/api/v1/payments/webhook/dujiaopay`，系统会按启用的 DujiaoPay 渠道逐个用 `webhook_secret` 验签匹配
 - 交互模式选择 `qr` 时，前台会展示钱包二维码、钱包地址、链上应付数量、链和支付币种；交互模式选择 `redirect` 时，用户会跳转到 DujiaoPay 收银台
 - 支持的链与币种以 DujiaoPay 官方文档为准：<https://www.dujiaopay.com/docs>
 
@@ -265,13 +265,13 @@ API 在 `/api`。回调地址填这个域名即可，不需要额外域名。
 
 填写地址：
 
-- `POST https://user.example.com/api/v1/payments/callback`
+- `POST https://shop.example.com/api/v1/payments/callback`
 
 ### 4.2 PayPal（单独 Webhook 地址）
 
 填写地址：
 
-- `POST https://user.example.com/api/v1/payments/webhook/paypal?channel_id=你的渠道ID`
+- `POST https://shop.example.com/api/v1/payments/webhook/paypal?channel_id=你的渠道ID`
 
 说明：
 
@@ -281,7 +281,7 @@ API 在 `/api`。回调地址填这个域名即可，不需要额外域名。
 
 填写地址：
 
-- `POST https://user.example.com/api/v1/payments/webhook/stripe?channel_id=你的渠道ID`
+- `POST https://shop.example.com/api/v1/payments/webhook/stripe?channel_id=你的渠道ID`
 
 说明：
 
@@ -291,7 +291,7 @@ API 在 `/api`。回调地址填这个域名即可，不需要额外域名。
 
 填写地址：
 
-- `POST https://user.example.com/api/v1/payments/webhook/dujiaopay?channel_id=你的渠道ID`
+- `POST https://shop.example.com/api/v1/payments/webhook/dujiaopay?channel_id=你的渠道ID`
 
 说明：
 
@@ -333,12 +333,12 @@ API 在 `/api`。回调地址填这个域名即可，不需要额外域名。
 
 例如，你将支付回调路由改为 `/api/my-secret/pay-notify`，则：
 
-- 原来填：`https://user.example.com/api/v1/payments/callback`
-- 现在填：`https://user.example.com/api/my-secret/pay-notify`
+- 原来填：`https://shop.example.com/api/v1/payments/callback`
+- 现在填：`https://shop.example.com/api/my-secret/pay-notify`
 
 DujiaoPay 使用单独的 Webhook 路由。如果你将 DujiaoPay Webhook 路由改为 `/api/my-secret/dujiaopay-webhook`，则 DujiaoPay 控制台里也要同步改成：
 
-- `https://user.example.com/api/my-secret/dujiaopay-webhook?channel_id=你的渠道ID`
+- `https://shop.example.com/api/my-secret/dujiaopay-webhook?channel_id=你的渠道ID`
 
 否则支付平台的回调通知将无法到达你的服务器。
 :::
@@ -365,7 +365,7 @@ DujiaoPay 使用单独的 Webhook 路由。如果你将 DujiaoPay Webhook 路由
 优先检查：
 
 - 回调地址是否填错域名/路径（如果配置了自定义回调路由，请确认各渠道的 `notify_url` / `callback_url` / Webhook URL 已同步更新）
-- API 域名是否可以被公网访问
+- 站点域名是否可以被公网访问
 - 支付平台后台是否有回调失败记录
 
 ### Q2：支付完成后没有回到前台支付页

@@ -18,7 +18,7 @@ outline: deep
 https://<B站域名>/api/v1/upstream
 ```
 
-示例：`https://api.example.com/api/v1/upstream`
+示例：`https://b.example.com/api/v1/upstream`
 
 ### 1.2 统一响应结构
 
@@ -754,7 +754,7 @@ import hashlib, hmac, time, json, requests
 
 api_key = "your_api_key"
 api_secret = "your_api_secret"
-base_url = "https://api.example.com"
+base_url = "https://b.example.com"
 
 def sign(secret: str, method: str, path: str, timestamp: int, body: bytes) -> str:
     body_md5 = hashlib.md5(body).hexdigest()
@@ -803,7 +803,7 @@ function dujiaoSign(string $secret, string $method, string $path, int $timestamp
 
 $apiKey = 'your_api_key';
 $apiSecret = 'your_api_secret';
-$baseUrl = 'https://api.example.com';
+$baseUrl = 'https://b.example.com';
 
 $method = 'POST';
 $path = '/api/v1/upstream/orders';

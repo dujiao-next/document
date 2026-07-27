@@ -137,7 +137,7 @@ captcha:
 
 ### 4.2 CORS 設定
 
-收緊 CORS，僅允許你的前端網域：
+收緊 CORS，僅允許你的站點網域：
 
 ```yaml
 cors:
