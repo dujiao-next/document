@@ -213,10 +213,21 @@ The "Settings" page in admin provides centralized site-wide configuration:
 | SMTP Email | Email server configuration with test email support |
 | CAPTCHA | Image CAPTCHA or Cloudflare Turnstile |
 | Telegram Login | Telegram OAuth login configuration |
+| Google Login | Google Account sign-in configuration |
 | Notification Center | Email/Telegram notification channel configuration |
 | Order Email Templates | Custom order status notification email templates |
 | Affiliate Settings | Commission rates, confirmation period, withdrawal configuration |
 | Telegram Bot | Bot feature configuration (requires Bot service purchase) |
+
+### 9.1 Google Sign-In
+
+Enter the Google Identity Services Web Client ID under "Settings → Google Login", then enable the feature. The Client ID is a public browser identifier; do not enter a Client Secret, and do not request Gmail read or send permissions.
+
+Before enabling it, complete the following in Google Cloud Console for the main storefront and every white-label domain:
+
+1. Add the complete origin (for example, `https://shop.example.com`) to **Authorized JavaScript origins**.
+2. Add the exact same-domain URI `https://shop.example.com/api/v1/auth/google/redirect/callback` to **Authorized redirect URIs**.
+3. Ensure Redis 7 is enabled and available. iOS/iPadOS redirect sign-in and binding require the one-time Redis state; desktop and Android popup/FedCM do not depend on that state store.
 
 ---
 

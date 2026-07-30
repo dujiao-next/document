@@ -480,6 +480,10 @@ Authorization: Bearer <user_token>
     "telegram_auth": {
       "enabled": true,
       "bot_username": "dujiao_auth_bot"
+    },
+    "google_auth": {
+      "enabled": true,
+      "client_id": "1234567890-xxxx.apps.googleusercontent.com"
     }
   }
 }
@@ -496,6 +500,7 @@ Authorization: Bearer <user_token>
 | payment_channels | object[] | 前臺可用支付渠道列表 |
 | captcha | object | 驗證碼公開配置 |
 | telegram_auth | object | Telegram 登錄公開配置（`enabled`、`bot_username`） |
+| google_auth | object | Google 登入公開配置（`enabled`、`client_id`） |
 | 其他字段 | any | 後臺站點設置中的公開字段（動態擴展） |
 
 ---
@@ -1059,6 +1064,127 @@ Authorization: Bearer <user_token>
 
 ---
 
+### 4.6 Google 登入
+
+**介面**：`POST /auth/google/login`
+
+**認證**：否
+
+#### Body 參數
+
+| 欄位 | 類型 | 必填 | 說明 |
+| --- | --- | --- | --- |
+| credential | string | 是 | Google Identity Services 回呼返回的不透明 ID Token；前端不得自行解析後信任其中聲明 |
+
+#### 請求範例
+
+```json
+{
+  "credential": "eyJhbGciOiJSUzI1NiIs..."
+}
+```
+
+#### 成功回應範例
+
+無需二次驗證時：
+
+```json
+{
+  "status_code": 0,
+  "msg": "success",
+  "data": {
+    "requires_totp": false,
+    "user": {
+      "id": 101,
+      "email": "user@gmail.com",
+      "nickname": "Google User",
+      "email_verified_at": "2026-07-30T10:00:00Z"
+    },
+    "token": "eyJhbGciOi...",
+    "expires_at": "2026-07-30T12:00:00Z"
+  }
+}
+```
+
+帳號已啟用 TOTP 時：
+
+```json
+{
+  "status_code": 0,
+  "msg": "success",
+  "data": {
+    "requires_totp": true,
+    "challenge_token": "eyJhbGciOi...",
+    "challenge_expires_at": "2026-07-30T10:05:00Z"
+  }
+}
+```
+
+收到二次驗證挑戰後，繼續呼叫 `POST /auth/login/verify-2fa`。
+
+> 後端會驗證 Google 簽章、`aud`、`iss`、有效期、`sub` 和郵箱驗證狀態。Gmail 地址及帶 `hd` 的 Google Workspace 地址可以安全地按郵箱關聯既有帳號；其他自訂網域同郵箱帳號必須先登入站內帳號，再透過綁定介面明確確認。首次建立帳號仍受註冊開關和郵箱網域白名單約束。
+
+#### iOS/iPadOS redirect 登入
+
+桌面瀏覽器與 Android 使用上述 popup/FedCM credential 介面。iOS/iPadOS 使用以下 redirect `form_post` 流程：
+
+1. 前端呼叫 `POST /auth/google/redirect/intent` 建立一次性登入意圖。
+2. Google 向同源 `POST /auth/google/redirect/callback` 提交 credential、state 和 CSRF 欄位。
+3. 後端驗證並消費一次性 state 後，以 `303` 重新導向到前台固定路徑 `/auth/google/callback?flow=login`（失敗時僅追加白名單內的 `error` 代碼）。
+4. 前端呼叫 `POST /auth/google/redirect/exchange`，消費 HttpOnly handoff 並取得與 popup 登入相同的登入/2FA 回應。
+
+##### 建立登入意圖
+
+**介面**：`POST /auth/google/redirect/intent`
+
+**認證**：否
+
+**Body**：空 JSON 物件 `{}`。
+
+```json
+{
+  "status_code": 0,
+  "msg": "success",
+  "data": {
+    "state": "c3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3M",
+    "expires_in": 600,
+    "issued_at": "2026-07-30T10:00:00Z"
+  }
+}
+```
+
+前端必須把返回的 `state` 原樣傳給 Google Identity Services 按鈕配置；同時後端會設定同源、Secure、HttpOnly 的 state Cookie。意圖只可使用一次。
+
+##### Google form_post 回呼
+
+**介面**：`POST /auth/google/redirect/callback`
+
+**認證**：否；此介面供 Google Identity Services 直接提交，不應由前端手動呼叫。
+
+**Content-Type**：`application/x-www-form-urlencoded`
+
+| 欄位 | 類型 | 必填 | 說明 |
+| --- | --- | --- | --- |
+| credential | string | 是 | Google 返回的 ID Token |
+| state | string | 是 | 建立意圖時取得的一次性 state |
+| g_csrf_token | string | 是 | 必須與 Google 設定的同名 Cookie 一致 |
+
+回呼不返回 JSON。後端完成 Google credential、雙提交 CSRF、state、租戶與流程驗證後，使用 `303 See Other` 跳轉到前台固定回呼頁。credential、state、handoff、站內 Token 均不會寫入重新導向 URL。
+
+##### 交換登入結果
+
+**介面**：`POST /auth/google/redirect/exchange`
+
+**認證**：否
+
+**Body**：空 JSON 物件 `{}`；瀏覽器必須攜帶同源 Cookie。
+
+成功回應與 `POST /auth/google/login` 完全相同，包括 TOTP challenge 分支。handoff 僅可交換一次，有效期為 120 秒。
+
+> redirect 登入依賴已啟用且可用的 Redis 7，透過 `GETDEL` 原子消費 state/handoff；Redis 不可用時這些 redirect 介面返回服務不可用。popup/FedCM 的 `POST /auth/google/login` 不依賴該狀態儲存。
+
+---
+
 ## 5. 登錄用戶資料介面（需 Bearer Token）
 
 ### 5.1 獲取當前用戶
@@ -1332,7 +1458,7 @@ Authorization: Bearer <user_token>
 | --- | --- | --- |
 | unbound | boolean | 是否解除綁定成功 |
 
-> 當用戶尚未綁定真實郵箱（`email_change_mode=bind_only`）時，不允許解除綁定 Telegram。
+> 僅當帳號仍有有效本機密碼，或另一個目前已啟用且配置完整的第三方登入方式時，才允許解除綁定 Telegram；否則後端會拒絕操作，避免帳號失去全部登入入口。
 
 ---
 
@@ -1469,6 +1595,91 @@ Authorization: Bearer <user_token>
 | 字段 | 類型 | 說明 |
 | --- | --- | --- |
 | updated | boolean | 是否更新成功 |
+
+---
+
+### 5.10 取得 Google 綁定狀態
+
+**介面**：`GET /me/google`
+
+**認證**：是
+
+#### 成功回應範例
+
+```json
+{
+  "status_code": 0,
+  "msg": "success",
+  "data": {
+    "bound": true,
+    "provider": "google",
+    "provider_user_id": "109876543210987654321",
+    "username": "user@gmail.com",
+    "email": "user@gmail.com",
+    "display_name": "Google User",
+    "avatar_url": "https://lh3.googleusercontent.com/a/example",
+    "auth_at": "2026-07-30T10:00:00Z",
+    "can_unbind": true
+  }
+}
+```
+
+`can_unbind=false` 表示解除綁定會使帳號失去全部可用登入方式，前端必須禁止解除綁定。
+
+---
+
+### 5.11 綁定 Google
+
+**介面**：`POST /me/google/bind`
+
+**認證**：是
+
+#### Body 參數
+
+| 欄位 | 類型 | 必填 | 說明 |
+| --- | --- | --- | --- |
+| credential | string | 是 | Google Identity Services 回呼返回的不透明 ID Token |
+
+```json
+{
+  "credential": "eyJhbGciOiJSUzI1NiIs..."
+}
+```
+
+成功回應與 `GET /me/google` 相同。若該 Google 身份已綁定其他用戶，或目前帳號已綁定另一 Google 身份，介面會拒絕操作。
+
+#### iOS/iPadOS redirect 綁定
+
+redirect 綁定與登入共用 `POST /auth/google/redirect/callback`，但意圖和 exchange 均要求目前用戶認證：
+
+1. 呼叫 `POST /me/google/redirect/intent` 建立綁定意圖（Body 為 `{}`，回應與登入意圖相同）。
+2. 將返回的 `state` 傳給 Google Identity Services，由 Google `form_post` 到同源 callback。
+3. callback 成功後以 `303` 重新導向到 `/auth/google/callback?flow=bind`。
+4. 呼叫 `POST /me/google/redirect/exchange`（Body 為 `{}`）交換綁定結果，成功回應與 `GET /me/google` 相同。
+
+建立和交換綁定意圖都必須攜帶 Bearer Token。一次性狀態同時綁定目前租戶與建立意圖的用戶；更換網域、租戶或用戶均不能完成交換。該流程同樣要求 Redis 7 可用。
+
+---
+
+### 5.12 解除綁定 Google
+
+**介面**：`DELETE /me/google/unbind`
+
+**認證**：是
+
+僅當帳號仍有有效本地密碼或其他目前可用的第三方登入方式時允許解除綁定。
+
+#### 成功回應範例
+
+```json
+{
+  "status_code": 0,
+  "msg": "success",
+  "data": {
+    "unbound": true
+  }
+}
+```
 
 ---
 
@@ -2525,3 +2736,46 @@ Authorization: Bearer <user_token>
 
 - `POST /admin/affiliates/withdraws/:id/reject` body 支持 `{ "reason": "拒絕原因" }`
 - `POST /admin/affiliates/withdraws/:id/pay` 無需額外 body 字段
+
+### 9.5 管理後臺 Google 登入配置介面（Admin）
+
+以下介面由管理後臺呼叫，需要 `system_admin` 權限。
+
+#### 9.5.1 取得 Google 登入配置
+
+**介面**：`GET /admin/settings/google-auth`
+
+**認證**：管理員 Token
+
+```json
+{
+  "status_code": 0,
+  "msg": "success",
+  "data": {
+    "enabled": true,
+    "client_id": "1234567890-example.apps.googleusercontent.com"
+  }
+}
+```
+
+#### 9.5.2 更新 Google 登入配置
+
+**介面**：`PUT /admin/settings/google-auth`
+
+**認證**：管理員 Token
+
+#### Body 參數（Patch）
+
+| 欄位 | 類型 | 必填 | 說明 |
+| --- | --- | --- | --- |
+| enabled | boolean | 否 | 是否啟用 Google 登入 |
+| client_id | string | 否 | Google OAuth 2.0 Web Client ID；啟用時不能為空 |
+
+```json
+{
+  "enabled": true,
+  "client_id": "1234567890-example.apps.googleusercontent.com"
+}
+```
+
+儲存後配置立即生效。Client ID 是瀏覽器端公開標識，不需要 Client Secret；本功能也不請求 Gmail 郵箱權限。

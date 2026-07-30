@@ -329,7 +329,41 @@ Additional notes:
 | `login_expire_seconds` | int | Login validity (seconds) | `300` |
 | `replay_ttl_seconds` | int | Replay protection TTL (seconds) | `300` |
 
-## 5.15 `captcha` (optional)
+## 5.15 `google_auth` (optional)
+
+Google Account sign-in uses Google Identity Services and does not request permission to read or send Gmail messages.
+
+| Field | Type | Description | Recommended |
+| --- | --- | --- | --- |
+| `enabled` | bool | Enable Google Account sign-in | Enable after configuration is complete |
+| `client_id` | string | Google OAuth 2.0 Web Client ID (not a Client Secret) | Use a dedicated production client |
+
+Example:
+
+```yaml
+google_auth:
+  enabled: true
+  client_id: "1234567890-xxxx.apps.googleusercontent.com"
+```
+
+Also register every actual site origin under **Authorized JavaScript origins** for the Web client in Google Cloud Console, for example:
+
+- Main storefront: `https://shop.example.com`
+- Each white-label storefront: `https://brand.example.net`
+- Local development: `http://localhost:5173`
+
+An origin includes the scheme and port (when present), but no path. Register the main storefront and every white-label storefront separately; registering only the main storefront is not sufficient.
+
+Desktop browsers and Android use popup/FedCM. iOS/iPadOS use the Google Identity Services redirect `form_post` flow, so you must also add an exact **Authorized redirect URI** for every actual domain:
+
+- Main storefront: `https://shop.example.com/api/v1/auth/google/redirect/callback`
+- White-label storefront: `https://brand.example.net/api/v1/auth/google/redirect/callback`
+
+The redirect URI must exactly match the protocol, domain, port, and path used by the browser, and it must remain same-origin with the storefront. The iOS/iPadOS redirect flow requires an enabled and available Redis 7 instance so one-time state and handoff records can be atomically consumed with `GETDEL`. If Redis is unavailable, redirect sign-in and binding return a service-unavailable response; desktop/Android popup sign-in does not depend on this state store.
+
+The Google Client ID is public browser configuration, not a secret. Never put a Client Secret in this section; this feature does not request any Gmail API scopes.
+
+## 5.16 `captcha` (optional)
 
 `config.yml.example` may not show this section completely, but it is supported by the system.
 
@@ -361,13 +395,14 @@ captcha:
     timeout_ms: 2000
 ```
 
-## 5.16 Runtime Override Priority (Important)
+## 5.17 Runtime Override Priority (Important)
 
 The following items can be changed dynamically in admin settings and have higher priority than `config.yml`:
 
 - SMTP (email) settings
 - Captcha settings
 - Telegram login settings
+- Google login settings
 - Order payment timeout minutes (`payment_expire_minutes`)
 
 If you changed `config.yml` but behavior did not change, check admin settings first.

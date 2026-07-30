@@ -213,10 +213,21 @@ outline: deep
 | SMTP 郵件 | 郵件伺服器設定，支持傳送測試郵件 |
 | 驗證碼 | 圖片驗證碼或 Cloudflare Turnstile |
 | Telegram 登入 | Telegram OAuth 登入設定 |
+| Google 登入 | Google 帳號一鍵登入設定 |
 | 通知中心 | 郵件/Telegram 通知渠道設定 |
 | 訂單郵件範本 | 自訂訂單狀態通知郵件範本 |
 | 分銷設定 | 佣金比例、確認期、提現設定 |
 | Telegram Bot | Bot 功能設定（需購買 Bot 服務） |
+
+### 9.1 Google 登入
+
+在「設定 → Google 登入」填寫 Google Identity Services Web Client ID 並啟用。Client ID 是瀏覽器端公開標識；不要填寫 Client Secret，也不需要申請 Gmail 讀取或傳送權限。
+
+啟用前還需要在 Google Cloud Console 為主站及每個白標網域逐一完成：
+
+1. 將完整 origin（例如 `https://shop.example.com`）加入 **Authorized JavaScript origins**。
+2. 將同網域的 `https://shop.example.com/api/v1/auth/google/redirect/callback` 精確加入 **Authorized redirect URIs**。
+3. 確認 Redis 7 已啟用且可用；iOS/iPadOS 的 redirect 登入/綁定依賴 Redis 一次性狀態，桌面與 Android 的 popup/FedCM 不依賴該狀態儲存。
 
 ---
 

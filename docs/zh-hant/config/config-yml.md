@@ -332,7 +332,41 @@ web:
 | `login_expire_seconds` | int | 登入有效期（秒） | `300` |
 | `replay_ttl_seconds` | int | 重放保護時長（秒） | `300` |
 
-## 5.15 `captcha`（可選）
+## 5.15 `google_auth`（可選）
+
+Google 帳號一鍵登入使用 Google Identity Services，不會申請 Gmail 郵件讀取、傳送等權限。
+
+| 字段 | 類型 | 說明 | 推薦 |
+| --- | --- | --- | --- |
+| `enabled` | bool | 是否啟用 Google 帳號登入 | 配置完成後開啟 |
+| `client_id` | string | Google OAuth 2.0 Web Client ID（不是 Client Secret） | 使用獨立的生產環境客戶端 |
+
+示例：
+
+```yaml
+google_auth:
+  enabled: true
+  client_id: "1234567890-xxxx.apps.googleusercontent.com"
+```
+
+還需要在 Google Cloud Console 對應 Web 客戶端的 **Authorized JavaScript origins** 中登記所有實際訪問來源，例如：
+
+- 主站：`https://shop.example.com`
+- 每個白標站點：`https://brand.example.net`
+- 本地開發：`http://localhost:5173`
+
+來源必須包含協議和連接埠（若有），但不包含路徑。主站和每個白標站點必須分別登記，不能只登記主站。
+
+桌面瀏覽器與 Android 使用 popup/FedCM；iOS/iPadOS 使用 Google Identity Services 的 redirect `form_post`。因此還必須為每個實際網域精確登記對應的 **Authorized redirect URI**：
+
+- 主站：`https://shop.example.com/api/v1/auth/google/redirect/callback`
+- 白標站點：`https://brand.example.net/api/v1/auth/google/redirect/callback`
+
+redirect URI 必須與瀏覽器實際訪問的協定、網域、連接埠和路徑完全一致，並與前台保持同源。iOS/iPadOS redirect 流程依賴已啟用且可用的 Redis 7，以 `GETDEL` 原子消費一次性 state/handoff；Redis 不可用時 redirect 登入和綁定會返回服務不可用，但桌面/Android 的 popup 登入不依賴該狀態儲存。
+
+Google Client ID 會透過公開配置下發到瀏覽器，不屬於密鑰。禁止把 Client Secret 寫入該配置；本功能也不申請 Gmail API scope。
+
+## 5.16 `captcha`（可選）
 
 `config.yml.example` 可能未完整展示該段，但系統已支持。
 
@@ -364,13 +398,14 @@ captcha:
     timeout_ms: 2000
 ```
 
-## 5.16 運行時覆蓋優先級（重要）
+## 5.17 運行時覆蓋優先級（重要）
 
 以下配置支持在後台「設置」中動態修改，且優先級高於 `config.yml`：
 
 - SMTP（郵件）配置
 - 驗證碼配置
 - Telegram 登入配置
+- Google 登入配置
 - 訂單支付超時分鐘數（`payment_expire_minutes`）
 
 如果你修改了 `config.yml` 但頁面行為沒有變化，請優先檢查後台對應設置項。

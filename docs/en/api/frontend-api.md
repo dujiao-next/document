@@ -480,6 +480,10 @@ None
     "telegram_auth": {
       "enabled": true,
       "bot_username": "dujiao_auth_bot"
+    },
+    "google_auth": {
+      "enabled": true,
+      "client_id": "1234567890-xxxx.apps.googleusercontent.com"
     }
   }
 }
@@ -496,6 +500,7 @@ None
 | payment_channels | object[] | List of available payment channels on the frontend |
 | captcha | object | Public captcha configuration |
 | telegram_auth | object | Public Telegram login config (`enabled`, `bot_username`) |
+| google_auth | object | Public Google sign-in config (`enabled`, `client_id`) |
 | other fields | any | Public fields from the backend site settings (dynamically extended) |
 
 ---
@@ -1059,6 +1064,127 @@ Same as registration: `user + token + expires_at`
 
 ---
 
+### 4.6 Google Sign-In
+
+**Endpoint**: `POST /auth/google/login`
+
+**Authentication**: No
+
+#### Body Parameters
+
+| Field | Type | Required | Description |
+| --- | --- | --- | --- |
+| credential | string | Yes | Opaque ID token returned by the Google Identity Services callback; the frontend must not parse it and trust its claims |
+
+#### Request Example
+
+```json
+{
+  "credential": "eyJhbGciOiJSUzI1NiIs..."
+}
+```
+
+#### Success Response Examples
+
+Without two-factor authentication:
+
+```json
+{
+  "status_code": 0,
+  "msg": "success",
+  "data": {
+    "requires_totp": false,
+    "user": {
+      "id": 101,
+      "email": "user@gmail.com",
+      "nickname": "Google User",
+      "email_verified_at": "2026-07-30T10:00:00Z"
+    },
+    "token": "eyJhbGciOi...",
+    "expires_at": "2026-07-30T12:00:00Z"
+  }
+}
+```
+
+When TOTP is enabled:
+
+```json
+{
+  "status_code": 0,
+  "msg": "success",
+  "data": {
+    "requires_totp": true,
+    "challenge_token": "eyJhbGciOi...",
+    "challenge_expires_at": "2026-07-30T10:05:00Z"
+  }
+}
+```
+
+After receiving a two-factor challenge, continue with `POST /auth/login/verify-2fa`.
+
+> The backend verifies the Google signature, `aud`, `iss`, expiry, `sub`, and email verification status. Gmail addresses and Google Workspace addresses with an `hd` claim can be safely matched to an existing account by email. Other custom-domain addresses must first sign in to the site account and then use the explicit binding endpoint. New accounts remain subject to registration settings and the email-domain allowlist.
+
+#### iOS/iPadOS Redirect Sign-In
+
+Desktop browsers and Android use the popup/FedCM credential endpoint above. iOS/iPadOS use the following redirect `form_post` flow:
+
+1. The frontend calls `POST /auth/google/redirect/intent` to create a one-time sign-in intent.
+2. Google submits the credential, state, and CSRF fields to the same-origin `POST /auth/google/redirect/callback`.
+3. After validating and consuming the one-time state, the backend sends a `303` redirect to the fixed frontend path `/auth/google/callback?flow=login` (failures add only an allowlisted `error` code).
+4. The frontend calls `POST /auth/google/redirect/exchange` to consume the HttpOnly handoff and receive the same login/2FA response as popup sign-in.
+
+##### Create a Sign-In Intent
+
+**Endpoint**: `POST /auth/google/redirect/intent`
+
+**Authentication**: No
+
+**Body**: Empty JSON object `{}`.
+
+```json
+{
+  "status_code": 0,
+  "msg": "success",
+  "data": {
+    "state": "c3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3M",
+    "expires_in": 600,
+    "issued_at": "2026-07-30T10:00:00Z"
+  }
+}
+```
+
+The frontend must pass the returned `state` unchanged to the Google Identity Services button configuration. The backend also sets a same-origin, Secure, HttpOnly state cookie. An intent can be used only once.
+
+##### Google form_post Callback
+
+**Endpoint**: `POST /auth/google/redirect/callback`
+
+**Authentication**: No. Google Identity Services submits directly to this endpoint; frontend code must not call it manually.
+
+**Content-Type**: `application/x-www-form-urlencoded`
+
+| Field | Type | Required | Description |
+| --- | --- | --- | --- |
+| credential | string | Yes | ID token returned by Google |
+| state | string | Yes | One-time state returned when the intent was created |
+| g_csrf_token | string | Yes | Must match the cookie of the same name set by Google |
+
+The callback does not return JSON. After validating the Google credential, double-submit CSRF token, state, tenant, and flow, the backend responds with `303 See Other` to a fixed frontend callback page. The credential, state, handoff, and site token are never placed in the redirect URL.
+
+##### Exchange the Sign-In Result
+
+**Endpoint**: `POST /auth/google/redirect/exchange`
+
+**Authentication**: No
+
+**Body**: Empty JSON object `{}`; the browser must include same-origin cookies.
+
+The success response is identical to `POST /auth/google/login`, including the TOTP challenge branch. A handoff can be exchanged only once and expires after 120 seconds.
+
+> Redirect sign-in requires an enabled and available Redis 7 instance and atomically consumes state/handoff records with `GETDEL`. When Redis is unavailable, these redirect endpoints return a service-unavailable response. Popup/FedCM `POST /auth/google/login` does not depend on this state store.
+
+---
+
 ## 5. Login User Profile API (Bearer Token Required)
 
 ### 5.1 Get Current User
@@ -1332,7 +1458,7 @@ None
 | --- | --- | --- |
 | unbound | boolean | Whether unbinding succeeded |
 
-> If the user has not bound a real email yet (`email_change_mode=bind_only`), unbinding Telegram is not allowed.
+> Telegram can be unbound only when the account still has a valid local password or another third-party sign-in method that is currently enabled and fully configured. Otherwise, the backend rejects the operation to prevent removing every usable sign-in method.
 
 ---
 
@@ -1469,6 +1595,91 @@ None
 | Field | Type | Description |
 | --- | --- | --- |
 | updated | boolean | Whether the update was successful |
+
+---
+
+### 5.10 Get Google Binding Status
+
+**Endpoint**: `GET /me/google`
+
+**Authentication**: Yes
+
+#### Success Response Example
+
+```json
+{
+  "status_code": 0,
+  "msg": "success",
+  "data": {
+    "bound": true,
+    "provider": "google",
+    "provider_user_id": "109876543210987654321",
+    "username": "user@gmail.com",
+    "email": "user@gmail.com",
+    "display_name": "Google User",
+    "avatar_url": "https://lh3.googleusercontent.com/a/example",
+    "auth_at": "2026-07-30T10:00:00Z",
+    "can_unbind": true
+  }
+}
+```
+
+`can_unbind=false` means unbinding would remove every usable sign-in method; the frontend must keep the action disabled.
+
+---
+
+### 5.11 Bind Google
+
+**Endpoint**: `POST /me/google/bind`
+
+**Authentication**: Yes
+
+#### Body Parameters
+
+| Field | Type | Required | Description |
+| --- | --- | --- | --- |
+| credential | string | Yes | Opaque ID token returned by the Google Identity Services callback |
+
+```json
+{
+  "credential": "eyJhbGciOiJSUzI1NiIs..."
+}
+```
+
+The success response is the same as `GET /me/google`. The endpoint rejects an identity already bound to another user and rejects replacing a different Google identity already bound to the current account.
+
+#### iOS/iPadOS Redirect Binding
+
+Redirect binding shares `POST /auth/google/redirect/callback` with sign-in, but both the intent and exchange endpoints require current-user authentication:
+
+1. Call `POST /me/google/redirect/intent` to create a binding intent (Body is `{}`; the response matches the sign-in intent response).
+2. Pass the returned `state` to Google Identity Services, which sends a same-origin `form_post` callback.
+3. On success, the callback sends a `303` redirect to `/auth/google/callback?flow=bind`.
+4. Call `POST /me/google/redirect/exchange` (Body is `{}`) to exchange the binding result. Its success response matches `GET /me/google`.
+
+Creating and exchanging a binding intent both require a Bearer token. One-time state is bound to both the current tenant and the user who created it; changing the domain, tenant, or user prevents the exchange. This flow also requires Redis 7 to be available.
+
+---
+
+### 5.12 Unbind Google
+
+**Endpoint**: `DELETE /me/google/unbind`
+
+**Authentication**: Yes
+
+Unbinding is allowed only when the account still has a valid local password or another currently usable third-party sign-in method.
+
+#### Success Response Example
+
+```json
+{
+  "status_code": 0,
+  "msg": "success",
+  "data": {
+    "unbound": true
+  }
+}
+```
 
 ---
 
@@ -2525,3 +2736,46 @@ Notes:
 
 - `POST /admin/affiliates/withdraws/:id/reject` body supports `{ "reason": "rejection reason" }`
 - `POST /admin/affiliates/withdraws/:id/pay` requires no extra body fields
+
+### 9.5 Admin Google Sign-In Settings APIs
+
+The following endpoints are used by the admin frontend and require the `system_admin` permission.
+
+#### 9.5.1 Get Google Sign-In Settings
+
+**Endpoint**: `GET /admin/settings/google-auth`
+
+**Authentication**: Admin token
+
+```json
+{
+  "status_code": 0,
+  "msg": "success",
+  "data": {
+    "enabled": true,
+    "client_id": "1234567890-example.apps.googleusercontent.com"
+  }
+}
+```
+
+#### 9.5.2 Update Google Sign-In Settings
+
+**Endpoint**: `PUT /admin/settings/google-auth`
+
+**Authentication**: Admin token
+
+#### Body Parameters (Patch)
+
+| Field | Type | Required | Description |
+| --- | --- | --- | --- |
+| enabled | boolean | No | Whether Google sign-in is enabled |
+| client_id | string | No | Google OAuth 2.0 Web Client ID; required when enabling sign-in |
+
+```json
+{
+  "enabled": true,
+  "client_id": "1234567890-example.apps.googleusercontent.com"
+}
+```
+
+The change takes effect immediately. The Client ID is a public browser identifier, so no Client Secret is required. This feature does not request Gmail mailbox permissions.
