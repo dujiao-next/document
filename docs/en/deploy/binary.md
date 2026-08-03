@@ -11,6 +11,68 @@ As of v1.4.0 the storefront and admin panel are embedded in the backend binary. 
 - One domain + SSL certificate (for production)
 - At least 512MB RAM
 
+## Official One-Click Installer (Recommended)
+
+On a fresh Ubuntu 22.04+ or Debian 12+ server, use the official interactive installer (x86_64 and arm64 are supported):
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/dujiao-next/dujiao-next/main/scripts/dujiao-next-manager.sh \
+  -o /tmp/dujiao-next-manager.sh
+sudo bash /tmp/dujiao-next-manager.sh install
+```
+
+Before running it, prepare:
+
+- One non-wildcard domain that already resolves to the server
+- Publicly reachable TCP ports 80 and 443
+- An email address for Let's Encrypt expiry notices
+- Root or sudo access
+
+The wizard downloads and verifies the latest Release, generates three independent runtime secrets, and installs SQLite, an isolated local Redis instance, systemd services, Nginx, and a Certbot-managed TLS certificate. The application and Redis listen only on loopback; ports 8080 and 6380 are not exposed publicly.
+
+Reopen the management menu after installation with:
+
+```bash
+sudo dujiao-next-manager
+```
+
+The menu provides status and logs, start/stop/restart, domain and admin-path changes, certificate renewal, admin password/2FA recovery, and safe uninstall. Application upgrades continue to use **System Update** in the admin panel; the manager does not implement a second updater.
+
+The same operations are exposed as automation-friendly subcommands:
+
+```bash
+sudo dujiao-next-manager status
+sudo dujiao-next-manager logs app        # redis / nginx / certbot are also available
+sudo dujiao-next-manager start           # stop / restart
+sudo dujiao-next-manager configure-domain
+sudo dujiao-next-manager configure-admin-path
+sudo dujiao-next-manager renew-cert
+sudo dujiao-next-manager admin-reset-password
+sudo dujiao-next-manager admin-reset-2fa
+sudo dujiao-next-manager uninstall
+```
+
+::: warning Supported scope
+The first installer release supports Ubuntu 22.04+ / Debian 12+, SQLite, and a single-domain HTTP-01 certificate only. It does not adopt manual or legacy three-part deployments and does not support Docker, PostgreSQL, external Redis, wildcard certificates, or DNS-01.
+:::
+
+::: warning SMTP and email registration
+SMTP is optional in the wizard. The storefront can run without it, but email-verification registration cannot. Configure and test SMTP under **Settings → SMTP Email** before opening registration. After installation, the database-backed admin setting is authoritative.
+:::
+
+If DNS, port 80, or certificate issuance fails, the installer does not expose the storefront over plain HTTP. Fix the problem and rerun `sudo dujiao-next-manager install`; it resumes from the recorded stage.
+
+Main data locations:
+
+| Path | Contents |
+| --- | --- |
+| `/opt/dujiao-next/` | Binary, `config.yml`, SQLite, uploads, and logs |
+| `/etc/dujiao-next/install-state.json` | Installation stage and managed resources (no admin password) |
+| `/var/lib/dujiao-next/redis/` | AOF data for the isolated Redis instance |
+| `/var/backups/dujiao-next/` | Mandatory recovery backups created before uninstall |
+
+Uninstall never removes apt packages that may be shared by other services. It deletes the application only after a backup containing `config.yml`, SQLite, and `uploads` has been created and verified. Keep `config.yml` with the database: its `app.secret_key` is required to recover encrypted data.
+
 ## 1. Download
 
 Grab the latest `dujiao-next_*.tar.gz` from [GitHub Releases](https://github.com/dujiao-next/dujiao-next/releases), matching your architecture:
@@ -42,6 +104,7 @@ Open `config.yml` and update the following:
 
 | Field | Description | Example |
 |---|---|---|
+| `app.secret_key` | Sensitive-config encryption key — **must change and differ from the JWT secrets** | output of `openssl rand -hex 32` |
 | `jwt.secret` | Admin JWT secret — **must change** | output of `openssl rand -hex 32` |
 | `user_jwt.secret` | User JWT secret — **must change** | same, but a different value |
 | `web.admin_path` | Admin panel path prefix — **strongly recommended to change** | `/dj-mgmt-7x9k2` |

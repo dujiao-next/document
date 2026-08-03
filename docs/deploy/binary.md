@@ -11,6 +11,68 @@
 - 一个域名 + SSL 证书（生产部署）
 - 至少 512MB 内存
 
+## 官方一键安装（推荐）
+
+全新 Ubuntu 22.04+ 或 Debian 12+ 服务器可以直接使用官方交互式安装器（支持 x86_64 / arm64）：
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/dujiao-next/dujiao-next/main/scripts/dujiao-next-manager.sh \
+  -o /tmp/dujiao-next-manager.sh
+sudo bash /tmp/dujiao-next-manager.sh install
+```
+
+运行前请先准备：
+
+- 一个已经解析到本服务器的非泛域名
+- 可从公网访问的 TCP 80/443 端口
+- 一个用于 Let's Encrypt 到期通知的邮箱
+- root 或 sudo 权限
+
+向导会下载并校验最新 Release，自动生成三个互不相同的运行密钥，部署 SQLite、独立本机 Redis、systemd、Nginx，并使用 Certbot 申请 SSL 证书。应用和 Redis 只监听回环地址，不会把 8080/6380 暴露到公网。
+
+安装完成后使用以下命令重新打开管理菜单：
+
+```bash
+sudo dujiao-next-manager
+```
+
+管理菜单提供状态与日志、启动/停止/重启、域名和后台路径修改、证书续签、管理员密码/2FA 恢复以及安全卸载。应用版本升级仍在后台「系统更新」中完成，管理脚本不会维护第二套升级逻辑。
+
+同样的操作也提供可用于自动化的子命令：
+
+```bash
+sudo dujiao-next-manager status
+sudo dujiao-next-manager logs app        # 也可使用 redis / nginx / certbot
+sudo dujiao-next-manager start           # stop / restart
+sudo dujiao-next-manager configure-domain
+sudo dujiao-next-manager configure-admin-path
+sudo dujiao-next-manager renew-cert
+sudo dujiao-next-manager admin-reset-password
+sudo dujiao-next-manager admin-reset-2fa
+sudo dujiao-next-manager uninstall
+```
+
+::: warning 适用边界
+首版安装器只支持 Ubuntu 22.04+ / Debian 12+、SQLite 和单域名 HTTP-01 证书。它不会接管手工安装、旧三端部署、Docker、PostgreSQL、外部 Redis、泛域名或 DNS-01。
+:::
+
+::: warning SMTP 与邮箱注册
+SMTP 可以在向导中配置，也可以跳过。未启用 SMTP 时商城本身可以运行，但邮箱验证码注册不可用；请登录后台，在「设置 → SMTP 邮件」完成配置和测试后再开放注册。安装后以后台保存的 SMTP 设置为准。
+:::
+
+如果 DNS、80 端口或证书申请失败，安装器不会把商城以明文 HTTP 方式开放。修复问题后重新执行 `sudo dujiao-next-manager install`，脚本会从保留的阶段继续。
+
+主要数据位置：
+
+| 路径 | 内容 |
+| --- | --- |
+| `/opt/dujiao-next/` | 二进制、`config.yml`、SQLite、上传文件与日志 |
+| `/etc/dujiao-next/install-state.json` | 安装阶段和受管资源（不含管理员密码） |
+| `/var/lib/dujiao-next/redis/` | 安装器独立 Redis 的 AOF 数据 |
+| `/var/backups/dujiao-next/` | 安全卸载前强制创建的恢复备份 |
+
+卸载不会移除可能由其他服务共用的 apt 软件包。脚本只有在包含 `config.yml`、SQLite 和 `uploads` 的备份成功且校验通过后才会删除应用；其中 `config.yml` 内的 `app.secret_key` 是恢复加密数据所必需的，请与数据库一同保管。
+
 ## 1. 下载
 
 到 [GitHub Releases](https://github.com/dujiao-next/dujiao-next/releases) 找最新的 `dujiao-next_*.tar.gz`，按系统架构选：
@@ -41,6 +103,7 @@ cp config.yml.example config.yml
 
 | 字段 | 说明 | 示例值 |
 |---|---|---|
+| `app.secret_key` | 敏感配置加密密钥，**必改且不能与 JWT 密钥相同** | `openssl rand -hex 32` 输出 |
 | `jwt.secret` | 后台管理员 JWT 密钥，**必改** | `openssl rand -hex 32` 输出 |
 | `user_jwt.secret` | 用户 JWT 密钥，**必改** | 同上，不同值 |
 | `web.admin_path` | 后台访问路径前缀，**强烈建议改** | `/dj-mgmt-7x9k2` |
