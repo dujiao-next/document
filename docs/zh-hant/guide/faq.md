@@ -146,7 +146,7 @@ queue:
 
 ### Q：郵件發送失敗
 
-1. 確認 `config.yml` 中 `email.enabled` 為 `true`
+1. 先確認後臺郵件設定已啟用；資料庫中的後臺設定優先於 `config.yml`，只有未儲存過後臺設定時才回退到 `email.enabled`
 2. 檢查 SMTP 設定是否正確（host、port、username、password）
 3. 確認 SSL/TLS 設定與郵件服務商要求一致：
    - 連接埠 465 通常使用 `use_ssl: true`

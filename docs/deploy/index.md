@@ -40,8 +40,10 @@
 - 准备 Linux 服务器与一个可解析到公网 IP 的域名（**一个就够**）
 - 规划端口（默认只需要 8080 一个）
 - 在 `config.yml` 中设置强随机密钥：
+  - `app.secret_key`
   - `jwt.secret`
   - `user_jwt.secret`
+  - 三个值必须分别生成、彼此不同；`app.secret_key` 还必须与数据库一起备份
 - 修改后台入口路径 `web.admin_path`，不要沿用默认的 `/admin`
 - 决定数据方案：
   - 轻量场景：SQLite + Redis

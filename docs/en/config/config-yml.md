@@ -1,33 +1,50 @@
 # `config.yml` Detailed Explanation and Recommended Configuration
 
-> Last Updated: 2026-03-28
+> Last updated: 2026-08-11
+>
+> Applies to: the current `dujiao-next` main branch. Field names and built-in defaults follow `internal/config/config.go`.
 
 ## 1. Configuration Loading Rules
 
-When the backend starts, values are taken in the following order:
+When the backend starts, values are resolved in the following order:
 
-1. Use built-in default values
-2. Read `config.yml`
-3. Read environment variables to override (e.g., `server.port` ⇢ `SERVER_PORT`)
+1. Built-in defaults
+2. Values from `config.yml`
+3. Environment-variable overrides, for example `server.port` ⇢ `SERVER_PORT`
 
-## 2. Conclusion First: Database Selection Recommendations
+The application looks for `config.yml` in the current directory, its parent directory, and `./etc`. If the file is missing or cannot be read, startup logs a warning and continues with environment variables and built-in defaults. However, the later security check still stops startup unless all three valid runtime secrets are supplied through the environment. A production deployment should keep a permission-protected copy of the file in its backup set.
 
-- **Development Environment**: Prefer `sqlite` (simple deployment, zero dependencies)
-- **Production Environment**: Prefer `postgres` (better concurrency, reliability, and observability)
+Except for the special bootstrap variables `DJ_DEFAULT_ADMIN_USERNAME` and `DJ_DEFAULT_ADMIN_PASSWORD`, an environment variable is normally formed from the full configuration key by uppercasing it and replacing `.` with `_`. For example, `app.secret_key` becomes `APP_SECRET_KEY`.
 
-If you use `sqlite` in production, you must accept:
+## 2. Database Recommendation
 
-- Weak write concurrency
-- Strong binding to single machine/disk
-- Limited horizontal scaling and high availability
+- **Development:** prefer `sqlite` for simple, dependency-free setup.
+- **Production:** prefer `postgres` for better concurrency, reliability, and observability.
 
-## 3. Copyable Demo Configurations
+Using SQLite in production means accepting:
 
-## 3.1 Demo A: Local Development (SQLite)
+- Lower write concurrency
+- A strong dependency on one machine and disk
+- Limited horizontal scaling and high-availability options
 
-Applicable Scenarios: Single-machine development, low concurrency testing.
+## 3. Configuration Templates
+
+Before starting the service, run the following command three times and paste the three different outputs into `app.secret_key`, `jwt.secret`, and `user_jwt.secret`:
+
+```bash
+openssl rand -hex 32
+```
+
+The three runtime secrets must be different. A built-in value, a known placeholder, a value shorter than 32 characters, or a duplicated value makes startup fail. Do not keep the angle-bracket placeholders below.
+
+## 3.1 Demo A: Local Development with SQLite
+
+Use this for single-machine development and low-concurrency testing.
 
 ```yaml
+app:
+  secret_key: "<first openssl output>"
+
 server:
   host: 0.0.0.0
   port: 8080
@@ -51,29 +68,37 @@ database:
     conn_max_idle_time_seconds: 0
 
 jwt:
-  secret: "dev-admin-jwt-secret-change-me-please-32chars"
+  secret: "<second openssl output>"
   expire_hours: 24
 
 user_jwt:
-  secret: "dev-user-jwt-secret-change-me-please-32chars"
+  secret: "<third openssl output>"
   expire_hours: 24
   remember_me_expire_hours: 168
 ```
-SQLite Key Reminders:
 
-- It is **recommended to set `max_open_conns` to 1**, otherwise `database is locked` errors may occur during high-concurrency writes.
-- `_journal_mode=WAL` can improve read-write concurrency experience (commonly used on a single machine).
-- It is not recommended to place the SQLite data file on an unstable network drive (may cause lock exceptions).
+SQLite reminders:
 
-## 3.2 Demo B: Production Environment (PostgreSQL)
+- Keep `max_open_conns` at `1`; multiple writers make `database is locked` errors more likely.
+- `_journal_mode=WAL` can improve read/write concurrency on a single machine.
+- Do not place the SQLite file on an unstable network filesystem; file-lock behavior may be unreliable.
 
-Applicable scenarios: official business, predictable concurrent traffic.
+## 3.2 Demo B: Production with PostgreSQL
+
+Use this for production workloads with predictable concurrent traffic.
 
 ```yaml
+app:
+  secret_key: "<first openssl output>"
+
 server:
   host: 0.0.0.0
   port: 8080
   mode: release
+  # These values apply only when the reverse proxy runs on the same host
+  trusted_proxies:
+    - 127.0.0.1/32
+    - ::1/128
 
 log:
   dir: /var/log/dujiao-next
@@ -93,24 +118,25 @@ database:
     conn_max_idle_time_seconds: 600
 
 jwt:
-  secret: "replace-with-strong-random-admin-secret-64chars"
+  secret: "<second openssl output>"
   expire_hours: 24
 
 user_jwt:
-  secret: "replace-with-strong-random-user-secret-64chars"
+  secret: "<third openssl output>"
   expire_hours: 24
   remember_me_expire_hours: 168
 ```
-PostgreSQL Key Reminders:
 
-- Do not set `max_open_conns` higher than PostgreSQL's `max_connections` limit
-- It's recommended to reserve some connections for DBA/monitoring/migration tasks to prevent the business from exhausting the connection pool
-- It's recommended to set `conn_max_lifetime_seconds` to avoid occasional errors caused by long-lived connections being reclaimed by intermediate network devices
-- It's recommended to explicitly configure `TimeZone` to prevent order times and log times from being misaligned
+PostgreSQL reminders:
 
-## 3.3 Demo C: Low-Traffic Production (PostgreSQL Low Resource)
+- Do not allocate more `max_open_conns` than the PostgreSQL `max_connections` budget.
+- Reserve connections for administration, monitoring, and migrations.
+- Set `conn_max_lifetime_seconds` so network infrastructure does not unexpectedly reclaim indefinitely long-lived connections.
+- Set `TimeZone` explicitly to keep order and log timestamps aligned.
 
-Applicable Scenarios: Lightweight business, low-spec cloud hosts.
+## 3.3 Demo C: Low-Resource PostgreSQL
+
+Use this connection-pool profile for a small production workload on a low-spec server:
 
 ```yaml
 database:
@@ -122,223 +148,240 @@ database:
     conn_max_lifetime_seconds: 1200
     conn_max_idle_time_seconds: 300
 ```
-## 4. How to Adjust Connection Pool Parameters
 
-The following recommendations apply to general scenarios in the current project (API, backend operations, payment callbacks).
+## 4. Tuning the Connection Pool
+
+These are general starting points for API traffic, admin operations, and payment callbacks:
 
 - `max_open_conns`
-  - Meaning: Maximum number of simultaneously open connections
-  - SQLite recommendation: `1`
-  - PostgreSQL recommendation: `20~100` (adjust according to business volume and DB specs)
+  - Maximum number of simultaneously open connections
+  - SQLite: `1`
+  - PostgreSQL: `20-100`, adjusted to workload and database capacity
 - `max_idle_conns`
-  - Meaning: Number of idle connections retained in the pool
-  - Recommendation: Usually set to `20%~40%` of `max_open_conns`
+  - Idle connections retained by the pool
+  - Usually 20%-40% of `max_open_conns`
 - `conn_max_lifetime_seconds`
-  - Meaning: Maximum lifetime of a single connection
-  - Recommendation: `900~3600`; `0` means no limit
+  - Maximum connection lifetime
+  - Usually `900-3600`; `0` means unlimited
 - `conn_max_idle_time_seconds`
-  - Meaning: Maximum idle time for idle connections
-  - Recommendation: `300~1200`; `0` means no limit
+  - Maximum time a connection may stay idle
+  - Usually `300-1200`; `0` means unlimited
 
-Common incorrect combinations:
+Common mistakes:
 
-- `max_idle_conns > max_open_conns` (meaningless and potentially misleading)
-- Setting `max_open_conns` too high in PostgreSQL, causing `too many clients` errors
-- Setting `max_open_conns` to multiple connections in SQLite, leading to increased lock conflicts
+- `max_idle_conns > max_open_conns`
+- Setting PostgreSQL `max_open_conns` so high that the database returns `too many clients`
+- Giving SQLite multiple open connections and increasing lock contention
 
-## 5. Explanation of Group Fields
+## 5. Configuration Groups
 
 ## 5.0 `app`
 
 | Field | Type | Default | Description | Recommendation |
 | --- | --- | --- | --- | --- |
-| `secret_key` | string | `change-me-32-byte-secret-key!!` | AES-256 encryption key for encrypting payment keys, Bot Tokens and other sensitive data | **Must be changed to a random 32-byte string** |
+| `secret_key` | string | `change-me-32-byte-secret-key!!` | Root AES-256 encryption key for payment credentials, Bot Tokens, and other sensitive data | **Generate separately with `openssl rand -hex 32`** |
+| `totp_issuer` | string | `Dujiao-Next` | Issuer name shown in administrator and user 2FA authenticator apps | Use a stable site name and avoid special characters such as `&` |
 
-> This key must not be changed after deployment, otherwise previously encrypted data will become unreadable.
+Do not rotate `app.secret_key` casually after deployment. Existing encrypted database values cannot be decrypted with a different key. It must differ from both JWT secrets and must be backed up with the database.
 
 ## 5.1 `server`
 
 | Field | Type | Default | Description | Recommendation |
 | --- | --- | --- | --- | --- |
-| `host` | string | `0.0.0.0` | Listening address | `0.0.0.0` |
+| `host` | string | `0.0.0.0` | Listen address | `0.0.0.0` |
 | `port` | string | `8080` | Service port | `8080` |
-| `mode` | string | `debug` | Running mode: `debug`/`release` | Use `release` for production |
+| `mode` | string | `debug` | Runtime mode: `debug` or `release` | Use `release` in production |
+| `trusted_proxies` | []string | `127.0.0.1/32`, `::1/128` | Proxy IP addresses/CIDRs from which Gin may trust forwarded client-IP headers | List only real reverse proxies; use `[]` when there is no proxy |
+
+An empty `trusted_proxies` list disables trust in forwarded headers and uses the TCP peer address. Docker, load balancer, and CDN deployments must use their real proxy networks. The application rejects `0.0.0.0/0` and `::/0` because they trust every source. This setting controls client-IP resolution only; it is separate from `reseller.trusted_forwarded_host`.
 
 ## 5.2 `log`
 
 | Field | Type | Default | Description | Recommendation |
 | --- | --- | --- | --- | --- |
-| `dir` | string | `""` | Log directory; if empty, `logs` in the running directory is used | Explicitly specify in production |
-| `filename` | string | `app.log` | Log file name | `app.log` |
-| `max_size_mb` | int | `100` | Maximum size per file in MB | `100` |
-| `max_backups` | int | `7` | Number of files to retain | `7~14` |
+| `dir` | string | `""` | Log directory; an empty value uses `logs` under the working directory | Set explicitly in production |
+| `filename` | string | `app.log` | Log filename | `app.log` |
+| `max_size_mb` | int | `100` | Maximum size of one file in MB | `100` |
+| `max_backups` | int | `7` | Number of rotated files to retain | `7-14` |
 | `max_age_days` | int | `30` | Retention period in days | `30` |
-| `compress` | bool | `true` | Whether to compress archives | `true` |
+| `compress` | bool | `true` | Compress rotated files | `true` |
 
 ## 5.3 `database`
 
 | Field | Type | Default | Description | Recommendation |
 | --- | --- | --- | --- | --- |
-| `driver` | string | `sqlite` | `sqlite` or `postgres` | Use `postgres` in production |
-| `dsn` | string | `./db/dujiao.db` | Database connection string | Configure according to environment |
-| `pool.max_open_conns` | int | `1` | Maximum open connections | SQLite=1; Postgres=20~100 |
-| `pool.max_idle_conns` | int | `1` | Maximum idle connections | 5~20 or 20%~40% of open connections |
-| `pool.conn_max_lifetime_seconds` | int | `0` | Maximum connection lifetime (seconds, 0=no limit) | `900~3600` |
-| `pool.conn_max_idle_time_seconds` | int | `0` | Maximum idle connection lifetime (seconds, 0=no limit) | `300~1200` |
+| `driver` | string | `sqlite` | `sqlite` or `postgres` | Prefer `postgres` in production |
+| `dsn` | string | `./db/dujiao.db` | Database connection string | Configure for the environment |
+| `pool.max_open_conns` | int | `1` | Maximum open connections | SQLite=1; PostgreSQL=20-100 |
+| `pool.max_idle_conns` | int | `1` | Maximum idle connections | 5-20, or 20%-40% of open connections |
+| `pool.conn_max_lifetime_seconds` | int | `0` | Maximum connection lifetime; 0 is unlimited | `900-3600` |
+| `pool.conn_max_idle_time_seconds` | int | `0` | Maximum idle time; 0 is unlimited | `300-1200` |
 
 ## 5.4 `jwt` / `user_jwt`
 
-| Field | Type | Default | Description | Recommended |
+| Field | Type | Default | Description | Recommendation |
 | --- | --- | --- | --- | --- |
-| `secret` | string | `change-me-in-production` | Signing key | At least a 32-character random string |
-| `expire_hours` | int | `24` | Token expiration time (hours) | `24` |
-| `remember_me_expire_hours` | int | `168` | Used only by `user_jwt`, remember me expiration time | `168` (7 days) |
+| `jwt.secret` | string | `change-me-in-production` | Administrator token signing secret | Generate separately with `openssl rand -hex 32` |
+| `jwt.expire_hours` | int | `24` | Administrator token expiration in hours | `24` |
+| `user_jwt.secret` | string | `user-change-me-in-production` | User token signing secret | Generate separately with `openssl rand -hex 32` |
+| `user_jwt.expire_hours` | int | `24` | Normal user token expiration in hours | `24` |
+| `user_jwt.remember_me_expire_hours` | int | `168` | Remember-me user token expiration | `168` (7 days) |
+
+Startup fails if any of `app.secret_key`, `jwt.secret`, or `user_jwt.secret` is weak, is still a known placeholder, or duplicates another secret.
 
 ## 5.5 `redis`
 
-| Field | Type | Default | Description | Recommended |
+| Field | Type | Default | Description | Recommendation |
 | --- | --- | --- | --- | --- |
-| `enabled` | bool | `true` | Whether to enable Redis | Recommended `true` in production |
-| `host` | string | `127.0.0.1` | Redis address | Set according to environment |
+| `enabled` | bool | `true` | Enable Redis | Recommended in production |
+| `host` | string | `127.0.0.1` | Redis host | Configure for the environment |
 | `port` | int | `6379` | Redis port | `6379` |
-| `password` | string | `""` | Redis password | Must be set in production |
-| `db` | int | `0` | DB index | `0` |
-| `prefix` | string | `dj` | Key prefix | `dj` or custom |
+| `password` | string | `""` | Redis password | Set in production |
+| `db` | int | `0` | Redis database index | `0` |
+| `prefix` | string | `dj` | Key prefix | `dj` or a deployment-specific value |
 
 ## 5.6 `queue`
 
-| Field | Type | Default | Description | Recommended |
+| Field | Type | Default | Description | Recommendation |
 | --- | --- | --- | --- | --- |
-| `enabled` | bool | `true` | Whether to enable async queue | Recommended `true` |
-| `host` | string | `127.0.0.1` | Queue Redis address | Can share but use a different DB from `redis` |
+| `enabled` | bool | `true` | Enable the asynchronous queue | Recommended |
+| `host` | string | `127.0.0.1` | Queue Redis host | May share the Redis server while using a different DB |
 | `port` | int | `6379` | Queue Redis port | `6379` |
-| `password` | string | `""` | Redis password | Must be set in production |
-| `db` | int | `1` | Queue DB index | `1` |
-| `concurrency` | int | `10` | Worker concurrency | 5~20 |
+| `password` | string | `""` | Queue Redis password | Set in production |
+| `db` | int | `1` | Queue Redis database index | `1` |
+| `concurrency` | int | `10` | Worker concurrency | 5-20 |
 | `queues` | map | `default:10, critical:5` | Queue names and weights | Adjust as needed |
+| `upstream_sync_interval` | duration string | `5m` (service fallback) | Scheduled upstream product inventory synchronization interval | Use a Go duration such as `5m` or `1h` |
 
-Note: If `queue.enabled=true` but Redis is unreachable, asynchronous tasks (such as emails) may fail or pile up.
-
-Additional notes:
+If `queue.enabled=true` but Redis is unavailable, asynchronous work such as email delivery fails or accumulates.
 
 - The default startup mode is `all` (API + Worker).
-- If `queue.enabled=false`, start with `-mode api`; otherwise Worker initialization will fail.
+- When `queue.enabled=false`, start with `-mode api`; otherwise the Worker cannot initialize.
+- Once the Upstream Sync setting is saved in the admin panel, it overrides `upstream_sync_interval`. The admin setting accepts 5 to 1,440 minutes.
 
 ## 5.7 `upload`
 
-| Field | Type | Description | Recommendation |
-| --- | --- | --- | --- |
-| `max_size` | int64 | Maximum upload size (bytes) | `10485760` (10MB) |
-| `allowed_types` | []string | Allowed MIME types | Only necessary types |
-| `allowed_extensions` | []string | Allowed file extensions | Match with MIME types |
-| `max_width` / `max_height` | int | Maximum image dimensions | `4096` |
+| Field | Type | Built-in default | Description | Recommendation |
+| --- | --- | --- | --- | --- |
+| `max_size` | int64 | `10485760` | Upload size limit in bytes | 10 MB or a tighter business limit |
+| `allowed_types` | []string | JPEG, PNG, GIF, WebP | Allowed MIME types | Keep only required types |
+| `allowed_extensions` | []string | `.jpg`, `.jpeg`, `.png`, `.gif`, `.webp` | Allowed extensions | Keep aligned with MIME types |
+| `max_width` / `max_height` | int | `4096` | Raster image dimension limit | `4096` |
+
+The official `config.yml.example` additionally enables SVG (`image/svg+xml` / `.svg`). Remove SVG from both allowlists if your business does not need it.
 
 ## 5.8 `web`
 
-Controls how the embedded frontends are mounted. Since v1.4.0 the storefront and admin panel are embedded in the binary, and this section determines the admin entry path.
+This section controls the embedded frontends. In fullstack builds, the user frontend is mounted at `/` and this setting chooses the admin entry path.
 
 | Field | Type | Default | Description | Recommendation |
 | --- | --- | --- | --- | --- |
-| `admin_path` | string | `/admin` | Path prefix for the admin panel | **Change it to something hard to guess** |
+| `admin_path` | string | `/admin` | Admin frontend path prefix | **Use a hard-to-guess path** |
 
 ```yaml
 web:
   admin_path: "/dj-mgmt-7x9k2"
 ```
 
-Additional notes:
+Rules and behavior:
 
-- Must start with `/`, must not end with `/`, and must not be `/` itself.
-- Each segment may only contain letters, digits and `-` `.` `_` `~` `@`, and must not be `.` or `..`. Colons and asterisks are Gin routing metacharacters (`/:tenant`, `/*admin`) that would make the admin panel swallow storefront paths or fail startup outright, so they are rejected.
-- Must not equal, contain, or be contained by `/api`, `/uploads`, or `/health`; otherwise startup fails with an error.
-- Validation runs before database initialization: an invalid value exits cleanly rather than leaving you with a migrated schema and a service that will not start.
-- A restart is required after changing it: the value is written into the admin page's `<base href>` once at startup.
-- The storefront is always mounted at `/` and is not configurable.
-- This path is only the "front door" of the admin panel, not a security boundary — endpoint security comes from
-  JWT and rate limiting. Changing it filters out automated scanning noise.
-- If the binary has no embedded frontends (built with `go build` without `-tags fullstack`), this section has no effect.
+- The path must begin with `/`, must not end with `/`, and cannot be `/`.
+- Each segment may contain letters, numbers, `-`, `.`, `_`, `~`, and `@`, but cannot be `.` or `..`. Gin route metacharacters such as `:` and `*` are rejected.
+- It cannot conflict with or be a prefix of `/api`, `/uploads`, or `/health`.
+- Validation happens before database initialization, so an invalid path exits before migrations.
+- A change requires a restart because the path is written into the admin page `<base href>` at startup.
+- The user frontend remains fixed at `/`.
+- The path reduces automated scanning noise but is not an authorization boundary; JWT authentication and rate limiting protect the APIs.
+- This section has no effect in a binary built without `-tags fullstack`.
 
 ## 5.9 `cors`
 
-| Field | Type | Description | Recommendation |
-| --- | --- | --- | --- |
-| `allowed_origins` | []string | Allowed origins | Do not use `*` in production |
-| `allowed_methods` | []string | Allowed methods | Keep to a minimal set |
-| `allowed_headers` | []string | Allowed request headers | Retain according to business needs |
-| `allow_credentials` | bool | Whether to allow credentials | Match frontend policy |
-| `max_age` | int | Preflight cache duration in seconds | `600` |
+| Field | Type | Default | Description | Recommendation |
+| --- | --- | --- | --- | --- |
+| `allowed_origins` | []string | `["*"]` | Allowed origins | List exact production origins |
+| `allowed_methods` | []string | GET, POST, PUT, DELETE, OPTIONS, PATCH | Allowed methods | Keep the minimum set |
+| `allowed_headers` | []string | See `config.yml.example` | Allowed request headers | Keep only what the application needs |
+| `allow_credentials` | bool | `true` | Whether credentials are allowed | Match the frontend policy |
+| `max_age` | int | `600` | Preflight cache duration in seconds | `600` |
 
-Additional notes:
-
-- Browser constraint: when `allow_credentials=true`, `allowed_origins` must not contain `*`.
+In the current implementation, when `allow_credentials=true` and the list contains `*`, the server reflects any request `Origin`. This effectively permits every origin to send credentialed requests, so production must use exact scheme, host, and port values.
 
 ## 5.10 `security`
 
-| Field | Type | Default | Description | Recommended |
+| Field | Type | Default | Description | Recommendation |
 | --- | --- | --- | --- | --- |
-| `login_rate_limit.window_seconds` | int | `300` | Rate limit detection window (seconds) | `300` |
-| `login_rate_limit.max_attempts` | int | `5` | Maximum failed attempts within window | `5` |
-| `login_rate_limit.block_seconds` | int | `900` | Block duration when limit exceeded (seconds) | `900` |
-| `password_policy.min_length` | int | `8` | Minimum password length | `8` or higher |
-| `password_policy.require_upper` | bool | `true` | Whether to require uppercase letters | `true` |
-| `password_policy.require_lower` | bool | `true` | Whether to require lowercase letters | `true` |
-| `password_policy.require_number` | bool | `true` | Whether to require digits | `true` |
-| `password_policy.require_special` | bool | `false` | Whether to require special characters | Enable as needed |
+| `login_rate_limit.window_seconds` | int | `300` | Rate-limit window in seconds | `300` |
+| `login_rate_limit.max_attempts` | int | `5` | Maximum failed attempts in the window | `5` |
+| `login_rate_limit.block_seconds` | int | `900` | Block duration after the limit is reached | `900` |
+| `password_policy.min_length` | int | `8` | Minimum password length | `8` or more |
+| `password_policy.require_upper` | bool | `true` | Require an uppercase letter | `true` |
+| `password_policy.require_lower` | bool | `true` | Require a lowercase letter | `true` |
+| `password_policy.require_number` | bool | `true` | Require a number | `true` |
+| `password_policy.require_special` | bool | `false` | Require a special character | Enable as needed |
 
 ## 5.11 `email`
 
-| Field | Type | Description | Recommended |
-| --- | --- | --- | --- |
-| `enabled` | bool | Whether email is enabled | Enable as needed |
-| `host`/`port` | string/int | SMTP address | Configure according to provider |
-| `username`/`password` | string | SMTP account password/authorization code | Use authorization code |
-| `from`/`from_name` | string | Sender address and name | Use company domain email |
-| `use_tls`/`use_ssl` | bool | Transport security strategy | Choose one, follow provider documentation |
-| `verify_code.*` | mixed | Verification code validity, frequency, length | Default values commonly used |
+| Field | Type | Built-in default | Description | Recommendation |
+| --- | --- | --- | --- | --- |
+| `enabled` | bool | `false` | Enable email | Enable only after a real delivery test |
+| `host` | string | `""` | SMTP host | Follow the provider settings |
+| `port` | int | `587` | SMTP port | 587 is common for STARTTLS; 465 for implicit TLS |
+| `username` / `password` | string | `""` | SMTP account and password/app password | Use a dedicated app password |
+| `from` / `from_name` | string | `""` | Sender address and display name | Use a verified business-domain mailbox |
+| `use_tls` | bool | `true` | Use STARTTLS | Mutually exclusive with `use_ssl` |
+| `use_ssl` | bool | `false` | Use TLS immediately on connect | Mutually exclusive with `use_tls` |
+| `verify_code.expire_minutes` | int | `10` | Verification-code lifetime in minutes | `10` |
+| `verify_code.send_interval_seconds` | int | `60` | Minimum resend interval per target in seconds | `60` |
+| `verify_code.max_attempts` | int | `5` | Maximum verification attempts | `5` |
+| `verify_code.length` | int | `6` | Numeric code length (4-10) | `6` |
+
+The official example uses port 465/SSL and placeholder SMTP details. Those are not built-in defaults; choose TLS or SSL according to your provider.
 
 ## 5.12 `bootstrap`
 
-| Field | Type | Description | Recommended |
-| --- | --- | --- | --- |
-| `default_admin_username` | string | Username for first-time default admin initialization | Set it explicitly to your own admin username |
-| `default_admin_password` | string | Password for first-time default admin initialization | Set a strong password |
+| Field | Type | Default | Description | Recommendation |
+| --- | --- | --- | --- | --- |
+| `default_admin_username` | string | `""` | Initial administrator username | Set your own administrator username explicitly |
+| `default_admin_password` | string | `""` | Initial administrator password | Use a strong password that satisfies `security.password_policy` |
 
-Additional notes:
-
-- The default admin is only created when the `admins` table is empty.
-- Priority: `DJ_DEFAULT_ADMIN_USERNAME` / `DJ_DEFAULT_ADMIN_PASSWORD` (environment variables) > `bootstrap.default_admin_username` / `bootstrap.default_admin_password` (`config.yml`) > system defaults.
-- In `release` mode, if no admin password is provided in either environment variables or `config.yml`, default admin initialization will be skipped.
+- An administrator is initialized only when the database `admins` table is empty.
+- Priority: `DJ_DEFAULT_ADMIN_USERNAME` / `DJ_DEFAULT_ADMIN_PASSWORD` (environment) > `bootstrap.default_admin_username` / `bootstrap.default_admin_password` (`config.yml`) > system defaults.
+- In `release` mode, if neither the environment nor `config.yml` provides an administrator password, default administrator initialization is skipped.
+- In `release` mode, a known default password or one that violates the current password policy makes startup fail. Other modes log a warning.
 
 ## 5.13 `order`
 
-| Field | Type | Default | Description | Recommended |
+| Field | Type | Default | Description | Recommendation |
 | --- | --- | --- | --- | --- |
-| `payment_expire_minutes` | int | `15` | Timeout in minutes for unpaid orders | `15~30` |
+| `payment_expire_minutes` | int | `15` | Pending-payment order timeout in minutes | `15-30` |
+| `max_refund_days` | int | `30` | Longest period in which an administrator may record a manual refund or refund to the internal wallet, counted from payment time (or creation time when absent) | Follow the after-sales policy; `0` means unlimited, maximum `3650` |
 
-Additional notes:
+- Both fields may be overridden by Order Settings in the admin panel. See Runtime Override Priority below.
+- A manual refund only creates a refund record and updates order status; it does not call the original payment channel. “Refund to wallet” credits the internal wallet. Returning funds through the original external payment method remains the merchant's responsibility.
 
-- The effective value may be overridden by admin settings (see "Runtime Override Priority" below).
+## 5.14 `telegram_auth` (Optional)
 
-## 5.14 `telegram_auth` (optional)
+| Field | Type | Default | Description | Recommendation |
+| --- | --- | --- | --- | --- |
+| `enabled` | bool | `false` | Enable Telegram login | Enable after configuration is complete |
+| `bot_username` | string | `""` | Bot username without `@` | For example, `dujiao_login_bot` |
+| `bot_token` | string | `""` | Bot Token; OIDC also derives its numeric `client_id` from the token prefix | Generate with BotFather and keep secret |
+| `client_secret` | string | `""` | Telegram OIDC Client Secret | Generate under Web Login in BotFather and keep secret |
+| `oidc_redirect_uri` | string | `""` | Telegram OIDC browser callback page | `https://store.example.com/auth/telegram/callback` |
+| `mini_app_url` | string | `""` | Telegram Mini App page URL | Keep aligned with the BotFather Web App URL |
+| `login_expire_seconds` | int | `300` | Login-data validity (30-86400 seconds) | `300` |
+| `replay_ttl_seconds` | int | `300` | Replay-protection lifetime (60-86400 seconds) | `300` |
 
-| Field | Type | Description | Recommended |
-| --- | --- | --- | --- |
-| `enabled` | bool | Enable Telegram login | Enable when needed |
-| `bot_username` | string | Bot username (without `@`) | e.g. `dujiao_login_bot` |
-| `bot_token` | string | Bot token | Generated by BotFather |
-| `login_expire_seconds` | int | Login validity (seconds) | `300` |
-| `replay_ttl_seconds` | int | Replay protection TTL (seconds) | `300` |
+With only `bot_token`, the site uses the legacy Login Widget. Supplying a valid `client_secret` and `oidc_redirect_uri` switches web login to OIDC. The callback must be a valid HTTP(S) URL and must also be added to BotFather Allowed URLs. `mini_app_url` only exposes the Mini App entry; it does not enable web login.
 
-## 5.15 `google_auth` (optional)
+## 5.15 `google_auth` (Optional)
 
-Google Account sign-in uses Google Identity Services and does not request permission to read or send Gmail messages.
+Google sign-in uses Google Identity Services and requests no Gmail read or send permissions.
 
-| Field | Type | Description | Recommended |
-| --- | --- | --- | --- |
-| `enabled` | bool | Enable Google Account sign-in | Enable after configuration is complete |
-| `client_id` | string | Google OAuth 2.0 Web Client ID (not a Client Secret) | Use a dedicated production client |
-
-Example:
+| Field | Type | Default | Description | Recommendation |
+| --- | --- | --- | --- | --- |
+| `enabled` | bool | `false` | Enable Google account sign-in | Enable after configuration is complete |
+| `client_id` | string | `""` | Google OAuth 2.0 Web Client ID, not a Client Secret | Use a dedicated production client |
 
 ```yaml
 google_auth:
@@ -346,38 +389,45 @@ google_auth:
   client_id: "1234567890-xxxx.apps.googleusercontent.com"
 ```
 
-Also register every actual site origin under **Authorized JavaScript origins** for the Web client in Google Cloud Console, for example:
+Register every real access origin under **Authorized JavaScript origins** in the matching Google Cloud Web client:
 
-- Main storefront: `https://shop.example.com`
-- Each white-label storefront: `https://brand.example.net`
+- Main site: `https://shop.example.com`
+- Each white-label site: `https://brand.example.net`
 - Local development: `http://localhost:5173`
 
-An origin includes the scheme and port (when present), but no path. Register the main storefront and every white-label storefront separately; registering only the main storefront is not sufficient.
+An origin includes the scheme and port, if any, but no path. Each main-site and white-label origin must be registered separately.
 
-Desktop browsers and Android use popup/FedCM. iOS/iPadOS use the Google Identity Services redirect `form_post` flow, so you must also add an exact **Authorized redirect URI** for every actual domain:
+Desktop browsers and Android use popup/FedCM. iOS and iPadOS use Google Identity Services redirect `form_post`, so also register an exact **Authorized redirect URI** for every real domain:
 
-- Main storefront: `https://shop.example.com/api/v1/auth/google/redirect/callback`
-- White-label storefront: `https://brand.example.net/api/v1/auth/google/redirect/callback`
+- Main site: `https://shop.example.com/api/v1/auth/google/redirect/callback`
+- White-label site: `https://brand.example.net/api/v1/auth/google/redirect/callback`
 
-The redirect URI must exactly match the protocol, domain, port, and path used by the browser, and it must remain same-origin with the storefront. The iOS/iPadOS redirect flow requires an enabled and available Redis 7 instance so one-time state and handoff records can be atomically consumed with `GETDEL`. If Redis is unavailable, redirect sign-in and binding return a service-unavailable response; desktop/Android popup sign-in does not depend on this state store.
+The redirect URI must exactly match the scheme, domain, port, and path seen by the browser and must stay same-origin with the frontend. The iOS/iPadOS redirect flow requires enabled, reachable Redis 7 because one-time state/handoff values are atomically consumed with `GETDEL`. Redis failure makes redirect login and binding unavailable, while desktop/Android popup login does not use that state store.
 
-The Google Client ID is public browser configuration, not a secret. Never put a Client Secret in this section; this feature does not request any Gmail API scopes.
+The Google Client ID is public browser configuration, not a secret. Do not add a Client Secret; this feature does not request Gmail API scopes.
 
-## 5.16 `captcha` (optional)
+## 5.16 `captcha` (Optional)
 
-`config.yml.example` may not show this section completely, but it is supported by the system.
+The official `config.yml.example` currently does not expand this section, but the code and admin settings fully support it. The default is `provider=none` with every scene disabled.
 
-- `provider`: `none` / `image` / `turnstile`
-- `scenes`:
-  - `login`
-  - `register_send_code`
-  - `reset_send_code`
-  - `guest_create_order`
-  - `gift_card_redeem`
-- `image`: image captcha parameters
-- `turnstile`: Cloudflare Turnstile parameters
+| Field | Default | Description |
+| --- | --- | --- |
+| `provider` | `none` | `none`, `image`, or `turnstile` |
+| `scenes.login` | `false` | Login |
+| `scenes.register_send_code` | `false` | Send a registration email code |
+| `scenes.reset_send_code` | `false` | Send a password-reset email code |
+| `scenes.guest_create_order` | `false` | Guest order creation |
+| `scenes.gift_card_redeem` | `false` | Gift-card redemption |
+| `image.length` | `5` | Image-captcha character count (4-8) |
+| `image.width` / `image.height` | `240` / `80` | Image dimensions; width at least 100 and height at least 40 |
+| `image.noise_count` / `image.show_line` | `2` / `2` | Noise-dot and interference-line counts |
+| `image.expire_seconds` | `300` | Lifetime (30-3600 seconds) |
+| `image.max_store` | `10240` | Maximum in-memory captcha entries, at least 100 |
+| `turnstile.site_key` / `secret_key` | `""` | Cloudflare Turnstile keys; both are required when Turnstile is active |
+| `turnstile.verify_url` | Cloudflare verification endpoint | Server-side verification URL |
+| `turnstile.timeout_ms` | `2000` | Server-side verification timeout (500-10000 ms) |
 
-Example:
+Turnstile example:
 
 ```yaml
 captcha:
@@ -395,19 +445,37 @@ captcha:
     timeout_ms: 2000
 ```
 
-## 5.17 Runtime Override Priority (Important)
+If any `scenes.*` switch is enabled, `provider` cannot remain `none`. A captcha configuration saved in the admin panel overrides this entire section.
 
-The following items can be changed dynamically in admin settings and have higher priority than `config.yml`:
+## 5.17 `reseller` (Optional)
 
-- SMTP (email) settings
+| Field | Type | Default | Description | Recommendation |
+| --- | --- | --- | --- | --- |
+| `enabled` | bool | `false` | Enable reseller/white-label tenant resolution | Enable only after domain, DNS, TLS, and tenant acceptance testing |
+| `main_hosts` | []string | `localhost`, `127.0.0.1`, `::1` | Hosts that are always treated as the main site | List every production main-site hostname without scheme or path |
+| `trusted_forwarded_host` | bool | `false` | Prefer `X-Forwarded-Host` when resolving the tenant | Enable only when a trusted proxy overwrites the header and the backend cannot be reached directly |
+| `subdomain_base` | string | `""` | Base domain used to assign system subdomains | For example, `shop.example.com`, with wildcard DNS/TLS configured first |
+| `self_apply_enabled` | bool | `true` | Let regular users apply for reseller status | Follow the operating policy |
+| `settlement_confirm_days` | int | `7` | Confirmation period before reseller profit becomes withdrawable | `0` is immediate; range 0-3650 |
+
+When enabled, a request host in `main_hosts` is treated as the main site. Other hosts resolve only to active, verified reseller domains stored in the database; unknown hosts do not silently fall back to the main site. `trusted_forwarded_host` and `server.trusted_proxies` are separate trust switches: the former trusts a tenant-host header, while the latter trusts client-IP headers. See the [Reseller Guide](/en/guide/reseller) for business configuration.
+
+## 5.18 Runtime Override Priority
+
+The following groups can be changed in admin settings and take priority over `config.yml`:
+
+- SMTP and email verification-code settings
 - Captcha settings
 - Telegram login settings
 - Google login settings
-- Order payment timeout minutes (`payment_expire_minutes`)
+- Order settings (`payment_expire_minutes` and `max_refund_days`)
+- Upstream synchronization interval; after the admin value has been saved, it overrides `queue.upstream_sync_interval`
 
-If you changed `config.yml` but behavior did not change, check admin settings first.
-## 6. Environment variable mapping example
+`config.yml` is the fallback only while the database has no corresponding setting. Once an admin setting has been saved, the database value remains authoritative across restarts. If editing `config.yml` has no effect, inspect the admin setting or clear the corresponding persisted value.
 
+## 6. Environment-Variable Examples
+
+- `APP_SECRET_KEY=...`
 - `SERVER_MODE=release`
 - `DATABASE_DSN=host=127.0.0.1 ...`
 - `JWT_SECRET=...`
@@ -418,33 +486,42 @@ If you changed `config.yml` but behavior did not change, check admin settings fi
 - `REDIS_HOST=127.0.0.1`
 - `CAPTCHA_TURNSTILE_SITE_KEY=...`
 - `TELEGRAM_AUTH_ENABLED=true`
+- `TELEGRAM_AUTH_OIDC_REDIRECT_URI=https://shop.example.com/auth/telegram/callback` (keep the matching empty YAML key; the official example includes it)
+- `RESELLER_ENABLED=true`
 
-Rule: '.' in the configuration key is converted to '_'.
+Rule: `.` in the configuration key is converted to `_`. An environment override is reliable only for keys known through built-in defaults or the loaded YAML. An environment-driven deployment should therefore retain a minimal YAML file containing the empty official-example keys such as `telegram_auth.client_secret`, `telegram_auth.oidc_redirect_uri`, and `telegram_auth.mini_app_url`. Lists and maps are also less predictable to express as environment variables, so keep values such as `trusted_proxies`, `allowed_origins`, and `queues` in YAML.
 
-## 7. Common faults and troubleshooting
+## 7. Troubleshooting
 
 - `database is locked`
-  - Common in SQLite multi-concurrent writes
-  - Check if 'max_open_conns' is '1' and confirm that the DSN is set to '_busy_timeout'
+  - Keep SQLite `max_open_conns` at `1` and include `_busy_timeout` in the DSN.
 - `pq: sorry, too many clients already`
-  - PostgreSQL connections run out
-  - Lowering 'max_open_conns', or raising the database 'max_connections'
-- Time display is scrambled (order time does not coincide with log time)
-  - Check the 'TimeZone' of PostgreSQL DSN with the system time zone
-- Redis/queue is available but the message is not sent
-  - Check 'queue.enabled', Redis connectivity, worker started
-- Orders stay in "pending payment" and never expire automatically
-  - Check whether you started with `-mode api` only, or queue/Redis is unavailable so timeout tasks are not consumed
+  - Lower `max_open_conns` or raise PostgreSQL `max_connections` with an appropriate capacity plan.
+- Order timestamps and log timestamps disagree
+  - Check the PostgreSQL DSN `TimeZone` and the host timezone.
+- Redis/queue is reachable but email is not delivered
+  - Check `queue.enabled`, queue Redis connectivity, and whether a Worker is running.
+- Orders remain pending and never expire
+  - Check whether the service runs only in `-mode api`, or whether queue/Redis is unavailable and timeout tasks are not consumed.
+- Startup exits because runtime secrets are weak, duplicated, or still use defaults
+  - Regenerate `app.secret_key`, `jwt.secret`, and `user_jwt.secret` separately; make each at least 32 characters and ensure all three differ.
+- Every client IP appears as the reverse proxy, or client IPs can be spoofed
+  - Correct `server.trusted_proxies`; list only real proxy IPs/CIDRs and never trust all networks.
+- Editing the file does not change email, login, captcha, order, or upstream-sync behavior
+  - Check the persisted admin settings, which have higher priority than `config.yml`.
 
-## 8. Pre-deployment checklist
+## 8. Pre-Deployment Checklist
 
 - [ ] `server.mode=release`
-- [ ] 'jwt.secret' and 'user_jwt.secret' have been replaced with high-strength random values
-- [ ] Database driver and DSN configuration compliance environment (SQLite/PostgreSQL)
-- [ ] The connection pool parameters match the database specifications
-- [ ] Redis/queue available (if enabled)
-- [ ] If using default startup mode `all`, ensure `queue.enabled=true` and queue Redis is reachable
-- [ ] If queue is intentionally disabled, start with `-mode api` and accept reduced async capabilities
+- [ ] `app.secret_key`, `jwt.secret`, and `user_jwt.secret` are three different high-entropy values, and `app.secret_key` is safely backed up
+- [ ] `server.trusted_proxies` contains only real proxy addresses/networks, or is an empty list when no proxy is used
+- [ ] The database driver and DSN match the environment
+- [ ] Connection-pool limits match database capacity
+- [ ] Redis and the queue are reachable when enabled
+- [ ] When using the default `all` mode, `queue.enabled=true` and queue Redis is reachable
+- [ ] When intentionally disabling the queue, the service starts with `-mode api` and the reduced asynchronous capability is understood
 - [ ] `web.admin_path` no longer uses the default `/admin`
-- [ ] CORS is restricted to real business domains
-- [ ] Email configuration has been authenticated (if enabled)
+- [ ] CORS is restricted to actual business origins
+- [ ] Email has passed a real delivery test when enabled
+- [ ] If Telegram OIDC is enabled, BotFather Allowed URLs, `client_secret`, and the callback have passed a real login test
+- [ ] If reseller mode is enabled, `main_hosts`, `subdomain_base`, DNS/TLS, and the proxy Host trust boundary have passed acceptance testing

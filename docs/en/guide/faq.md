@@ -146,7 +146,7 @@ Troubleshoot in the following order:
 
 ### Q: Email sending fails
 
-1. Confirm `email.enabled` is set to `true` in `config.yml`
+1. Check that email is enabled in admin settings first. Persisted admin settings override `config.yml`; `email.enabled` is only the fallback when no admin value has been saved
 2. Check that the SMTP settings are correct (host, port, username, password)
 3. Ensure SSL/TLS settings match your email provider's requirements:
    - Port 465 typically uses `use_ssl: true`

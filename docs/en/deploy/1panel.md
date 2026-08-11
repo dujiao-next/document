@@ -137,7 +137,7 @@ Then open `/opt/dujiao-next/config/config.yml` in "Host → Files" and edit it w
 | `redis.*` / `queue.*` | Redis | Set `host` to `redis` |
 
 ::: danger Check before going live
-`jwt.secret`, `user_jwt.secret`, and `app.secret_key` must **never** keep their template defaults. Default values mean anyone can forge an admin token and walk straight into your admin panel.
+`jwt.secret`, `user_jwt.secret`, and `app.secret_key` must **never** keep their template defaults or duplicate one another. The current version refuses to start with weak, known-placeholder, or duplicated runtime secrets; `app.secret_key` is also required to recover encrypted sensitive data.
 :::
 
 #### Option A: SQLite + Redis (lightweight, good starting point)
@@ -668,7 +668,7 @@ Copying a `.db` file while writes are in flight can produce an inconsistent snap
 
 Walk through this list once deployment is done:
 
-- [ ] `jwt.secret`, `user_jwt.secret`, and `app.secret_key` are all random strings — none is a template default
+- [ ] `jwt.secret`, `user_jwt.secret`, and `app.secret_key` are different random strings, none is a template default, and `app.secret_key` is backed up
 - [ ] `web.admin_path` has been changed and is not `/admin`
 - [ ] `server.mode` is `release`
 - [ ] The default admin password was changed on first login

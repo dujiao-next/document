@@ -146,7 +146,7 @@ queue:
 
 ### Q：邮件发送失败
 
-1. 确认 `config.yml` 中 `email.enabled` 为 `true`
+1. 先检查后台邮件设置是否已启用；数据库中的后台设置优先于 `config.yml`，未保存过后台设置时才回退到 `email.enabled`
 2. 检查 SMTP 配置是否正确（host、port、username、password）
 3. 确认 SSL/TLS 设置与邮件服务商要求一致：
    - 端口 465 通常使用 `use_ssl: true`

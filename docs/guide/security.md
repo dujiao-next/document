@@ -18,19 +18,20 @@ outline: deep
 
 ```yaml
 app:
-  secret_key: "你的32字节随机密钥"
+  secret_key: "<第 1 个 openssl 输出>"
 ```
 
 **要求：**
 - 必须修改默认值
-- 长度为 32 字节
+- 长度不少于 32 个字符
 - 使用随机生成的字符串
 - 生产环境部署后不可随意更换（否则已加密数据无法解密）
+- 与数据库一起备份
 
 生成随机密钥：
 
 ```bash
-openssl rand -base64 32 | head -c 32
+openssl rand -hex 32
 ```
 
 ### 1.2 JWT 密钥
@@ -39,19 +40,21 @@ openssl rand -base64 32 | head -c 32
 
 ```yaml
 jwt:
-  secret: "管理员JWT密钥-请修改"
+  secret: "<第 2 个 openssl 输出>"
   expire_hours: 24
 
 user_jwt:
-  secret: "用户JWT密钥-请修改"
+  secret: "<第 3 个 openssl 输出>"
   expire_hours: 24
   remember_me_expire_hours: 168
 ```
 
 **建议：**
-- 管理员和用户使用不同的密钥
+- `app.secret_key`、管理员 JWT 和用户 JWT 三个密钥必须分别生成、彼此不同
 - 密钥长度不少于 32 字符
 - 管理员 Token 过期时间建议不超过 24 小时
+
+当前版本会拒绝使用默认值、已知占位值、少于 32 个字符或相互重复的运行时密钥启动。
 
 ---
 
@@ -215,8 +218,8 @@ upload:
 
 部署到生产环境前，确认以下事项：
 
-- [ ] 修改 `app.secret_key` 为随机 32 字节密钥
-- [ ] 修改 `jwt.secret` 和 `user_jwt.secret` 为随机密钥
+- [ ] `app.secret_key`、`jwt.secret`、`user_jwt.secret` 已换成三个彼此不同、至少 32 个字符的随机密钥
+- [ ] `app.secret_key` 已与数据库备份配套保存
 - [ ] 修改 `bootstrap` 中的默认管理员密码
 - [ ] 设置 `server.mode` 为 `release`
 - [ ] 配置 HTTPS 并强制跳转

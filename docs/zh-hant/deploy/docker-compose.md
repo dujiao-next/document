@@ -44,12 +44,13 @@ curl -L https://raw.githubusercontent.com/dujiao-next/dujiao-next/main/config.ym
 
 你需要在 `./config/config.yml` 裡按方案修改資料庫與 Redis 配置。
 
-> ⚠️ 重要安全提醒：上線前必須修改 JWT 密鑰。
+> ⚠️ 重要安全提醒：上線前必須修改三個執行時期密鑰。
 >
+> - `app.secret_key`（敏感資料加密根密鑰）
 > - `jwt.secret`（後臺管理員登入 Token）
 > - `user_jwt.secret`（前臺用戶登入 Token）
 >
-> 請務必使用高強度隨機字串（建議至少 32 位），嚴禁使用範本默認值。否則會導致 Token 可偽造，存在嚴重安全風險。
+> 請分別產生至少 32 位的高強度隨機字串並確保三者不同，嚴禁使用範本默認值。`app.secret_key` 必須與資料庫一起備份。
 
 ### 3.1 後臺入口路徑（新增，務必設定）
 
@@ -120,7 +121,7 @@ queue:
 
 在 `/opt/dujiao-next/.env` 新建：
 
-```env
+```dotenv
 TAG=latest
 TZ=Asia/Shanghai
 

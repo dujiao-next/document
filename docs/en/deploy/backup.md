@@ -68,7 +68,7 @@ docker compose cp postgres:/tmp/backup.dump ./backup/
 cp config.yml backup/config.yml.$(date +%Y%m%d)
 ```
 
-> `config.yml` contains sensitive information such as database passwords, JWT secrets, and payment configurations. Store backup copies securely.
+> `config.yml` contains sensitive values such as database passwords and JWT secrets. Its `app.secret_key` is required to recover encrypted configuration stored in the database. Restrict backup permissions and always keep it paired with the matching database backup.
 
 ---
 

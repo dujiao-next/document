@@ -120,13 +120,13 @@ cp config.yml.example config.yml
 
 - `server.mode`（debug/release）
 - `database.driver` / `database.dsn`
-- `jwt.secret` / `user_jwt.secret`
+- `app.secret_key` / `jwt.secret` / `user_jwt.secret`
 - `web.admin_path`（后台入口路径，**务必改掉默认的 `/admin`**）
 - `redis`、`queue`、`email`（按需启用）
 
-> ⚠️ 重要安全提醒：上线前必须修改 `jwt.secret` 与 `user_jwt.secret`，并使用至少 32 位高强度随机字符串。
+> ⚠️ 重要安全提醒：上线前必须分别修改 `app.secret_key`、`jwt.secret` 与 `user_jwt.secret`，使用至少 32 位的高强度随机字符串，并确保三者不同。
 >
-> 严禁使用模板默认值，否则可能导致 Token 可伪造，存在严重安全风险。
+> 严禁使用模板默认值；否则服务会拒绝启动。`app.secret_key` 用于解密敏感数据，必须与数据库一起备份。
 
 ## 6. 运行
 

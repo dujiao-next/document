@@ -40,8 +40,10 @@
 - 準備 Linux 伺服器與一個可解析到公網 IP 的網域（**一個就夠**）
 - 規劃埠號（默認只需要 8080 一個）
 - 在 `config.yml` 中設置強隨機密鑰：
+  - `app.secret_key`
   - `jwt.secret`
   - `user_jwt.secret`
+  - 三個值必須分別產生、彼此不同；`app.secret_key` 還必須與資料庫一起備份
 - 修改後臺入口路徑 `web.admin_path`，不要沿用默認的 `/admin`
 - 決定資料方案：
   - 輕量場景：SQLite + Redis

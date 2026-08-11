@@ -67,7 +67,7 @@ docker compose cp postgres:/tmp/backup.dump ./backup/
 cp config.yml backup/config.yml.$(date +%Y%m%d)
 ```
 
-> `config.yml` 包含数据库密码、JWT 密钥、支付配置等敏感信息，请妥善保管备份文件。
+> `config.yml` 包含数据库密码、JWT 密钥等敏感信息，其中 `app.secret_key` 是恢复数据库内加密配置所必需的。请限制备份文件权限，并始终让它与对应数据库备份配套保存。
 
 ---
 

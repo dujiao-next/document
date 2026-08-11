@@ -18,19 +18,20 @@ outline: deep
 
 ```yaml
 app:
-  secret_key: "你的32位元組隨機金鑰"
+  secret_key: "<第 1 個 openssl 輸出>"
 ```
 
 **要求：**
 - 必須修改預設值
-- 長度為 32 位元組
+- 長度不少於 32 個字元
 - 使用隨機產生的字串
 - 正式環境部署後不可隨意更換（否則已加密資料無法解密）
+- 與資料庫一起備份
 
 產生隨機金鑰：
 
 ```bash
-openssl rand -base64 32 | head -c 32
+openssl rand -hex 32
 ```
 
 ### 1.2 JWT 金鑰
@@ -39,19 +40,21 @@ openssl rand -base64 32 | head -c 32
 
 ```yaml
 jwt:
-  secret: "管理員JWT金鑰-請修改"
+  secret: "<第 2 個 openssl 輸出>"
   expire_hours: 24
 
 user_jwt:
-  secret: "使用者JWT金鑰-請修改"
+  secret: "<第 3 個 openssl 輸出>"
   expire_hours: 24
   remember_me_expire_hours: 168
 ```
 
 **建議：**
-- 管理員和使用者使用不同的金鑰
+- `app.secret_key`、管理員 JWT 與使用者 JWT 三個金鑰必須分別產生、彼此不同
 - 金鑰長度不少於 32 字元
 - 管理員 Token 過期時間建議不超過 24 小時
+
+目前版本會拒絕使用預設值、已知預留值、少於 32 個字元或相互重複的執行時期金鑰啟動。
 
 ---
 
@@ -215,8 +218,8 @@ upload:
 
 部署到正式環境前，確認以下事項：
 
-- [ ] 修改 `app.secret_key` 為隨機 32 位元組金鑰
-- [ ] 修改 `jwt.secret` 和 `user_jwt.secret` 為隨機金鑰
+- [ ] `app.secret_key`、`jwt.secret`、`user_jwt.secret` 已換成三個彼此不同、至少 32 個字元的隨機金鑰
+- [ ] `app.secret_key` 已與資料庫備份配套保存
 - [ ] 修改 `bootstrap` 中的預設管理員密碼
 - [ ] 設定 `server.mode` 為 `release`
 - [ ] 設定 HTTPS 並強制跳轉

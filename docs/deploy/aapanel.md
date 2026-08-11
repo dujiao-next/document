@@ -63,9 +63,9 @@ chmod +x ./dujiao-next
 # 编辑 config.yml
 ```
 
-> ⚠️ 重要安全提醒：上线前必须修改 `config.yml` 中的 `jwt.secret` 与 `user_jwt.secret`。
+> ⚠️ 重要安全提醒：上线前必须分别修改 `config.yml` 中的 `app.secret_key`、`jwt.secret` 与 `user_jwt.secret`。
 >
-> 请使用至少 32 位高强度随机字符串，严禁使用模板默认值。
+> 请使用至少 32 位的高强度随机字符串并确保三者不同，严禁使用模板默认值；`app.secret_key` 还必须与数据库一起备份。
 
 同时务必修改后台入口路径（默认 `/admin` 是扫描器首要目标）：
 

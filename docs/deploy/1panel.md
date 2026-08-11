@@ -137,7 +137,7 @@ curl -L https://raw.githubusercontent.com/dujiao-next/dujiao-next/main/config.ym
 | `redis.*` / `queue.*` | Redis | `host` 填 `redis` |
 
 ::: danger 上线前必查
-`jwt.secret`、`user_jwt.secret`、`app.secret_key` 三项**绝对不能保留模板默认值**。默认值意味着任何人都能伪造管理员 Token 直接登录你的后台。
+`jwt.secret`、`user_jwt.secret`、`app.secret_key` 三项**绝对不能保留模板默认值，也不能相互重复**。当前版本会拒绝使用弱值、已知占位值或重复密钥启动；`app.secret_key` 还关系到已加密敏感数据的恢复。
 :::
 
 #### 方案 A：SQLite + Redis（轻量，推荐起步）
@@ -668,7 +668,7 @@ SQLite 直接复制 `.db` 文件在有写入时可能拿到不一致的快照。
 
 部署完对着这张表逐条确认：
 
-- [ ] `jwt.secret`、`user_jwt.secret`、`app.secret_key` 都换成了随机串，没有一个是模板默认值
+- [ ] `jwt.secret`、`user_jwt.secret`、`app.secret_key` 都换成了彼此不同的随机串，没有一个是模板默认值，并已备份 `app.secret_key`
 - [ ] `web.admin_path` 已改掉，不是 `/admin`
 - [ ] `server.mode` 是 `release`
 - [ ] 默认管理员密码已在首次登录后修改

@@ -18,19 +18,20 @@ The `app.secret_key` in `config.yml` is used for AES-256 encryption of sensitive
 
 ```yaml
 app:
-  secret_key: "your-32-byte-random-secret-key"
+  secret_key: "<first openssl output>"
 ```
 
 **Requirements:**
 - Must be changed from the default value
-- Must be exactly 32 bytes in length
+- Must be at least 32 characters long
 - Use a randomly generated string
 - Do not change after production deployment (encrypted data will become unrecoverable)
+- Back it up with the database
 
 Generate a random key:
 
 ```bash
-openssl rand -base64 32 | head -c 32
+openssl rand -hex 32
 ```
 
 ### 1.2 JWT Secret Keys
@@ -39,19 +40,21 @@ Admins and users use separate JWT secret keys:
 
 ```yaml
 jwt:
-  secret: "admin-jwt-secret-change-this"
+  secret: "<second openssl output>"
   expire_hours: 24
 
 user_jwt:
-  secret: "user-jwt-secret-change-this"
+  secret: "<third openssl output>"
   expire_hours: 24
   remember_me_expire_hours: 168
 ```
 
 **Recommendations:**
-- Use different secrets for admin and user tokens
+- Generate `app.secret_key`, the admin JWT secret, and the user JWT secret separately and keep all three different
 - Secret length should be at least 32 characters
 - Admin token expiry should not exceed 24 hours
+
+The current version refuses to start with built-in defaults, known placeholders, values shorter than 32 characters, or duplicated runtime secrets.
 
 ---
 
@@ -215,8 +218,8 @@ The site connection API uses HMAC-SHA256 signatures to verify requests and preve
 
 Before deploying to production, verify the following:
 
-- [ ] Changed `app.secret_key` to a random 32-byte key
-- [ ] Changed `jwt.secret` and `user_jwt.secret` to random secrets
+- [ ] `app.secret_key`, `jwt.secret`, and `user_jwt.secret` are three different random values of at least 32 characters
+- [ ] `app.secret_key` is stored with the matching database backup
 - [ ] Changed the default admin password in `bootstrap`
 - [ ] Set `server.mode` to `release`
 - [ ] Configured HTTPS with forced redirection

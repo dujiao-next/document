@@ -40,8 +40,10 @@ Whichever you pick, you end up running the same binary with embedded frontends. 
 - Prepare a Linux server and one domain that resolves to your public IP (**one is enough**)
 - Plan your port (only 8080 is needed by default)
 - Set strong random keys in `config.yml`:
+  - `app.secret_key`
   - `jwt.secret`
   - `user_jwt.secret`
+  - Generate all three separately and keep them different; back up `app.secret_key` with the database
 - Change the admin entry path `web.admin_path` — do not keep the default `/admin`
 - Choose your data stack:
   - Lightweight: SQLite + Redis

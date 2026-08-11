@@ -63,9 +63,9 @@ chmod +x ./dujiao-next
 # edit config.yml
 ```
 
-> ⚠️ Critical security note: you must change `jwt.secret` and `user_jwt.secret` in `config.yml` before going live.
+> ⚠️ Critical security note: before going live, change `app.secret_key`, `jwt.secret`, and `user_jwt.secret` separately in `config.yml`.
 >
-> Use random strings of at least 32 characters. Never keep the template defaults.
+> Use high-entropy strings of at least 32 characters, keep all three different, never retain template defaults, and back up `app.secret_key` with the database.
 
 Also change the admin entry path (the default `/admin` is a prime scanner target):
 

@@ -44,12 +44,13 @@ curl -L https://raw.githubusercontent.com/dujiao-next/dujiao-next/main/config.ym
 
 Then edit `./config/config.yml` for your chosen database and Redis setup.
 
-> ⚠️ Critical security note: you must change the JWT secrets before going live.
+> ⚠️ Critical security note: change all three runtime secrets before going live.
 >
+> - `app.secret_key` (root key for encrypting sensitive data)
 > - `jwt.secret` (admin login tokens)
 > - `user_jwt.secret` (storefront user login tokens)
 >
-> Use high-entropy random strings (at least 32 characters). Never keep the template defaults — doing so makes tokens forgeable and is a serious security risk.
+> Generate separate high-entropy strings of at least 32 characters and keep all three different. Never keep the template defaults, and back up `app.secret_key` with the database.
 
 ### 3.1 Admin Entry Path (New — Set This)
 
@@ -120,7 +121,7 @@ queue:
 
 Create `/opt/dujiao-next/.env`:
 
-```env
+```dotenv
 TAG=latest
 TZ=Asia/Shanghai
 

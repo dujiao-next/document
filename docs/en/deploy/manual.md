@@ -121,13 +121,13 @@ At minimum, verify:
 
 - `server.mode` (debug/release)
 - `database.driver` / `database.dsn`
-- `jwt.secret` / `user_jwt.secret`
+- `app.secret_key` / `jwt.secret` / `user_jwt.secret`
 - `web.admin_path` (admin entry path — **change the default `/admin`**)
 - `redis`, `queue`, `email` (enable as needed)
 
-> ⚠️ Critical security note: you must change `jwt.secret` and `user_jwt.secret` before going live, using random strings of at least 32 characters.
+> ⚠️ Critical security note: before going live, change `app.secret_key`, `jwt.secret`, and `user_jwt.secret` separately, use high-entropy strings of at least 32 characters, and keep all three different.
 >
-> Never keep the template defaults — doing so makes tokens forgeable and is a serious security risk.
+> Never keep the template defaults; the service will refuse to start. Back up `app.secret_key` with the database because it is required to decrypt sensitive data.
 
 ## 6. Running
 

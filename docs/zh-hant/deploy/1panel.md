@@ -137,7 +137,7 @@ curl -L https://raw.githubusercontent.com/dujiao-next/dujiao-next/main/config.ym
 | `redis.*` / `queue.*` | Redis | `host` 填 `redis` |
 
 ::: danger 上線前必查
-`jwt.secret`、`user_jwt.secret`、`app.secret_key` 三項**絕對不能保留範本預設值**。預設值意味著任何人都能偽造管理員 Token 直接登入你的後臺。
+`jwt.secret`、`user_jwt.secret`、`app.secret_key` 三項**絕對不能保留範本預設值，也不能相互重複**。目前版本會拒絕使用弱值、已知預留值或重複密鑰啟動；`app.secret_key` 還關係到已加密敏感資料的復原。
 :::
 
 #### 方案 A：SQLite + Redis（輕量，推薦起步）
@@ -668,7 +668,7 @@ SQLite 直接複製 `.db` 檔案在有寫入時可能拿到不一致的快照。
 
 部署完對著這張表逐條確認：
 
-- [ ] `jwt.secret`、`user_jwt.secret`、`app.secret_key` 都換成了隨機字串，沒有一個是範本預設值
+- [ ] `jwt.secret`、`user_jwt.secret`、`app.secret_key` 都換成了彼此不同的隨機字串，沒有一個是範本預設值，並已備份 `app.secret_key`
 - [ ] `web.admin_path` 已改掉，不是 `/admin`
 - [ ] `server.mode` 是 `release`
 - [ ] 預設管理員密碼已在首次登入後修改
